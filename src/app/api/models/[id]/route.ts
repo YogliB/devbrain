@@ -9,11 +9,11 @@ function getDb() {
 }
 
 export async function GET(
-	request: NextRequest,
-	{ params }: { params: { id: string } },
+	_request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		const { id } = params;
+		const { id } = await params;
 		const db = getDb();
 
 		const model = db
@@ -36,15 +36,16 @@ export async function GET(
 
 		// Convert boolean value
 		const formattedModel = {
-			...model,
-			isDownloaded: Boolean(model.isDownloaded),
+			...(model as any),
+			isDownloaded: Boolean((model as any).isDownloaded),
 		};
 
 		db.close();
 
 		return NextResponse.json(formattedModel);
 	} catch (error) {
-		console.error(`Error fetching model ${params.id}:`, error);
+		const { id } = await params;
+		console.error(`Error fetching model ${id}:`, error);
 		return NextResponse.json(
 			{ message: 'Failed to fetch model', error: String(error) },
 			{ status: 500 },
@@ -54,10 +55,10 @@ export async function GET(
 
 export async function PATCH(
 	request: NextRequest,
-	{ params }: { params: { id: string } },
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		const { id } = params;
+		const { id } = await params;
 		const body = await request.json();
 		const { isDownloaded } = body;
 
@@ -103,15 +104,16 @@ export async function PATCH(
 
 		// Convert boolean value
 		const formattedModel = {
-			...updatedModel,
-			isDownloaded: Boolean(updatedModel.isDownloaded),
+			...(updatedModel as any),
+			isDownloaded: Boolean((updatedModel as any).isDownloaded),
 		};
 
 		db.close();
 
 		return NextResponse.json(formattedModel);
 	} catch (error) {
-		console.error(`Error updating model ${params.id}:`, error);
+		const { id } = await params;
+		console.error(`Error updating model ${id}:`, error);
 		return NextResponse.json(
 			{ message: 'Failed to update model', error: String(error) },
 			{ status: 500 },

@@ -5,10 +5,10 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(
 	_request: NextRequest,
-	{ params }: { params: { notebookId: string } },
+	{ params }: { params: Promise<{ notebookId: string }> },
 ) {
 	try {
-		const { notebookId } = params;
+		const { notebookId } = await params;
 		const db = getDb();
 
 		const [notebook] = await db
@@ -32,7 +32,8 @@ export async function GET(
 
 		return NextResponse.json(formattedNotebook);
 	} catch (error) {
-		console.error(`Error fetching notebook ${params.notebookId}:`, error);
+		const { notebookId } = await params;
+		console.error(`Error fetching notebook ${notebookId}:`, error);
 		return NextResponse.json(
 			{ message: 'Failed to fetch notebook', error: String(error) },
 			{ status: 500 },
@@ -44,10 +45,10 @@ export async function GET(
 
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: { notebookId: string } },
+	{ params }: { params: Promise<{ notebookId: string }> },
 ) {
 	try {
-		const { notebookId } = params;
+		const { notebookId } = await params;
 		const body = await request.json();
 		const { title } = body;
 
@@ -99,7 +100,8 @@ export async function PUT(
 
 		return NextResponse.json(formattedNotebook);
 	} catch (error) {
-		console.error(`Error updating notebook ${params.notebookId}:`, error);
+		const { notebookId } = await params;
+		console.error(`Error updating notebook ${notebookId}:`, error);
 		return NextResponse.json(
 			{ message: 'Failed to update notebook', error: String(error) },
 			{ status: 500 },
@@ -111,10 +113,10 @@ export async function PUT(
 
 export async function DELETE(
 	_request: NextRequest,
-	{ params }: { params: { notebookId: string } },
+	{ params }: { params: Promise<{ notebookId: string }> },
 ) {
 	try {
-		const { notebookId } = params;
+		const { notebookId } = await params;
 		const db = getDb();
 
 		// Check if notebook exists
@@ -135,7 +137,8 @@ export async function DELETE(
 
 		return NextResponse.json({ message: 'Notebook deleted successfully' });
 	} catch (error) {
-		console.error(`Error deleting notebook ${params.notebookId}:`, error);
+		const { notebookId } = await params;
+		console.error(`Error deleting notebook ${notebookId}:`, error);
 		return NextResponse.json(
 			{ message: 'Failed to delete notebook', error: String(error) },
 			{ status: 500 },

@@ -6,10 +6,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { notebookId: string } }
+  { params }: { params: Promise<{ notebookId: string }> }
 ) {
   try {
-    const { notebookId } = params;
+    const { notebookId } = await params;
     const db = getDb();
 
     // Check if notebook exists
@@ -40,7 +40,8 @@ export async function GET(
 
     return NextResponse.json(formattedSources);
   } catch (error) {
-    console.error(`Error fetching sources for notebook ${params.notebookId}:`, error);
+    const { notebookId } = await params;
+    console.error(`Error fetching sources for notebook ${notebookId}:`, error);
     return NextResponse.json(
       { message: 'Failed to fetch sources', error: String(error) },
       { status: 500 }
@@ -52,10 +53,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { notebookId: string } }
+  { params }: { params: Promise<{ notebookId: string }> }
 ) {
   try {
-    const { notebookId } = params;
+    const { notebookId } = await params;
     const body = await request.json();
     const { content, filename, tag } = body;
 
@@ -114,7 +115,8 @@ export async function POST(
 
     return NextResponse.json(formattedSource, { status: 201 });
   } catch (error) {
-    console.error(`Error creating source for notebook ${params.notebookId}:`, error);
+    const { notebookId } = await params;
+    console.error(`Error creating source for notebook ${notebookId}:`, error);
     return NextResponse.json(
       { message: 'Failed to create source', error: String(error) },
       { status: 500 }
