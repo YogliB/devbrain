@@ -5,9 +5,7 @@ import { suggestedQuestions } from '@/lib/data/suggestedQuestionsData';
 import { useAppInitialization } from '@/hooks/useAppInitialization';
 
 export default function Home() {
-	// Initialize app and get shared state and functions
 	const {
-		// State
 		isLoading,
 		notebooks,
 		activeNotebook,
@@ -15,22 +13,14 @@ export default function Home() {
 		sources,
 		models,
 		selectedModel,
-
-		// Notebook functions
 		selectNotebook,
 		createNotebook,
 		deleteNotebook,
-
-		// Message functions
 		sendMessage,
 		selectQuestion,
-
-		// Source functions
 		addSource,
 		updateSource,
 		deleteSource,
-
-		// Model functions
 		selectModel,
 		downloadModel,
 	} = useAppInitialization();
