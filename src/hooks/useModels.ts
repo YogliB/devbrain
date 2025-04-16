@@ -8,19 +8,14 @@ export function useModels() {
 	const [selectedModel, setSelectedModel] = useState<Model | null>(null);
 	const [isInitialized, setIsInitialized] = useState(false);
 
-	// Initialize WebLLM models and sync with our models
 	const initializeWebLLM = useCallback(async () => {
 		try {
-			// Get models from our API
 			const modelsData = await modelsAPI.getAll();
 
-			// Get available models from WebLLM
 			const webLLMModels = await webLLMService.getAvailableModels();
 
-			// Map our models to WebLLM models and check their download status
 			const enhancedModels = await Promise.all(
 				modelsData.map(async (model) => {
-					// Find matching WebLLM model by name (could be improved with better matching)
 					const webLLMModel = webLLMModels.find(
 						(wm) =>
 							wm.model_id
@@ -31,7 +26,6 @@ export function useModels() {
 								.includes(wm.model_id.toLowerCase()),
 					);
 
-					// Check if model is actually downloaded in WebLLM
 					const isReallyDownloaded = webLLMModel
 						? await webLLMService.isModelDownloaded(
 								webLLMModel.model_id,
@@ -44,7 +38,6 @@ export function useModels() {
 						downloadStatus: isReallyDownloaded
 							? 'downloaded'
 							: 'not-downloaded',
-						// Only rely on WebLLM's state for isDownloaded, ignore database value
 						isDownloaded: isReallyDownloaded,
 					};
 				}),
@@ -52,7 +45,6 @@ export function useModels() {
 
 			setModels(enhancedModels);
 
-			// Set the first downloaded model as selected
 			const downloadedModel = enhancedModels.find((m) => m.isDownloaded);
 			if (downloadedModel) {
 				setSelectedModel(downloadedModel);
@@ -67,7 +59,6 @@ export function useModels() {
 		}
 	}, []);
 
-	// Fetch models and initialize WebLLM on mount
 	useEffect(() => {
 		initializeWebLLM();
 	}, [initializeWebLLM]);
@@ -126,7 +117,6 @@ export function useModels() {
 
 	const downloadModel = async (model: Model) => {
 		try {
-			// Update UI to show downloading state
 			const updatingModels = models.map((m) =>
 				m.id === model.id
 					? {
@@ -139,7 +129,6 @@ export function useModels() {
 			);
 			setModels(updatingModels);
 
-			// Set up listeners for download progress
 			const progressListener = (progress: number) => {
 				setModels((prev) =>
 					prev.map((m) =>
@@ -166,14 +155,12 @@ export function useModels() {
 			);
 			webLLMService.addStatusListener(model.id, statusListener);
 
-			// Start the download process
 			if (!model.webLLMId) {
 				throw new Error('Model does not have a WebLLM ID');
 			}
 
 			const downloadSuccess = await webLLMService.downloadModel(model);
 
-			// Clean up listeners
 			webLLMService.removeDownloadProgressListener(
 				model.id,
 				progressListener,
@@ -181,8 +168,6 @@ export function useModels() {
 			webLLMService.removeStatusListener(model.id, statusListener);
 
 			if (downloadSuccess) {
-				// Update models list with the downloaded model
-				// No need to call API to update download status anymore
 				setModels((prev) =>
 					prev.map((m) =>
 						m.id === model.id
@@ -196,7 +181,6 @@ export function useModels() {
 					),
 				);
 
-				// Set as selected model
 				setSelectedModel({
 					...model,
 					isDownloaded: true,
@@ -206,7 +190,6 @@ export function useModels() {
 
 				return model;
 			} else {
-				// Update UI to show download failed
 				setModels((prev) =>
 					prev.map((m) =>
 						m.id === model.id
@@ -219,7 +202,6 @@ export function useModels() {
 		} catch (error) {
 			console.error('Failed to download model:', error);
 
-			// Reset downloading state on error
 			setModels((prev) =>
 				prev.map((m) =>
 					m.id === model.id ? { ...m, downloadStatus: 'failed' } : m,

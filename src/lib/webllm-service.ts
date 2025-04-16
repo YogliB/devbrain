@@ -1,4 +1,3 @@
-// filepath: /Users/yogevb/private-dev/devbrain/src/lib/webllm-service.ts
 import { ChatModule, ModelRecord } from '@mlc-ai/web-llm';
 import { Model, ModelDownloadStatus } from '@/types/model';
 
