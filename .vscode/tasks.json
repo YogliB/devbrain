@@ -40,8 +40,17 @@
       "label": "Next.js: lint",
       "type": "npm",
       "script": "lint",
-      "problemMatcher": ["$eslint-stylish"],
+      "problemMatcher": [
+        "$eslint-stylish"
+      ],
       "detail": "Run ESLint"
+    },
+    {
+      "label": "Next.js: format",
+      "type": "npm",
+      "script": "format",
+      "problemMatcher": [],
+      "detail": "Format code with Prettier"
     }
   ]
 }

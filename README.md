@@ -35,10 +35,23 @@ Alternatively, you can use the VS Code tasks:
    - `Next.js: build` - Build the application for production
    - `Next.js: start` - Start the production server
    - `Next.js: lint` - Run ESLint
+   - `Next.js: format` - Format code with Prettier
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+### Code Formatting
+
+This project uses Prettier for code formatting and ESLint for code linting. The configuration is set up to run Prettier as an ESLint rule, which means that formatting issues will be reported as ESLint errors.
+
+You can format your code in several ways:
+
+1. Automatically on save (configured in VS Code settings)
+2. By running `npm run format` to format all files
+3. By running the VS Code task `Next.js: format`
+
+To check if your code is properly formatted without making changes, run `npm run format:check`.
 
 ## Learn More
 
