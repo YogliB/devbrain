@@ -2,6 +2,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Using the Command Line
+
 First, run the development server:
 
 ```bash
@@ -15,6 +17,24 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### Using VS Code
+
+This project includes VS Code configurations to make development easier:
+
+1. Open the project in VS Code
+2. Press `F5` to start the development server with debugging enabled
+3. VS Code will automatically open your browser when the server is ready
+
+Alternatively, you can use the VS Code tasks:
+
+1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
+2. Type "Tasks: Run Task"
+3. Select one of the available tasks:
+   - `Next.js: dev` - Start the development server
+   - `Next.js: build` - Build the application for production
+   - `Next.js: start` - Start the production server
+   - `Next.js: lint` - Run ESLint
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
