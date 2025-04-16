@@ -1,7 +1,6 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from './schema';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
@@ -27,16 +26,14 @@ export function getDb() {
 export function ensureDatabaseExists() {
 	const dbPath = getDbPath();
 
-	// Check if database file exists
 	if (!existsSync(dbPath)) {
 		console.log('Database file does not exist, creating it...');
-		// Create the database file by opening and closing a connection
 		const tempDb = new Database(dbPath);
 		tempDb.close();
-		return false; // Database didn't exist before
+		return false;
 	}
 
-	return true; // Database already existed
+	return true;
 }
 
 export function closeDb() {
@@ -47,14 +44,12 @@ export function closeDb() {
 	}
 }
 
-export async function initDb(forceMigrate = false) {
+export async function initDb(forceInit = false) {
 	const dbExisted = ensureDatabaseExists();
 	const db = getDb();
 
-	// Only run migrations if the database didn't exist or if forceMigrate is true
-	if (!dbExisted || forceMigrate) {
-		console.log('Running database migrations...');
-		migrate(db, { migrationsFolder: join(process.cwd(), 'src/db/migrations') });
+	if (!dbExisted || forceInit) {
+		console.log('Database initialized');
 	}
 
 	return db;

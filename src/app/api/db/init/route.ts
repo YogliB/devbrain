@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { initDb, ensureDatabaseExists } from '@/db';
+import { spawn } from 'child_process';
 
 export async function GET(request: NextRequest) {
 	try {
-		// Check if we should force migrations
 		const searchParams = request.nextUrl.searchParams;
-		const forceMigrate = searchParams.get('forceMigrate') === 'true';
+		const forceInit = searchParams.get('forceInit') === 'true';
 		const isDev = process.env.NODE_ENV === 'development';
 
-		// In production, only ensure the database exists unless forceMigrate is true
-		if (!isDev && !forceMigrate) {
+		if (!isDev && !forceInit) {
 			ensureDatabaseExists();
 			return NextResponse.json({
 				success: true,
@@ -18,21 +17,35 @@ export async function GET(request: NextRequest) {
 			});
 		}
 
-		// In development or if forceMigrate is true, run the full initialization
-		if (isDev || forceMigrate) {
-			// Use the initDb function directly instead of spawning a process
-			await initDb(true);
-
-			// Run the seed script if needed
-			const { spawn } = require('child_process');
-			const process = spawn('npm', ['run', 'db:seed']);
+		if (isDev || forceInit) {
+			const pushProcess = spawn('npm', ['run', 'db:push']);
 
 			await new Promise<void>((resolve, reject) => {
-				process.on('close', (code: number) => {
+				pushProcess.on('close', (code: number) => {
 					if (code === 0) {
 						resolve();
 					} else {
-						reject(new Error(`Seed process exited with code ${code}`));
+						reject(
+							new Error(
+								`Schema push process exited with code ${code}`,
+							),
+						);
+					}
+				});
+			});
+
+			await initDb(true);
+
+			const seedProcess = spawn('npm', ['run', 'db:seed']);
+
+			await new Promise<void>((resolve, reject) => {
+				seedProcess.on('close', (code: number) => {
+					if (code === 0) {
+						resolve();
+					} else {
+						reject(
+							new Error(`Seed process exited with code ${code}`),
+						);
 					}
 				});
 			});
