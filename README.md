@@ -18,6 +18,18 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Database Management
+
+This project uses SQLite with Drizzle ORM for database management. The database is automatically initialized when the application starts, but migrations are only run when necessary.
+
+#### Database Commands
+
+- `npm run db:manual-init` - Manually initialize the database (run migrations and seed data)
+- `npm run db:generate` - Generate migrations based on schema changes
+- `npm run db:push` - Apply migrations to the database
+- `npm run db:seed` - Seed the database with initial data
+- `npm run db:studio` - Open Drizzle Studio to view and edit the database
+
 ### Using VS Code
 
 This project includes VS Code configurations to make development easier:

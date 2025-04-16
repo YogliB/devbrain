@@ -13,7 +13,8 @@
 		"db:seed": "node src/db/seed-db.js",
 		"db:studio": "drizzle-kit studio",
 		"db:push": "drizzle-kit push",
-		"db:init": "bun run db:generate && bun run db:push && bun run db:seed"
+		"db:init": "bun run db:generate && bun run db:push && bun run db:seed",
+		"db:manual-init": "bun src/scripts/init-db.ts"
 	},
 	"dependencies": {
 		"@types/uuid": "^10.0.0",

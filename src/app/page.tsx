@@ -41,7 +41,9 @@ export default function Home() {
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				await initializeDatabase();
+				// Only force migrations in development mode
+				const isDev = process.env.NODE_ENV === 'development';
+				await initializeDatabase(isDev);
 
 				const notebooksData = await notebooksAPI.getAll();
 				setNotebooks(notebooksData);
@@ -251,7 +253,7 @@ export default function Home() {
 						Loading DevBrain
 					</h2>
 					<p className="text-muted-foreground">
-						Initializing database...
+						Loading application...
 					</p>
 				</div>
 			</div>
