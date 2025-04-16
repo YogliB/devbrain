@@ -272,8 +272,7 @@ export function useAppInitialization() {
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				const isDev = process.env.NODE_ENV === 'development';
-				await initializeDatabase(isDev);
+				await initializeDatabase();
 
 				const notebooksData = await fetchNotebooks();
 

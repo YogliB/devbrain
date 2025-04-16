@@ -27,14 +27,11 @@ async function fetchAPI<T>(
 	return res.json();
 }
 
-export async function initializeDatabase(
-	forceMigrate: boolean = false,
-): Promise<{
+export async function initializeDatabase(): Promise<{
 	success: boolean;
 	message: string;
 }> {
-	const queryParams = forceMigrate ? '?forceMigrate=true' : '';
-	return fetchAPI(`/db/init${queryParams}`);
+	return fetchAPI('/db/init');
 }
 
 export const notebooksAPI = {
