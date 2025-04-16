@@ -1,51 +1,15 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/templates/main-layout';
 import { Notebook } from '@/types/notebook';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 import { Model } from '@/types/model';
+import { initializeDatabase, notebooksAPI, sourcesAPI, messagesAPI, modelsAPI } from '@/lib/api';
 
-// Mock data for demonstration
-const mockNotebooks: Notebook[] = [
-	{
-		id: '1',
-		title: 'Project Ideas',
-		createdAt: new Date('2023-01-01'),
-		updatedAt: new Date('2023-01-05'),
-	},
-	{
-		id: '2',
-		title: 'Learning Notes',
-		createdAt: new Date('2023-02-01'),
-		updatedAt: new Date('2023-02-10'),
-	},
-	{
-		id: '3',
-		title: 'Code Snippets',
-		createdAt: new Date('2023-03-01'),
-		updatedAt: new Date('2023-03-15'),
-	},
-];
-
-const mockMessages: ChatMessage[] = [
-	{
-		id: '1',
-		content: 'How can I implement a binary search tree in JavaScript?',
-		role: 'user',
-		timestamp: new Date('2023-04-01T10:00:00'),
-	},
-	{
-		id: '2',
-		content:
-			'Here\'s how you can implement a binary search tree in JavaScript:\n\n```javascript\nclass Node {\n  constructor(value) {\n    this.value = value;\n    this.left = null;\n    this.right = null;\n  }\n}\n\nclass BinarySearchTree {\n  constructor() {\n    this.root = null;\n  }\n  \n  insert(value) {\n    const newNode = new Node(value);\n    \n    if (this.root === null) {\n      this.root = newNode;\n      return this;\n    }\n    \n    let current = this.root;\n    \n    while (true) {\n      if (value === current.value) return undefined;\n      if (value < current.value) {\n        if (current.left === null) {\n          current.left = newNode;\n          return this;\n        }\n        current = current.left;\n      } else {\n        if (current.right === null) {\n          current.right = newNode;\n          return this;\n        }\n        current = current.right;\n      }\n    }\n  }\n}\n```',
-		role: 'assistant',
-		timestamp: new Date('2023-04-01T10:01:00'),
-	},
-];
-
-const mockSuggestedQuestions: SuggestedQuestion[] = [
+// Suggested questions based on sources
+const suggestedQuestions: SuggestedQuestion[] = [
 	{
 		id: '1',
 		text: 'How do I balance a binary search tree?',
@@ -60,111 +24,144 @@ const mockSuggestedQuestions: SuggestedQuestion[] = [
 	},
 ];
 
-const mockSources: Source[] = [
-	{
-		id: '1',
-		content:
-			'# Binary Search Tree\n\nA binary search tree is a data structure that consists of nodes in a tree-like structure. Each node has a value and two children: left and right. The left child contains a value less than the parent node, and the right child contains a value greater than the parent node.',
-		filename: 'data-structures.md',
-		createdAt: new Date('2023-03-20'),
-	},
-	{
-		id: '2',
-		content:
-			'function inOrderTraversal(node) {\n  if (node !== null) {\n    inOrderTraversal(node.left);\n    console.log(node.value);\n    inOrderTraversal(node.right);\n  }\n}',
-		filename: 'traversal.js',
-		createdAt: new Date('2023-03-25'),
-	},
-];
-
-const mockModels: Model[] = [
-	{
-		id: '1',
-		name: 'TinyLlama',
-		isDownloaded: true,
-		parameters: '1.1B',
-		size: '600MB',
-		useCase: 'Fast responses, lower accuracy',
-	},
-	{
-		id: '2',
-		name: 'Mistral',
-		isDownloaded: true,
-		parameters: '7B',
-		size: '4GB',
-		useCase: 'Balanced performance and accuracy',
-	},
-	{
-		id: '3',
-		name: 'Phi-3',
-		isDownloaded: false,
-		parameters: '3.8B',
-		size: '2.2GB',
-		useCase: 'Optimized for coding tasks',
-	},
-	{
-		id: '4',
-		name: 'Llama 3',
-		isDownloaded: false,
-		parameters: '8B',
-		size: '4.5GB',
-		useCase: 'High accuracy, slower responses',
-	},
-];
-
 export default function Home() {
-	const [notebooks, setNotebooks] = useState<Notebook[]>(mockNotebooks);
-	const [activeNotebook, setActiveNotebook] = useState<Notebook | null>(mockNotebooks[0]);
-	const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
-	const [suggestedQuestions, setSuggestedQuestions] = useState<SuggestedQuestion[]>(mockSuggestedQuestions);
-	const [sources, setSources] = useState<Source[]>(mockSources);
-	const [models, setModels] = useState<Model[]>(mockModels);
-	const [selectedModel, setSelectedModel] = useState<Model | null>(mockModels.find(m => m.isDownloaded) || null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [notebooks, setNotebooks] = useState<Notebook[]>([]);
+	const [activeNotebook, setActiveNotebook] = useState<Notebook | null>(null);
+	const [messages, setMessages] = useState<ChatMessage[]>([]);
+	const [sources, setSources] = useState<Source[]>([]);
+	const [models, setModels] = useState<Model[]>([]);
+	const [selectedModel, setSelectedModel] = useState<Model | null>(null);
+
+	// Initialize the database and load data
+	useEffect(() => {
+		async function initializeApp() {
+			try {
+				// Initialize the database
+				await initializeDatabase();
+
+				// Load notebooks
+				const notebooksData = await notebooksAPI.getAll();
+				setNotebooks(notebooksData);
+
+				// Set active notebook if available
+				if (notebooksData.length > 0) {
+					const notebook = notebooksData[0];
+					setActiveNotebook(notebook);
+
+					// Load sources and messages for the active notebook
+					const [sourcesData, messagesData] = await Promise.all([
+						sourcesAPI.getAll(notebook.id),
+						messagesAPI.getAll(notebook.id),
+					]);
+
+					setSources(sourcesData);
+					setMessages(messagesData);
+				}
+
+				// Load models
+				const modelsData = await modelsAPI.getAll();
+				setModels(modelsData);
+
+				// Set selected model if available
+				const downloadedModel = modelsData.find((m) => m.isDownloaded);
+				if (downloadedModel) {
+					setSelectedModel(downloadedModel);
+				}
+			} catch (error) {
+				console.error('Failed to initialize app:', error);
+			} finally {
+				setIsLoading(false);
+			}
+		}
+
+		initializeApp();
+	}, []);
+
+	// Load sources and messages when active notebook changes
+	useEffect(() => {
+		if (!activeNotebook) return;
+
+		// TypeScript non-null assertion since we've already checked above
+		const notebookId = activeNotebook!.id;
+
+		async function loadNotebookData() {
+			try {
+				const [sourcesData, messagesData] = await Promise.all([
+					sourcesAPI.getAll(notebookId),
+					messagesAPI.getAll(notebookId),
+				]);
+
+				setSources(sourcesData);
+				setMessages(messagesData);
+			} catch (error) {
+				console.error('Failed to load notebook data:', error);
+			}
+		}
+
+		loadNotebookData();
+	}, [activeNotebook]);
 
 	// Notebook handlers
-	const handleSelectNotebook = (notebook: Notebook) => {
+	const handleSelectNotebook = async (notebook: Notebook) => {
 		setActiveNotebook(notebook);
 	};
 
-	const handleCreateNotebook = () => {
-		const newNotebook: Notebook = {
-			id: `${Date.now()}`,
-			title: `New Notebook ${notebooks.length + 1}`,
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		};
-		setNotebooks([...notebooks, newNotebook]);
-		setActiveNotebook(newNotebook);
+	const handleCreateNotebook = async () => {
+		try {
+			const newNotebook = await notebooksAPI.create(
+				`New Notebook ${notebooks.length + 1}`
+			);
+			setNotebooks([...notebooks, newNotebook]);
+			setActiveNotebook(newNotebook);
+		} catch (error) {
+			console.error('Failed to create notebook:', error);
+		}
 	};
 
-	const handleDeleteNotebook = (notebook: Notebook) => {
-		const updatedNotebooks = notebooks.filter((n) => n.id !== notebook.id);
-		setNotebooks(updatedNotebooks);
-		if (activeNotebook?.id === notebook.id) {
-			setActiveNotebook(updatedNotebooks[0] || null);
+	const handleDeleteNotebook = async (notebook: Notebook) => {
+		try {
+			await notebooksAPI.delete(notebook.id);
+			const updatedNotebooks = notebooks.filter((n) => n.id !== notebook.id);
+			setNotebooks(updatedNotebooks);
+
+			if (activeNotebook?.id === notebook.id) {
+				setActiveNotebook(updatedNotebooks[0] || null);
+			}
+		} catch (error) {
+			console.error('Failed to delete notebook:', error);
 		}
 	};
 
 	// Chat handlers
-	const handleSendMessage = (content: string) => {
-		const newMessage: ChatMessage = {
-			id: `${Date.now()}`,
-			content,
-			role: 'user',
-			timestamp: new Date(),
-		};
-		setMessages([...messages, newMessage]);
+	const handleSendMessage = async (content: string) => {
+		if (!activeNotebook) return;
 
-		// Mock response (in a real app, this would come from the LLM)
-		setTimeout(() => {
-			const responseMessage: ChatMessage = {
-				id: `${Date.now() + 1}`,
-				content: `I received your message: "${content}". This is a mock response.`,
-				role: 'assistant',
-				timestamp: new Date(),
-			};
-			setMessages((prev) => [...prev, responseMessage]);
-		}, 1000);
+		try {
+			// Create user message
+			const userMessage = await messagesAPI.create(
+				activeNotebook.id,
+				content,
+				'user'
+			);
+			setMessages((prev) => [...prev, userMessage]);
+
+			// Mock LLM response
+			setTimeout(async () => {
+				try {
+					const assistantMessage = await messagesAPI.create(
+						activeNotebook.id,
+						`I received your message: "${content}". This is a mock response.`,
+						'assistant'
+					);
+					setMessages((prev) => [...prev, assistantMessage]);
+				} catch (error) {
+					console.error('Failed to create assistant message:', error);
+				}
+			}, 1000);
+		} catch (error) {
+			console.error('Failed to send message:', error);
+		}
 	};
 
 	const handleSelectQuestion = (question: SuggestedQuestion) => {
@@ -172,26 +169,49 @@ export default function Home() {
 	};
 
 	// Source handlers
-	const handleAddSource = (content: string, filename?: string) => {
-		const newSource: Source = {
-			id: `${Date.now()}`,
-			content,
-			filename,
-			createdAt: new Date(),
-		};
-		setSources([...sources, newSource]);
+	const handleAddSource = async (content: string, filename?: string) => {
+		if (!activeNotebook) return;
+
+		try {
+			const newSource = await sourcesAPI.create(
+				activeNotebook.id,
+				content,
+				filename
+			);
+			setSources((prev) => [...prev, newSource]);
+		} catch (error) {
+			console.error('Failed to add source:', error);
+		}
 	};
 
-	const handleUpdateSource = (source: Source, content: string) => {
-		const updatedSources = sources.map((s) =>
-			s.id === source.id ? { ...s, content } : s,
-		);
-		setSources(updatedSources);
+	const handleUpdateSource = async (source: Source, content: string) => {
+		if (!activeNotebook) return;
+
+		try {
+			const updatedSource = await sourcesAPI.update(
+				activeNotebook.id,
+				source.id,
+				content,
+				source.filename
+			);
+
+			setSources((prev) =>
+				prev.map((s) => (s.id === updatedSource.id ? updatedSource : s))
+			);
+		} catch (error) {
+			console.error('Failed to update source:', error);
+		}
 	};
 
-	const handleDeleteSource = (source: Source) => {
-		const updatedSources = sources.filter((s) => s.id !== source.id);
-		setSources(updatedSources);
+	const handleDeleteSource = async (source: Source) => {
+		if (!activeNotebook) return;
+
+		try {
+			await sourcesAPI.delete(activeNotebook.id, source.id);
+			setSources((prev) => prev.filter((s) => s.id !== source.id));
+		} catch (error) {
+			console.error('Failed to delete source:', error);
+		}
 	};
 
 	// Model handlers
@@ -199,16 +219,49 @@ export default function Home() {
 		setSelectedModel(model);
 	};
 
-	const handleDownloadModel = (model: Model) => {
-		// Mock download - in a real app, this would trigger an actual download
-		setTimeout(() => {
-			const updatedModels = models.map((m) =>
-				m.id === model.id ? { ...m, isDownloaded: true } : m,
+	const handleDownloadModel = async (model: Model) => {
+		try {
+			// Show loading state
+			const updatingModels = models.map((m) =>
+				m.id === model.id ? { ...m, isDownloading: true } : m
 			);
-			setModels(updatedModels);
-			setSelectedModel(model);
-		}, 2000);
+			setModels(updatingModels);
+
+			// Mock download delay
+			await new Promise((resolve) => setTimeout(resolve, 2000));
+
+			// Update model download status in the database
+			const updatedModel = await modelsAPI.updateDownloadStatus(model.id, true);
+
+			// Update models state
+			setModels((prev) =>
+				prev.map((m) => (m.id === updatedModel.id ? updatedModel : m))
+			);
+
+			// Set as selected model
+			setSelectedModel(updatedModel);
+		} catch (error) {
+			console.error('Failed to download model:', error);
+
+			// Reset loading state
+			setModels((prev) =>
+				prev.map((m) =>
+					m.id === model.id ? { ...m, isDownloading: false } : m
+				)
+			);
+		}
 	};
+
+	if (isLoading) {
+		return (
+			<div className="flex h-screen items-center justify-center">
+				<div className="text-center">
+					<h2 className="text-2xl font-semibold mb-2">Loading DevBrain</h2>
+					<p className="text-muted-foreground">Initializing database...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<MainLayout
