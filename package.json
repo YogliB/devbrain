@@ -8,11 +8,13 @@
 		"start": "next start",
 		"lint": "next lint",
 		"format": "prettier --write .",
+		"format:all": "prettier --write . && eslint --fix .",
 		"db:seed": "node src/db/seed-db.js",
 		"db:studio": "drizzle-kit studio",
 		"db:push": "drizzle-kit push",
 		"db:init": "bun run db:push && bun run db:seed",
-		"db:manual-init": "bun src/scripts/init-db.ts"
+		"db:manual-init": "bun src/scripts/init-db.ts",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@types/uuid": "^10.0.0",
@@ -40,6 +42,8 @@
 		"eslint-config-next": "15.3.0",
 		"eslint-config-prettier": "^10.1.2",
 		"eslint-plugin-prettier": "^5.2.6",
+		"husky": "^9.1.7",
+		"lint-staged": "^15.5.1",
 		"prettier": "^3.5.3",
 		"tailwindcss": "^4",
 		"ts-node": "^10.9.2",

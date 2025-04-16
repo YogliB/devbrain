@@ -32,7 +32,7 @@ export default function Home() {
 
 		// Model functions
 		selectModel,
-		downloadModel
+		downloadModel,
 	} = useAppInitialization();
 
 	if (isLoading) {

@@ -25,7 +25,7 @@ export function useMessages(notebookId: string | null) {
 			const userMessage = await messagesAPI.create(
 				notebookId,
 				content,
-				'user'
+				'user',
 			);
 			setMessages((prev) => [...prev, userMessage]);
 
@@ -35,7 +35,7 @@ export function useMessages(notebookId: string | null) {
 					const assistantMessage = await messagesAPI.create(
 						notebookId,
 						`I received your message: "${content}". This is a mock response.`,
-						'assistant'
+						'assistant',
 					);
 					setMessages((prev) => [...prev, assistantMessage]);
 				} catch (error) {
@@ -50,9 +50,8 @@ export function useMessages(notebookId: string | null) {
 		}
 	};
 
-	const selectQuestion = (question: SuggestedQuestion) => {
-		return sendMessage(question.text);
-	};
+	const selectQuestion = (question: SuggestedQuestion) =>
+		sendMessage(question.text);
 
 	return {
 		messages,

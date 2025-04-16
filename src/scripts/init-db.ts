@@ -22,7 +22,11 @@ async function main() {
 					console.log('Schema applied successfully');
 					resolve();
 				} else {
-					reject(new Error(`Schema push process exited with code ${code}`));
+					reject(
+						new Error(
+							`Schema push process exited with code ${code}`,
+						),
+					);
 				}
 			});
 		});

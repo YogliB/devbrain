@@ -27,7 +27,9 @@ async function fetchAPI<T>(
 	return res.json();
 }
 
-export async function initializeDatabase(forceMigrate: boolean = false): Promise<{
+export async function initializeDatabase(
+	forceMigrate: boolean = false,
+): Promise<{
 	success: boolean;
 	message: string;
 }> {

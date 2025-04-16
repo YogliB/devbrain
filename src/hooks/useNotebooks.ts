@@ -24,7 +24,7 @@ export function useNotebooks() {
 	const createNotebook = async () => {
 		try {
 			const newNotebook = await notebooksAPI.create(
-				`New Notebook ${notebooks.length + 1}`
+				`New Notebook ${notebooks.length + 1}`,
 			);
 			setNotebooks([...notebooks, newNotebook]);
 			setActiveNotebook(newNotebook);
@@ -38,7 +38,9 @@ export function useNotebooks() {
 	const deleteNotebook = async (notebook: Notebook) => {
 		try {
 			await notebooksAPI.delete(notebook.id);
-			const updatedNotebooks = notebooks.filter((n) => n.id !== notebook.id);
+			const updatedNotebooks = notebooks.filter(
+				(n) => n.id !== notebook.id,
+			);
 			setNotebooks(updatedNotebooks);
 
 			if (activeNotebook?.id === notebook.id) {

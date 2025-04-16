@@ -32,7 +32,7 @@ export function useModels() {
 		try {
 			// Update UI to show downloading state
 			const updatingModels = models.map((m) =>
-				m.id === model.id ? { ...m, isDownloading: true } : m
+				m.id === model.id ? { ...m, isDownloading: true } : m,
 			);
 			setModels(updatingModels);
 
@@ -40,11 +40,14 @@ export function useModels() {
 			await new Promise((resolve) => setTimeout(resolve, 2000));
 
 			// Update model download status
-			const updatedModel = await modelsAPI.updateDownloadStatus(model.id, true);
+			const updatedModel = await modelsAPI.updateDownloadStatus(
+				model.id,
+				true,
+			);
 
 			// Update models list with the downloaded model
 			setModels((prev) =>
-				prev.map((m) => (m.id === updatedModel.id ? updatedModel : m))
+				prev.map((m) => (m.id === updatedModel.id ? updatedModel : m)),
 			);
 
 			// Set as selected model
@@ -55,7 +58,9 @@ export function useModels() {
 
 			// Reset downloading state on error
 			setModels((prev) =>
-				prev.map((m) => (m.id === model.id ? { ...m, isDownloading: false } : m))
+				prev.map((m) =>
+					m.id === model.id ? { ...m, isDownloading: false } : m,
+				),
 			);
 			return null;
 		}
