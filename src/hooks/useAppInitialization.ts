@@ -272,7 +272,22 @@ export function useAppInitialization() {
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				await initializeDatabase();
+				const initPromise = initializeDatabase();
+				const timeoutPromise = new Promise((_, reject) => {
+					setTimeout(
+						() =>
+							reject(
+								new Error('Database initialization timed out'),
+							),
+						10000,
+					);
+				});
+
+				try {
+					await Promise.race([initPromise, timeoutPromise]);
+				} catch (error) {
+					console.error('Database initialization issue:', error);
+				}
 
 				const notebooksData = await fetchNotebooks();
 
@@ -298,11 +313,9 @@ export function useAppInitialization() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// Load notebook data when active notebook changes
 	useEffect(() => {
 		if (!activeNotebook) return;
 
-		// Store the notebook ID in a variable to avoid TypeScript null check issues
 		const notebookId = activeNotebook.id;
 
 		async function loadNotebookData() {
@@ -321,7 +334,6 @@ export function useAppInitialization() {
 	}, [activeNotebook]);
 
 	return {
-		// State
 		isLoading,
 		notebooks,
 		activeNotebook,
@@ -330,21 +342,17 @@ export function useAppInitialization() {
 		models,
 		selectedModel,
 
-		// Notebook functions
 		selectNotebook,
 		createNotebook,
 		deleteNotebook,
 
-		// Message functions
 		sendMessage,
 		selectQuestion,
 
-		// Source functions
 		addSource,
 		updateSource,
 		deleteSource,
 
-		// Model functions
 		selectModel,
 		downloadModel,
 	};

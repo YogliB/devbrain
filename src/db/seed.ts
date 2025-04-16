@@ -13,7 +13,6 @@ async function seed() {
 			{
 				id: '1',
 				name: 'TinyLlama',
-				isDownloaded: true,
 				parameters: '1.1B',
 				size: '600MB',
 				useCase: 'Fast responses, lower accuracy',
@@ -21,7 +20,6 @@ async function seed() {
 			{
 				id: '2',
 				name: 'Mistral',
-				isDownloaded: true,
 				parameters: '7B',
 				size: '4GB',
 				useCase: 'Balanced performance and accuracy',
@@ -29,7 +27,6 @@ async function seed() {
 			{
 				id: '3',
 				name: 'Phi-3',
-				isDownloaded: false,
 				parameters: '3.8B',
 				size: '2.2GB',
 				useCase: 'Optimized for coding tasks',
@@ -37,7 +34,6 @@ async function seed() {
 			{
 				id: '4',
 				name: 'Llama 3',
-				isDownloaded: false,
 				parameters: '8B',
 				size: '4.5GB',
 				useCase: 'High accuracy, slower responses',

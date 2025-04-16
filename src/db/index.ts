@@ -14,26 +14,62 @@ export function getDbPath() {
 export function getDb() {
 	if (db) return db;
 
-	const dbPath = getDbPath();
+	try {
+		const dbPath = getDbPath();
+		console.log(`Opening database at: ${dbPath}`);
 
-	sqlite = new Database(dbPath);
+		sqlite = new Database(dbPath);
+		db = drizzle(sqlite, { schema });
 
-	db = drizzle(sqlite, { schema });
-
-	return db;
+		return db;
+	} catch (error) {
+		console.error('Error opening database:', error);
+		throw error;
+	}
 }
 
 export function ensureDatabaseExists() {
 	const dbPath = getDbPath();
 
-	if (!existsSync(dbPath)) {
-		console.log('Database file does not exist, creating it...');
-		const tempDb = new Database(dbPath);
-		tempDb.close();
-		return false;
-	}
+	try {
+		if (!existsSync(dbPath)) {
+			console.log('Database file does not exist, creating it...');
+			try {
+				const tempDb = new Database(dbPath);
+				tempDb.close();
+				console.log('Empty database file created successfully');
+				return false;
+			} catch (error) {
+				console.error('Error creating database file:', error);
+				throw error;
+			}
+		}
 
-	return true;
+		// Verify the database file is valid by opening it
+		try {
+			const testDb = new Database(dbPath, { readonly: true });
+			testDb.close();
+			console.log('Database file exists and is valid');
+		} catch (error) {
+			console.error('Database file exists but is invalid:', error);
+			// If the database file is corrupted, delete it and create a new one
+			console.log('Recreating database file...');
+			try {
+				const tempDb = new Database(dbPath);
+				tempDb.close();
+				console.log('Database file recreated successfully');
+				return false;
+			} catch (innerError) {
+				console.error('Error recreating database file:', innerError);
+				throw innerError;
+			}
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Error in ensureDatabaseExists:', error);
+		throw error;
+	}
 }
 
 export function closeDb() {
@@ -45,12 +81,29 @@ export function closeDb() {
 }
 
 export async function initDb(forceInit = false) {
-	const dbExisted = ensureDatabaseExists();
-	const db = getDb();
+	try {
+		// Close any existing connection first
+		closeDb();
 
-	if (!dbExisted || forceInit) {
-		console.log('Database initialized');
+		// Ensure the database file exists
+		const dbExisted = ensureDatabaseExists();
+
+		// Get a fresh database connection
+		const db = getDb();
+
+		if (!dbExisted || forceInit) {
+			console.log('Database initialized');
+		}
+
+		return db;
+	} catch (error) {
+		console.error('Error in initDb:', error);
+		// Try to get a database connection even if initialization fails
+		try {
+			return getDb();
+		} catch (innerError) {
+			console.error('Failed to get database connection:', innerError);
+			throw innerError;
+		}
 	}
-
-	return db;
 }

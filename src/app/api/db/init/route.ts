@@ -1,6 +1,39 @@
 import { NextResponse } from 'next/server';
-import { initDb, ensureDatabaseExists } from '@/db';
+import { initDb, ensureDatabaseExists, closeDb } from '@/db';
 import { spawn } from 'child_process';
+
+async function runProcessWithTimeout(
+	command: string,
+	args: string[],
+	timeoutMs: number = 5000,
+) {
+	const process = spawn(command, args);
+
+	return new Promise<void>((resolve, reject) => {
+		const timeout = setTimeout(() => {
+			process.kill();
+			reject(
+				new Error(
+					`Process ${command} ${args.join(' ')} timed out after ${timeoutMs}ms`,
+				),
+			);
+		}, timeoutMs);
+
+		process.on('close', (code: number) => {
+			clearTimeout(timeout);
+			if (code === 0) {
+				resolve();
+			} else {
+				reject(new Error(`Process exited with code ${code}`));
+			}
+		});
+
+		process.on('error', (err) => {
+			clearTimeout(timeout);
+			reject(err);
+		});
+	});
+}
 
 export async function GET() {
 	try {
@@ -15,41 +48,33 @@ export async function GET() {
 		}
 
 		if (isDev) {
-			const pushProcess = spawn('npm', ['run', 'db:push']);
-
-			await new Promise<void>((resolve, reject) => {
-				pushProcess.on('close', (code: number) => {
-					if (code === 0) {
-						resolve();
-					} else {
-						reject(
-							new Error(
-								`Schema push process exited with code ${code}`,
-							),
-						);
-					}
-				});
-			});
+			const dbExisted = ensureDatabaseExists();
+			console.log(`Database existed before initialization: ${dbExisted}`);
 
 			await initDb(true);
 
-			const seedProcess = spawn('npm', ['run', 'db:seed']);
+			try {
+				await runProcessWithTimeout('npm', ['run', 'db:push'], 8000);
+				console.log('Schema push completed successfully');
+			} catch (error) {
+				console.error('Schema push failed:', error);
+			}
 
-			await new Promise<void>((resolve, reject) => {
-				seedProcess.on('close', (code: number) => {
-					if (code === 0) {
-						resolve();
-					} else {
-						reject(
-							new Error(`Seed process exited with code ${code}`),
-						);
-					}
-				});
-			});
+			closeDb();
+			await initDb(true);
+
+			try {
+				await runProcessWithTimeout('npm', ['run', 'db:seed'], 8000);
+				console.log('Database seeding completed successfully');
+			} catch (error) {
+				console.error('Database seeding failed:', error);
+			}
+
+			closeDb();
 
 			return NextResponse.json({
 				success: true,
-				message: 'Database initialized and seeded successfully',
+				message: 'Database initialization process completed',
 			});
 		}
 
@@ -59,6 +84,8 @@ export async function GET() {
 		});
 	} catch (error) {
 		console.error('Error initializing database:', error);
+		// Make sure to close the database connection on error
+		closeDb();
 		return NextResponse.json(
 			{
 				success: false,
