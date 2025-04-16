@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { initializeDatabase, notebooksAPI, messagesAPI, sourcesAPI, modelsAPI } from '@/lib/api';
+import {
+	initializeDatabase,
+	notebooksAPI,
+	messagesAPI,
+	sourcesAPI,
+	modelsAPI,
+} from '@/lib/api';
 import { Notebook } from '@/types/notebook';
 import { Source } from '@/types/source';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
@@ -33,7 +39,7 @@ export function useAppInitialization() {
 	const createNotebook = useCallback(async () => {
 		try {
 			const newNotebook = await notebooksAPI.create(
-				`New Notebook ${notebooks.length + 1}`
+				`New Notebook ${notebooks.length + 1}`,
 			);
 			setNotebooks((prev) => [...prev, newNotebook]);
 			setActiveNotebook(newNotebook);
@@ -44,21 +50,26 @@ export function useAppInitialization() {
 		}
 	}, [notebooks.length]);
 
-	const deleteNotebook = useCallback(async (notebook: Notebook) => {
-		try {
-			await notebooksAPI.delete(notebook.id);
-			const updatedNotebooks = notebooks.filter((n) => n.id !== notebook.id);
-			setNotebooks(updatedNotebooks);
+	const deleteNotebook = useCallback(
+		async (notebook: Notebook) => {
+			try {
+				await notebooksAPI.delete(notebook.id);
+				const updatedNotebooks = notebooks.filter(
+					(n) => n.id !== notebook.id,
+				);
+				setNotebooks(updatedNotebooks);
 
-			if (activeNotebook?.id === notebook.id) {
-				setActiveNotebook(updatedNotebooks[0] || null);
+				if (activeNotebook?.id === notebook.id) {
+					setActiveNotebook(updatedNotebooks[0] || null);
+				}
+				return true;
+			} catch (error) {
+				console.error('Failed to delete notebook:', error);
+				return false;
 			}
-			return true;
-		} catch (error) {
-			console.error('Failed to delete notebook:', error);
-			return false;
-		}
-	}, [notebooks, activeNotebook]);
+		},
+		[notebooks, activeNotebook],
+	);
 
 	// Message functions
 	const fetchMessages = useCallback(async (notebookId: string) => {
@@ -74,41 +85,48 @@ export function useAppInitialization() {
 		}
 	}, []);
 
-	const sendMessage = useCallback(async (content: string) => {
-		if (!activeNotebook) return null;
+	const sendMessage = useCallback(
+		async (content: string) => {
+			if (!activeNotebook) return null;
 
-		try {
-			const userMessage = await messagesAPI.create(
-				activeNotebook.id,
-				content,
-				'user'
-			);
-			setMessages((prev) => [...prev, userMessage]);
+			try {
+				const userMessage = await messagesAPI.create(
+					activeNotebook.id,
+					content,
+					'user',
+				);
+				setMessages((prev) => [...prev, userMessage]);
 
-			// Simulate assistant response
-			setTimeout(async () => {
-				try {
-					const assistantMessage = await messagesAPI.create(
-						activeNotebook.id,
-						`I received your message: "${content}". This is a mock response.`,
-						'assistant'
-					);
-					setMessages((prev) => [...prev, assistantMessage]);
-				} catch (error) {
-					console.error('Failed to create assistant message:', error);
-				}
-			}, 1000);
+				// Simulate assistant response
+				setTimeout(async () => {
+					try {
+						const assistantMessage = await messagesAPI.create(
+							activeNotebook.id,
+							`I received your message: "${content}". This is a mock response.`,
+							'assistant',
+						);
+						setMessages((prev) => [...prev, assistantMessage]);
+					} catch (error) {
+						console.error(
+							'Failed to create assistant message:',
+							error,
+						);
+					}
+				}, 1000);
 
-			return userMessage;
-		} catch (error) {
-			console.error('Failed to send message:', error);
-			return null;
-		}
-	}, [activeNotebook]);
+				return userMessage;
+			} catch (error) {
+				console.error('Failed to send message:', error);
+				return null;
+			}
+		},
+		[activeNotebook],
+	);
 
-	const selectQuestion = useCallback((question: SuggestedQuestion) => {
-		return sendMessage(question.text);
-	}, [sendMessage]);
+	const selectQuestion = useCallback(
+		(question: SuggestedQuestion) => sendMessage(question.text),
+		[sendMessage],
+	);
 
 	// Source functions
 	const fetchSources = useCallback(async (notebookId: string) => {
@@ -124,58 +142,67 @@ export function useAppInitialization() {
 		}
 	}, []);
 
-	const addSource = useCallback(async (content: string, filename?: string) => {
-		if (!activeNotebook) return null;
+	const addSource = useCallback(
+		async (content: string, filename?: string) => {
+			if (!activeNotebook) return null;
 
-		try {
-			const newSource = await sourcesAPI.create(
-				activeNotebook.id,
-				content,
-				filename,
-			);
-			setSources((prev) => [...prev, newSource]);
-			return newSource;
-		} catch (error) {
-			console.error('Failed to add source:', error);
-			return null;
-		}
-	}, [activeNotebook]);
+			try {
+				const newSource = await sourcesAPI.create(
+					activeNotebook.id,
+					content,
+					filename,
+				);
+				setSources((prev) => [...prev, newSource]);
+				return newSource;
+			} catch (error) {
+				console.error('Failed to add source:', error);
+				return null;
+			}
+		},
+		[activeNotebook],
+	);
 
-	const updateSource = useCallback(async (source: Source, content: string) => {
-		if (!activeNotebook) return null;
+	const updateSource = useCallback(
+		async (source: Source, content: string) => {
+			if (!activeNotebook) return null;
 
-		try {
-			const updatedSource = await sourcesAPI.update(
-				activeNotebook.id,
-				source.id,
-				content,
-				source.filename,
-			);
+			try {
+				const updatedSource = await sourcesAPI.update(
+					activeNotebook.id,
+					source.id,
+					content,
+					source.filename,
+				);
 
-			setSources((prev) =>
-				prev.map((s) =>
-					s.id === updatedSource.id ? updatedSource : s,
-				),
-			);
-			return updatedSource;
-		} catch (error) {
-			console.error('Failed to update source:', error);
-			return null;
-		}
-	}, [activeNotebook]);
+				setSources((prev) =>
+					prev.map((s) =>
+						s.id === updatedSource.id ? updatedSource : s,
+					),
+				);
+				return updatedSource;
+			} catch (error) {
+				console.error('Failed to update source:', error);
+				return null;
+			}
+		},
+		[activeNotebook],
+	);
 
-	const deleteSource = useCallback(async (source: Source) => {
-		if (!activeNotebook) return false;
+	const deleteSource = useCallback(
+		async (source: Source) => {
+			if (!activeNotebook) return false;
 
-		try {
-			await sourcesAPI.delete(activeNotebook.id, source.id);
-			setSources((prev) => prev.filter((s) => s.id !== source.id));
-			return true;
-		} catch (error) {
-			console.error('Failed to delete source:', error);
-			return false;
-		}
-	}, [activeNotebook]);
+			try {
+				await sourcesAPI.delete(activeNotebook.id, source.id);
+				setSources((prev) => prev.filter((s) => s.id !== source.id));
+				return true;
+			} catch (error) {
+				console.error('Failed to delete source:', error);
+				return false;
+			}
+		},
+		[activeNotebook],
+	);
 
 	// Model functions
 	const fetchModels = useCallback(async () => {
@@ -200,38 +227,48 @@ export function useAppInitialization() {
 		setSelectedModel(model);
 	}, []);
 
-	const downloadModel = useCallback(async (model: Model) => {
-		try {
-			// Update UI to show downloading state
-			const updatingModels = models.map((m) =>
-				m.id === model.id ? { ...m, isDownloading: true } : m
-			);
-			setModels(updatingModels);
+	const downloadModel = useCallback(
+		async (model: Model) => {
+			try {
+				// Update UI to show downloading state
+				const updatingModels = models.map((m) =>
+					m.id === model.id ? { ...m, isDownloading: true } : m,
+				);
+				setModels(updatingModels);
 
-			// Simulate download delay
-			await new Promise((resolve) => setTimeout(resolve, 2000));
+				// Simulate download delay
+				await new Promise((resolve) => setTimeout(resolve, 2000));
 
-			// Update model download status
-			const updatedModel = await modelsAPI.updateDownloadStatus(model.id, true);
+				// Update model download status
+				const updatedModel = await modelsAPI.updateDownloadStatus(
+					model.id,
+					true,
+				);
 
-			// Update models list with the downloaded model
-			setModels((prev) =>
-				prev.map((m) => (m.id === updatedModel.id ? updatedModel : m))
-			);
+				// Update models list with the downloaded model
+				setModels((prev) =>
+					prev.map((m) =>
+						m.id === updatedModel.id ? updatedModel : m,
+					),
+				);
 
-			// Set as selected model
-			setSelectedModel(updatedModel);
-			return updatedModel;
-		} catch (error) {
-			console.error('Failed to download model:', error);
+				// Set as selected model
+				setSelectedModel(updatedModel);
+				return updatedModel;
+			} catch (error) {
+				console.error('Failed to download model:', error);
 
-			// Reset downloading state on error
-			setModels((prev) =>
-				prev.map((m) => (m.id === model.id ? { ...m, isDownloading: false } : m))
-			);
-			return null;
-		}
-	}, [models]);
+				// Reset downloading state on error
+				setModels((prev) =>
+					prev.map((m) =>
+						m.id === model.id ? { ...m, isDownloading: false } : m,
+					),
+				);
+				return null;
+			}
+		},
+		[models],
+	);
 
 	// Initialize app on mount
 	useEffect(() => {
@@ -252,7 +289,7 @@ export function useAppInitialization() {
 					// Fetch data for the active notebook
 					await Promise.all([
 						fetchSources(notebook.id),
-						fetchMessages(notebook.id)
+						fetchMessages(notebook.id),
 					]);
 				}
 
@@ -280,7 +317,7 @@ export function useAppInitialization() {
 			try {
 				await Promise.all([
 					fetchSources(notebookId),
-					fetchMessages(notebookId)
+					fetchMessages(notebookId),
 				]);
 			} catch (error) {
 				console.error('Failed to load notebook data:', error);
@@ -317,6 +354,6 @@ export function useAppInitialization() {
 
 		// Model functions
 		selectModel,
-		downloadModel
+		downloadModel,
 	};
 }
