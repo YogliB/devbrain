@@ -9,7 +9,7 @@ import {
 	XCircle,
 	XSquare,
 } from 'lucide-react';
-import { Model, ModelDownloadStatus } from '@/types/model';
+import { Model } from '@/types/model';
 import { ProgressBar } from '@/components/atoms/progress-bar';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +28,13 @@ export function ModelDownloadCard({
 }: ModelDownloadCardProps) {
 	const isDownloading = model.downloadStatus === 'downloading';
 	const isDownloaded =
-		model.downloadStatus === 'downloaded' || model.isDownloaded;
+		(model.downloadStatus === 'downloaded' || model.isDownloaded) &&
+		model.downloadStatus !== 'cancelled';
+
+	// Debug logging
+	console.log(
+		`Model ${model.id} status: ${model.downloadStatus}, isDownloaded: ${isDownloaded}, wasCancelled: ${model.downloadStatus === 'cancelled'}`,
+	);
 	const hasFailed = model.downloadStatus === 'failed';
 	const wasCancelled = model.downloadStatus === 'cancelled';
 
@@ -109,7 +115,11 @@ export function ModelDownloadCard({
 				<div className="mb-3">
 					<ProgressBar
 						progress={
-							isDownloaded ? 100 : model.downloadProgress || 0
+							isDownloaded
+								? 100
+								: wasCancelled
+									? 0
+									: model.downloadProgress || 0
 						}
 						showPercentage
 						size="sm"

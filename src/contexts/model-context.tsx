@@ -6,6 +6,7 @@ import React, {
 	useState,
 	useEffect,
 	useCallback,
+	useRef,
 } from 'react';
 import { Model, ModelDownloadStatus } from '@/types/model';
 import { useModelDownload } from '@/hooks/useModelDownload';
@@ -31,6 +32,8 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 	const [models, setModels] = useState<Model[]>([]);
 	const [selectedModel, setSelectedModel] = useState<Model | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	// Use a ref to track when we need to refresh models
+	const shouldRefreshModels = useRef(true);
 
 	const {
 		downloadModel: downloadModelHook,
@@ -44,18 +47,39 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 	// Fetch models from the API
 	useEffect(() => {
 		async function fetchModels() {
+			if (!shouldRefreshModels.current) return;
+
 			try {
 				setIsLoading(true);
 				const modelsData = await modelsAPI.getAll();
 
 				// Enhance models with runtime properties
-				const enhancedModels = modelsData.map((model) => ({
-					...model,
-					isDownloaded: isModelDownloaded(model.id),
-					downloadStatus: isModelDownloaded(model.id)
-						? ('downloaded' as ModelDownloadStatus)
-						: ('not-downloaded' as ModelDownloadStatus),
-				}));
+				const enhancedModels = modelsData.map((model) => {
+					// Get the current download status
+					const status = getDownloadStatus(model.id);
+					// If the model has a status (like 'cancelled'), use it
+					const downloadStatus: ModelDownloadStatus =
+						status !== 'not-downloaded'
+							? status
+							: isModelDownloaded(model.id)
+								? 'downloaded'
+								: 'not-downloaded';
+
+					// Ensure cancelled models are never considered downloaded
+					const isModelDownloadedValue =
+						downloadStatus === 'downloaded';
+
+					// Debug logging
+					console.log(
+						`Model ${model.id} enhanced with status: ${downloadStatus}, isDownloaded: ${isModelDownloadedValue}`,
+					);
+
+					return {
+						...model,
+						isDownloaded: isModelDownloadedValue,
+						downloadStatus,
+					};
+				});
 
 				setModels(enhancedModels);
 
@@ -69,6 +93,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 				} else if (enhancedModels.length > 0) {
 					setSelectedModel(enhancedModels[0]);
 				}
+
+				// Reset the refresh flag
+				shouldRefreshModels.current = false;
 			} catch (error) {
 				console.error('Failed to fetch models:', error);
 			} finally {
@@ -77,7 +104,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		}
 
 		fetchModels();
-	}, [isModelDownloaded]);
+	}, []); // Empty dependency array to avoid infinite loops
 
 	// Download a model
 	const downloadModel = useCallback(
@@ -105,6 +132,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 					setSelectedModel(updatedModel);
 					webLLMService.setActiveModel(updatedModel.id);
 				}
+
+				// Set the refresh flag to true for the next render
+				shouldRefreshModels.current = true;
 
 				return updatedModel;
 			} catch (error) {
@@ -134,6 +164,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 							: m,
 					),
 				);
+
+				// Set the refresh flag to true for the next render
+				shouldRefreshModels.current = true;
 			}
 
 			return result;
@@ -152,11 +185,12 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	// Clean up resources when the component unmounts
-	useEffect(() => {
-		return () => {
+	useEffect(
+		() => () => {
 			webLLMService.cleanup();
-		};
-	}, []);
+		},
+		[],
+	);
 
 	const value = {
 		models,

@@ -40,20 +40,49 @@ export function useModelDownload() {
 				}));
 				setDownloadProgress((prev) => ({ ...prev, [model.id]: 0 }));
 
+				// Use a local variable to track the latest progress and status
+				let latestProgress = 0;
+				let latestStatus: ModelDownloadStatus = 'downloading';
+
+				// Throttle state updates to prevent too many renders
+				let lastUpdateTime = 0;
+				const throttleInterval = 500; // ms
+
 				// Download the model with progress tracking
 				const updatedModel = await webLLMService.downloadModel(
 					model,
 					(progress, status) => {
-						setDownloadProgress((prev) => ({
-							...prev,
-							[model.id]: progress,
-						}));
-						setDownloadStatus((prev) => ({
-							...prev,
-							[model.id]: status,
-						}));
+						// Update local variables
+						latestProgress = progress;
+						latestStatus = status;
+
+						// Throttle state updates
+						const now = Date.now();
+						if (now - lastUpdateTime > throttleInterval) {
+							lastUpdateTime = now;
+
+							// Update state
+							setDownloadProgress((prev) => ({
+								...prev,
+								[model.id]: progress,
+							}));
+							setDownloadStatus((prev) => ({
+								...prev,
+								[model.id]: status,
+							}));
+						}
 					},
 				);
+
+				// Ensure final state is updated with the latest values
+				setDownloadProgress((prev) => ({
+					...prev,
+					[model.id]: latestProgress,
+				}));
+				setDownloadStatus((prev) => ({
+					...prev,
+					[model.id]: latestStatus,
+				}));
 
 				// Update the model in the database
 				if (updatedModel.downloadStatus === 'downloaded') {
@@ -100,9 +129,7 @@ export function useModelDownload() {
 	 * @returns True if the model is downloading, false otherwise
 	 */
 	const isDownloading = useCallback(
-		(modelId: string): boolean => {
-			return !!downloadingModels[modelId];
-		},
+		(modelId: string): boolean => !!downloadingModels[modelId],
 		[downloadingModels],
 	);
 
@@ -112,9 +139,7 @@ export function useModelDownload() {
 	 * @returns The download progress (0-100) or 0 if not downloading
 	 */
 	const getDownloadProgress = useCallback(
-		(modelId: string): number => {
-			return downloadProgress[modelId] || 0;
-		},
+		(modelId: string): number => downloadProgress[modelId] || 0,
 		[downloadProgress],
 	);
 
@@ -124,9 +149,8 @@ export function useModelDownload() {
 	 * @returns The download status or 'not-downloaded' if not downloading
 	 */
 	const getDownloadStatus = useCallback(
-		(modelId: string): ModelDownloadStatus => {
-			return downloadStatus[modelId] || 'not-downloaded';
-		},
+		(modelId: string): ModelDownloadStatus =>
+			downloadStatus[modelId] || 'not-downloaded',
 		[downloadStatus],
 	);
 
@@ -135,9 +159,34 @@ export function useModelDownload() {
 	 * @param modelId The ID of the model to check
 	 * @returns True if the model is downloaded, false otherwise
 	 */
-	const isModelDownloaded = useCallback((modelId: string): boolean => {
-		return webLLMService.isModelDownloaded(modelId);
-	}, []);
+	const isModelDownloaded = useCallback(
+		(modelId: string): boolean => {
+			// If the model status is 'cancelled', it's not downloaded
+			if (downloadStatus[modelId] === 'cancelled') {
+				console.log(
+					`Model ${modelId} has cancelled status, returning false from hook`,
+				);
+				return false;
+			}
+			// Otherwise, check with the WebLLM service
+			const result = webLLMService.isModelDownloaded(modelId);
+
+			// If the WebLLM service says it's not downloaded but our status says it is,
+			// update our status to match reality
+			if (!result && downloadStatus[modelId] === 'downloaded') {
+				console.log(
+					`Fixing inconsistent state: WebLLM says ${modelId} is not downloaded but status was 'downloaded'`,
+				);
+				setDownloadStatus((prev) => ({
+					...prev,
+					[modelId]: 'not-downloaded',
+				}));
+			}
+
+			return result;
+		},
+		[downloadStatus],
+	);
 
 	/**
 	 * Cancel a model download
@@ -145,14 +194,15 @@ export function useModelDownload() {
 	 * @returns True if the download was cancelled, false if no download was in progress
 	 */
 	const cancelDownload = useCallback((modelId: string): boolean => {
+		// First update our local state to prevent any further progress updates
+		setDownloadingModels((prev) => ({ ...prev, [modelId]: false }));
+		setDownloadStatus((prev) => ({ ...prev, [modelId]: 'cancelled' }));
+		setDownloadProgress((prev) => ({ ...prev, [modelId]: 0 }));
+
+		// Then cancel the download in the WebLLM service
 		const wasCancelled = webLLMService.cancelDownload(modelId);
 
 		if (wasCancelled) {
-			// Update local state
-			setDownloadingModels((prev) => ({ ...prev, [modelId]: false }));
-			setDownloadStatus((prev) => ({ ...prev, [modelId]: 'cancelled' }));
-			setDownloadProgress((prev) => ({ ...prev, [modelId]: 0 }));
-
 			// Log cancellation for debugging
 			console.log(`Download cancelled for model ${modelId}`);
 		}

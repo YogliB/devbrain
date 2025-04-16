@@ -152,6 +152,26 @@ export class WebLLMService {
 			// Remove the abort controller
 			this.downloadControllers.delete(model.id);
 
+			// Remove the engine from the engines map if it exists
+			// This ensures isModelDownloaded returns false for cancelled models
+			if (this.engines.has(model.id)) {
+				this.engines.delete(model.id);
+				console.log(
+					`Removed engine for failed/cancelled model ${model.id}`,
+				);
+			}
+
+			// If this was an abort error, add to cancelled models set
+			if (wasAborted) {
+				if (!this._cancelledModels) {
+					this._cancelledModels = new Set<string>();
+				}
+				this._cancelledModels.add(model.id);
+				console.log(
+					`Added ${model.id} to cancelled models set (from catch block)`,
+				);
+			}
+
 			return failedModel;
 		}
 	}
@@ -185,8 +205,27 @@ export class WebLLMService {
 	 * @returns True if the model is downloaded, false otherwise
 	 */
 	public isModelDownloaded(modelId: string): boolean {
-		return this.engines.has(modelId);
+		// Track a map of cancelled models to ensure they're never considered downloaded
+		if (!this._cancelledModels) {
+			this._cancelledModels = new Set<string>();
+		}
+
+		// If the model was cancelled, it's not downloaded
+		if (this._cancelledModels.has(modelId)) {
+			console.log(
+				`Model ${modelId} was cancelled, returning false for isModelDownloaded`,
+			);
+			return false;
+		}
+
+		// Otherwise, check if the engine exists
+		const result = this.engines.has(modelId);
+		console.log(`isModelDownloaded check for ${modelId}: ${result}`);
+		return result;
 	}
+
+	// Track cancelled models to ensure they're never considered downloaded
+	private _cancelledModels: Set<string> | null = null;
 
 	/**
 	 * Get the WebLLM model ID for a model
@@ -244,14 +283,43 @@ export class WebLLMService {
 	 * @returns True if the download was cancelled, false if no download was in progress
 	 */
 	public cancelDownload(modelId: string): boolean {
+		// Always add to cancelled models set regardless of whether a download is in progress
+		// This ensures isModelDownloaded always returns false for cancelled models
+		if (!this._cancelledModels) {
+			this._cancelledModels = new Set<string>();
+		}
+		this._cancelledModels.add(modelId);
+		console.log(`Added ${modelId} to cancelled models set`);
+
+		// Remove the engine from the engines map if it exists
+		// This ensures isModelDownloaded returns false for cancelled models
+		if (this.engines.has(modelId)) {
+			this.engines.delete(modelId);
+			console.log(`Removed engine for cancelled model ${modelId}`);
+		}
+
+		// If this was the active model, clear the active model
+		if (this.activeModelId === modelId) {
+			this.activeEngine = null;
+			this.activeModelId = null;
+			console.log(
+				`Cleared active model because ${modelId} was cancelled`,
+			);
+		}
+
+		// Check if there's an active download to cancel
 		const controller = this.downloadControllers.get(modelId);
 		if (controller) {
+			// Abort the download
 			controller.abort();
 			this.downloadControllers.delete(modelId);
 			console.log(`Cancelled download for model ${modelId}`);
 			return true;
 		}
-		return false;
+
+		// Even if there was no active download, we've still marked the model as cancelled
+		// and removed it from the engines map, so return true
+		return true;
 	}
 
 	/**
@@ -261,11 +329,28 @@ export class WebLLMService {
 		console.log(
 			`Cancelling ${this.downloadControllers.size} ongoing downloads`,
 		);
+
+		// Initialize cancelled models set if it doesn't exist
+		if (!this._cancelledModels) {
+			this._cancelledModels = new Set<string>();
+		}
+
 		for (const [
 			modelId,
 			controller,
 		] of this.downloadControllers.entries()) {
+			// Abort the download
 			controller.abort();
+
+			// Add to cancelled models set
+			this._cancelledModels.add(modelId);
+
+			// Remove the engine from the engines map if it exists
+			if (this.engines.has(modelId)) {
+				this.engines.delete(modelId);
+				console.log(`Removed engine for cancelled model ${modelId}`);
+			}
+
 			console.log(`Cancelled download for model ${modelId}`);
 		}
 		this.downloadControllers.clear();
