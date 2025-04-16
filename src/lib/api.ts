@@ -3,10 +3,10 @@ import { Source } from '@/types/source';
 import { ChatMessage } from '@/types/chat';
 import { Model } from '@/types/model';
 
-// Base API URL
+
 const API_URL = '/api';
 
-// Helper function for API requests
+
 async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -27,12 +27,12 @@ async function fetchAPI<T>(
   return res.json();
 }
 
-// Initialize the database
+
 export async function initializeDatabase(): Promise<{ success: boolean; message: string }> {
   return fetchAPI('/db/init');
 }
 
-// Notebook API
+
 export const notebooksAPI = {
   getAll: (): Promise<Notebook[]> => fetchAPI('/notebooks'),
   
@@ -56,7 +56,7 @@ export const notebooksAPI = {
     }),
 };
 
-// Sources API
+
 export const sourcesAPI = {
   getAll: (notebookId: string): Promise<Source[]> =>
     fetchAPI(`/notebooks/${notebookId}/sources`),
@@ -93,7 +93,7 @@ export const sourcesAPI = {
     }),
 };
 
-// Messages API
+
 export const messagesAPI = {
   getAll: (notebookId: string): Promise<ChatMessage[]> =>
     fetchAPI(`/notebooks/${notebookId}/messages`),
@@ -109,7 +109,7 @@ export const messagesAPI = {
     }),
 };
 
-// Models API
+
 export const modelsAPI = {
   getAll: (): Promise<Model[]> => fetchAPI('/models'),
   

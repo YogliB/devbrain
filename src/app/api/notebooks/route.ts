@@ -13,7 +13,7 @@ export async function GET() {
 			.from(notebooks)
 			.orderBy(notebooks.updatedAt);
 
-		// Format dates for JSON response
+		
 		const formattedNotebooks = notebooksData.map((notebook) => ({
 			...notebook,
 			createdAt: new Date(notebook.createdAt),
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 		const now = new Date();
 		const id = uuidv4();
 
-		// Insert the new notebook
+		
 		await db.insert(notebooks).values({
 			id,
 			title,
@@ -57,13 +57,13 @@ export async function POST(request: NextRequest) {
 			updatedAt: now,
 		});
 
-		// Get the inserted notebook
+		
 		const [newNotebook] = await db
 			.select()
 			.from(notebooks)
 			.where(eq(notebooks.id, id));
 
-		// Format dates for JSON response
+		
 		const formattedNotebook = {
 			...newNotebook,
 			createdAt: new Date(newNotebook.createdAt),

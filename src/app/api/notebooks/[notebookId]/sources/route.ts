@@ -12,7 +12,7 @@ export async function GET(
     const { notebookId } = await params;
     const db = getDb();
 
-    // Check if notebook exists
+    
     const [notebook] = await db
       .select()
       .from(notebooks)
@@ -25,14 +25,14 @@ export async function GET(
       );
     }
 
-    // Get sources for the notebook
+    
     const sourcesData = await db
       .select()
       .from(sources)
       .where(eq(sources.notebookId, notebookId))
       .orderBy(desc(sources.createdAt));
 
-    // Format dates for JSON response
+    
     const formattedSources = sourcesData.map((source) => ({
       ...source,
       createdAt: new Date(source.createdAt),
@@ -69,7 +69,7 @@ export async function POST(
 
     const db = getDb();
 
-    // Check if notebook exists
+    
     const [notebook] = await db
       .select()
       .from(notebooks)
@@ -85,7 +85,7 @@ export async function POST(
     const id = uuidv4();
     const now = new Date();
 
-    // Insert the new source
+    
     await db.insert(sources).values({
       id,
       content,
@@ -95,19 +95,19 @@ export async function POST(
       createdAt: now,
     });
 
-    // Get the inserted source
+    
     const [newSource] = await db
       .select()
       .from(sources)
       .where(eq(sources.id, id));
 
-    // Format dates for JSON response
+    
     const formattedSource = {
       ...newSource,
       createdAt: new Date(newSource.createdAt),
     };
 
-    // Update notebook's updated_at timestamp
+    
     await db
       .update(notebooks)
       .set({ updatedAt: now })

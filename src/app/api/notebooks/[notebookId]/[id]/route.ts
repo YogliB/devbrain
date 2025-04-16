@@ -11,7 +11,7 @@ export async function GET(
     const { notebookId } = params;
     const db = getDb();
 
-    // Get the notebook by ID
+    
     const [notebook] = await db
       .select()
       .from(notebooks)
@@ -25,7 +25,7 @@ export async function GET(
       );
     }
 
-    // Format dates for JSON response
+    
     const formattedNotebook = {
       ...notebook,
       createdAt: new Date(notebook.createdAt),
@@ -64,7 +64,7 @@ export async function PUT(
 
     const db = getDb();
 
-    // Check if notebook exists
+    
     const [existingNotebook] = await db
       .select()
       .from(notebooks)
@@ -80,7 +80,7 @@ export async function PUT(
 
     const now = new Date();
 
-    // Update the notebook
+    
     await db
       .update(notebooks)
       .set({
@@ -89,13 +89,13 @@ export async function PUT(
       })
       .where(eq(notebooks.id, notebookId));
 
-    // Get the updated notebook
+    
     const [updatedNotebook] = await db
       .select()
       .from(notebooks)
       .where(eq(notebooks.id, notebookId));
 
-    // Format dates for JSON response
+    
     const formattedNotebook = {
       ...updatedNotebook,
       createdAt: new Date(updatedNotebook.createdAt),
@@ -122,7 +122,7 @@ export async function DELETE(
     const { notebookId } = params;
     const db = getDb();
 
-    // Check if notebook exists
+    
     const [existingNotebook] = await db
       .select()
       .from(notebooks)
@@ -136,7 +136,7 @@ export async function DELETE(
       );
     }
 
-    // Delete the notebook (cascade will delete related sources and messages)
+    
     await db
       .delete(notebooks)
       .where(eq(notebooks.id, notebookId));

@@ -11,7 +11,7 @@ export async function GET(
 		const { id } = await params;
 		const db = getDb();
 
-		// Get the model by ID
+		
 		const [model] = await db
 			.select()
 			.from(models)
@@ -25,7 +25,7 @@ export async function GET(
 			);
 		}
 
-		// No need to convert boolean values as drizzle handles this
+		
 
 		return NextResponse.json(model);
 	} catch (error) {
@@ -58,7 +58,7 @@ export async function PATCH(
 
 		const db = getDb();
 
-		// Check if model exists
+		
 		const [existingModel] = await db
 			.select()
 			.from(models)
@@ -72,13 +72,13 @@ export async function PATCH(
 			);
 		}
 
-		// Update the model
+		
 		await db
 			.update(models)
 			.set({ isDownloaded: isDownloaded })
 			.where(eq(models.id, id));
 
-		// Get the updated model
+		
 		const [updatedModel] = await db
 			.select()
 			.from(models)

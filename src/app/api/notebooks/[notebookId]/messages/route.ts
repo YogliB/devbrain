@@ -11,7 +11,7 @@ export async function GET(
 		const { notebookId } = await params;
 		const db = getDb();
 
-		// Check if notebook exists
+		
 		const [notebook] = await db
 			.select()
 			.from(notebooks)
@@ -25,14 +25,14 @@ export async function GET(
 			);
 		}
 
-		// Get messages for the notebook
+		
 		const messagesData = await db
 			.select()
 			.from(messages)
 			.where(eq(messages.notebookId, notebookId))
 			.orderBy(asc(messages.timestamp));
 
-		// Format dates for JSON response
+		
 		const formattedMessages = messagesData.map((message) => ({
 			...message,
 			timestamp: new Date(message.timestamp),
@@ -81,7 +81,7 @@ export async function POST(
 
 		const db = getDb();
 
-		// Check if notebook exists
+		
 		const [notebook] = await db
 			.select()
 			.from(notebooks)
@@ -98,7 +98,7 @@ export async function POST(
 		const id = `${Date.now()}`;
 		const now = new Date();
 
-		// Insert the new message
+		
 		await db.insert(messages).values({
 			id,
 			content,
@@ -107,19 +107,19 @@ export async function POST(
 			timestamp: now,
 		});
 
-		// Get the inserted message
+		
 		const [newMessage] = await db
 			.select()
 			.from(messages)
 			.where(eq(messages.id, id));
 
-		// Update notebook's updated_at timestamp
+		
 		await db
 			.update(notebooks)
 			.set({ updatedAt: now })
 			.where(eq(notebooks.id, notebookId));
 
-		// Format dates for JSON response
+		
 		const formattedMessage = {
 			...newMessage,
 			timestamp: new Date(newMessage.timestamp),

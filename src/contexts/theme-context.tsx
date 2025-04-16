@@ -30,12 +30,12 @@ export function ThemeProvider({
 	storageKey = 'devbrain-theme',
 	...props
 }: ThemeProviderProps) {
-	// Always start with the default theme on the server
+	
 	const [theme, setTheme] = useState<Theme>(defaultTheme);
-	// Track if we're mounted to avoid hydration issues
+	
 	const [mounted, setMounted] = useState(false);
 
-	// Once mounted, update the theme based on localStorage
+	
 	useEffect(() => {
 		setMounted(true);
 		const storedTheme = localStorage.getItem(storageKey) as Theme;
@@ -44,7 +44,7 @@ export function ThemeProvider({
 		}
 	}, [storageKey]);
 
-	// Apply theme to document
+	
 	useEffect(() => {
 		if (!mounted) return;
 

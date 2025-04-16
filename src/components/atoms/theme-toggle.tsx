@@ -11,16 +11,16 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
 	const { theme, setTheme } = useTheme();
-	// Add a state to track if the component has mounted
+	
 	const [mounted, setMounted] = useState(false);
 
-	// After mounting, we can show the theme toggle
+	
 	useEffect(() => {
 		setMounted(true);
 	}, []);
 
-	// If not mounted yet, render a placeholder with the same dimensions
-	// to avoid layout shift
+	
+	
 	if (!mounted) {
 		return <div className={cn('flex items-center gap-2 h-9', className)} />;
 	}

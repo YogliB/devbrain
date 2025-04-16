@@ -12,21 +12,21 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, className }: ChatMessageProps) {
 	const isUser = message.role === 'user';
-	// Add state to track client-side rendering
+	
 	const [timeString, setTimeString] = useState<string>('');
 
-	// Update the time string only on the client side
+	
 	useEffect(() => {
 		if (message.timestamp) {
 			try {
-				// Ensure timestamp is a Date object
+				
 				const date = message.timestamp instanceof Date
 					? message.timestamp
 					: new Date(message.timestamp);
 				setTimeString(date.toLocaleTimeString());
 			} catch (error) {
 				console.error('Error formatting timestamp:', error);
-				setTimeString(''); // Set empty string if there's an error
+				setTimeString(''); 
 			}
 		}
 	}, [message.timestamp]);

@@ -53,7 +53,6 @@ export function MainLayout({
 }: MainLayoutProps) {
 	return (
 		<div className={cn('flex h-screen', className)}>
-			{/* Sidebar */}
 			<NotebooksSidebar
 				notebooks={notebooks}
 				activeNotebook={activeNotebook}
@@ -63,9 +62,7 @@ export function MainLayout({
 				className="hidden md:flex"
 			/>
 
-			{/* Main Content */}
 			<div className="flex-1 flex flex-col h-full overflow-hidden">
-				{/* Header */}
 				<header className="border-b border-border p-4">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-4">
@@ -82,7 +79,6 @@ export function MainLayout({
 					</div>
 				</header>
 
-				{/* Content */}
 				<main className="flex-1 overflow-hidden">
 					<ContentTabs
 						messages={messages}

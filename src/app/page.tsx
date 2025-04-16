@@ -8,7 +8,7 @@ import { Source } from '@/types/source';
 import { Model } from '@/types/model';
 import { initializeDatabase, notebooksAPI, sourcesAPI, messagesAPI, modelsAPI } from '@/lib/api';
 
-// Suggested questions based on sources
+
 const suggestedQuestions: SuggestedQuestion[] = [
 	{
 		id: '1',
@@ -33,23 +33,23 @@ export default function Home() {
 	const [models, setModels] = useState<Model[]>([]);
 	const [selectedModel, setSelectedModel] = useState<Model | null>(null);
 
-	// Initialize the database and load data
+	
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				// Initialize the database
+				
 				await initializeDatabase();
 
-				// Load notebooks
+				
 				const notebooksData = await notebooksAPI.getAll();
 				setNotebooks(notebooksData);
 
-				// Set active notebook if available
+				
 				if (notebooksData.length > 0) {
 					const notebook = notebooksData[0];
 					setActiveNotebook(notebook);
 
-					// Load sources and messages for the active notebook
+					
 					const [sourcesData, messagesData] = await Promise.all([
 						sourcesAPI.getAll(notebook.id),
 						messagesAPI.getAll(notebook.id),
@@ -59,11 +59,11 @@ export default function Home() {
 					setMessages(messagesData);
 				}
 
-				// Load models
+				
 				const modelsData = await modelsAPI.getAll();
 				setModels(modelsData);
 
-				// Set selected model if available
+				
 				const downloadedModel = modelsData.find((m) => m.isDownloaded);
 				if (downloadedModel) {
 					setSelectedModel(downloadedModel);
@@ -78,11 +78,11 @@ export default function Home() {
 		initializeApp();
 	}, []);
 
-	// Load sources and messages when active notebook changes
+	
 	useEffect(() => {
 		if (!activeNotebook) return;
 
-		// TypeScript non-null assertion since we've already checked above
+		
 		const notebookId = activeNotebook!.id;
 
 		async function loadNotebookData() {
@@ -102,7 +102,7 @@ export default function Home() {
 		loadNotebookData();
 	}, [activeNotebook]);
 
-	// Notebook handlers
+	
 	const handleSelectNotebook = async (notebook: Notebook) => {
 		setActiveNotebook(notebook);
 	};
@@ -133,12 +133,12 @@ export default function Home() {
 		}
 	};
 
-	// Chat handlers
+	
 	const handleSendMessage = async (content: string) => {
 		if (!activeNotebook) return;
 
 		try {
-			// Create user message
+			
 			const userMessage = await messagesAPI.create(
 				activeNotebook.id,
 				content,
@@ -146,7 +146,7 @@ export default function Home() {
 			);
 			setMessages((prev) => [...prev, userMessage]);
 
-			// Mock LLM response
+			
 			setTimeout(async () => {
 				try {
 					const assistantMessage = await messagesAPI.create(
@@ -168,7 +168,7 @@ export default function Home() {
 		handleSendMessage(question.text);
 	};
 
-	// Source handlers
+	
 	const handleAddSource = async (content: string, filename?: string) => {
 		if (!activeNotebook) return;
 
@@ -214,36 +214,36 @@ export default function Home() {
 		}
 	};
 
-	// Model handlers
+	
 	const handleSelectModel = (model: Model) => {
 		setSelectedModel(model);
 	};
 
 	const handleDownloadModel = async (model: Model) => {
 		try {
-			// Show loading state
+			
 			const updatingModels = models.map((m) =>
 				m.id === model.id ? { ...m, isDownloading: true } : m
 			);
 			setModels(updatingModels);
 
-			// Mock download delay
+			
 			await new Promise((resolve) => setTimeout(resolve, 2000));
 
-			// Update model download status in the database
+			
 			const updatedModel = await modelsAPI.updateDownloadStatus(model.id, true);
 
-			// Update models state
+			
 			setModels((prev) =>
 				prev.map((m) => (m.id === updatedModel.id ? updatedModel : m))
 			);
 
-			// Set as selected model
+			
 			setSelectedModel(updatedModel);
 		} catch (error) {
 			console.error('Failed to download model:', error);
 
-			// Reset loading state
+			
 			setModels((prev) =>
 				prev.map((m) =>
 					m.id === model.id ? { ...m, isDownloading: false } : m

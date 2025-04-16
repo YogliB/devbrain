@@ -11,7 +11,7 @@ export async function GET(
     const { notebookId, id } = await params;
     const db = getDb();
 
-    // Get the source by ID and notebook ID
+    
     const [source] = await db
       .select()
       .from(sources)
@@ -30,7 +30,7 @@ export async function GET(
       );
     }
 
-    // Format date for JSON response
+    
     const formattedSource = {
       ...source,
       createdAt: new Date(source.createdAt),
@@ -69,7 +69,7 @@ export async function PUT(
 
     const db = getDb();
 
-    // Check if source exists
+    
     const [existingSource] = await db
       .select()
       .from(sources)
@@ -90,7 +90,7 @@ export async function PUT(
 
     const now = new Date();
 
-    // Update the source
+    
     await db
       .update(sources)
       .set({
@@ -105,19 +105,19 @@ export async function PUT(
         )
       );
 
-    // Get the updated source
+    
     const [updatedSource] = await db
       .select()
       .from(sources)
       .where(eq(sources.id, id));
 
-    // Format date for JSON response
+    
     const formattedSource = {
       ...updatedSource,
       createdAt: new Date(updatedSource.createdAt),
     };
 
-    // Update notebook's updated_at timestamp
+    
     await db
       .update(notebooks)
       .set({ updatedAt: now })
@@ -144,7 +144,7 @@ export async function DELETE(
     const { notebookId, id } = await params;
     const db = getDb();
 
-    // Check if source exists
+    
     const [existingSource] = await db
       .select()
       .from(sources)
@@ -163,7 +163,7 @@ export async function DELETE(
       );
     }
 
-    // Delete the source
+    
     await db
       .delete(sources)
       .where(
@@ -173,7 +173,7 @@ export async function DELETE(
         )
       );
 
-    // Update notebook's updated_at timestamp
+    
     const now = new Date();
     await db
       .update(notebooks)
