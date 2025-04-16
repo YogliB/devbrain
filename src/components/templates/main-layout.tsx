@@ -5,6 +5,7 @@ import { ThemeToggle } from '@/components/atoms/theme-toggle';
 import { NotebooksSidebar } from '@/components/organisms/notebooks-sidebar';
 import { ContentTabs } from '@/components/organisms/content-tabs';
 import { ModelSelector } from '@/components/molecules/model-selector';
+import { EmptyNotebookPlaceholder } from '@/components/molecules/empty-notebook-placeholder';
 import { Notebook } from '@/types/notebook';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
@@ -80,16 +81,22 @@ export function MainLayout({
 				</header>
 
 				<main className="flex-1 overflow-hidden">
-					<ContentTabs
-						messages={messages}
-						suggestedQuestions={suggestedQuestions}
-						sources={sources}
-						onSendMessage={onSendMessage}
-						onSelectQuestion={onSelectQuestion}
-						onAddSource={onAddSource}
-						onUpdateSource={onUpdateSource}
-						onDeleteSource={onDeleteSource}
-					/>
+					{notebooks.length === 0 || !activeNotebook ? (
+						<EmptyNotebookPlaceholder
+							onCreateNotebook={onCreateNotebook}
+						/>
+					) : (
+						<ContentTabs
+							messages={messages}
+							suggestedQuestions={suggestedQuestions}
+							sources={sources}
+							onSendMessage={onSendMessage}
+							onSelectQuestion={onSelectQuestion}
+							onAddSource={onAddSource}
+							onUpdateSource={onUpdateSource}
+							onDeleteSource={onDeleteSource}
+						/>
+					)}
 				</main>
 			</div>
 		</div>
