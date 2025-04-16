@@ -1,60 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import { join } from 'path';
-
-// Helper function to get database connection
-function getDb() {
-  const dbPath = join(process.cwd(), 'devbrain.db');
-  return new Database(dbPath);
-}
+import { getDb, closeDb } from '@/db';
+import { notebooks } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { notebookId: string } }
 ) {
   try {
-    const { id } = params;
+    const { notebookId } = params;
     const db = getDb();
 
-    const notebook = db.prepare(`
-      SELECT id, title, created_at as createdAt, updated_at as updatedAt
-      FROM notebooks
-      WHERE id = ?
-    `).get(id);
+    // Get the notebook by ID
+    const [notebook] = await db
+      .select()
+      .from(notebooks)
+      .where(eq(notebooks.id, notebookId));
 
     if (!notebook) {
-      db.close();
+      closeDb();
       return NextResponse.json(
         { message: 'Notebook not found' },
         { status: 404 }
       );
     }
 
-    // Convert timestamps to Date objects
+    // Format dates for JSON response
     const formattedNotebook = {
       ...notebook,
-      createdAt: new Date(notebook.createdAt * 1000),
-      updatedAt: new Date(notebook.updatedAt * 1000),
+      createdAt: new Date(notebook.createdAt),
+      updatedAt: new Date(notebook.updatedAt),
     };
 
-    db.close();
+    closeDb();
 
     return NextResponse.json(formattedNotebook);
   } catch (error) {
-    console.error(`Error fetching notebook ${params.id}:`, error);
+    console.error(`Error fetching notebook ${params.notebookId}:`, error);
     return NextResponse.json(
       { message: 'Failed to fetch notebook', error: String(error) },
       { status: 500 }
     );
+  } finally {
+    closeDb();
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { notebookId: string } }
 ) {
   try {
-    const { id } = params;
+    const { notebookId } = params;
     const body = await request.json();
     const { title } = body;
 
@@ -68,62 +65,71 @@ export async function PUT(
     const db = getDb();
 
     // Check if notebook exists
-    const existingNotebook = db.prepare('SELECT id FROM notebooks WHERE id = ?').get(id);
+    const [existingNotebook] = await db
+      .select()
+      .from(notebooks)
+      .where(eq(notebooks.id, notebookId));
 
     if (!existingNotebook) {
-      db.close();
+      closeDb();
       return NextResponse.json(
         { message: 'Notebook not found' },
         { status: 404 }
       );
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now = new Date();
 
-    db.prepare(`
-      UPDATE notebooks
-      SET title = ?, updated_at = ?
-      WHERE id = ?
-    `).run(title, now, id);
+    // Update the notebook
+    await db
+      .update(notebooks)
+      .set({
+        title,
+        updatedAt: now
+      })
+      .where(eq(notebooks.id, notebookId));
 
-    const updatedNotebook = db.prepare(`
-      SELECT id, title, created_at as createdAt, updated_at as updatedAt
-      FROM notebooks
-      WHERE id = ?
-    `).get(id);
+    // Get the updated notebook
+    const [updatedNotebook] = await db
+      .select()
+      .from(notebooks)
+      .where(eq(notebooks.id, notebookId));
 
-    // Convert timestamps to Date objects
+    // Format dates for JSON response
     const formattedNotebook = {
       ...updatedNotebook,
-      createdAt: new Date(updatedNotebook.createdAt * 1000),
-      updatedAt: new Date(updatedNotebook.updatedAt * 1000),
+      createdAt: new Date(updatedNotebook.createdAt),
+      updatedAt: new Date(updatedNotebook.updatedAt),
     };
-
-    db.close();
 
     return NextResponse.json(formattedNotebook);
   } catch (error) {
-    console.error(`Error updating notebook ${params.id}:`, error);
+    console.error(`Error updating notebook ${params.notebookId}:`, error);
     return NextResponse.json(
       { message: 'Failed to update notebook', error: String(error) },
       { status: 500 }
     );
+  } finally {
+    closeDb();
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: { notebookId: string } }
 ) {
   try {
-    const { id } = params;
+    const { notebookId } = params;
     const db = getDb();
 
     // Check if notebook exists
-    const existingNotebook = db.prepare('SELECT id FROM notebooks WHERE id = ?').get(id);
+    const [existingNotebook] = await db
+      .select()
+      .from(notebooks)
+      .where(eq(notebooks.id, notebookId));
 
     if (!existingNotebook) {
-      db.close();
+      closeDb();
       return NextResponse.json(
         { message: 'Notebook not found' },
         { status: 404 }
@@ -131,16 +137,18 @@ export async function DELETE(
     }
 
     // Delete the notebook (cascade will delete related sources and messages)
-    db.prepare('DELETE FROM notebooks WHERE id = ?').run(id);
-
-    db.close();
+    await db
+      .delete(notebooks)
+      .where(eq(notebooks.id, notebookId));
 
     return NextResponse.json({ message: 'Notebook deleted successfully' });
   } catch (error) {
-    console.error(`Error deleting notebook ${params.id}:`, error);
+    console.error(`Error deleting notebook ${params.notebookId}:`, error);
     return NextResponse.json(
       { message: 'Failed to delete notebook', error: String(error) },
       { status: 500 }
     );
+  } finally {
+    closeDb();
   }
 }

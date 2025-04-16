@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5d88fc87-59a4-4ed2-a07b-d4b101fc7751",
+  "id": "af0352d1-e696-46ae-90e0-a225b71c8ba0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "notebooks": {

@@ -9,8 +9,11 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "db:generate": "drizzle-kit generate",
-    "db:seed": "bun run src/db/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:migrate": "bun src/db/migrate.ts",
+    "db:seed": "node src/db/seed-db.js",
+    "db:studio": "drizzle-kit studio",
+    "db:push": "drizzle-kit push",
+    "db:init": "bun run db:generate && bun run db:push && bun run db:seed"
   },
   "dependencies": {
     "@types/uuid": "^10.0.0",
@@ -40,6 +43,8 @@
     "eslint-plugin-prettier": "^5.2.6",
     "prettier": "^3.5.3",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
     "typescript": "^5"
   }
 }

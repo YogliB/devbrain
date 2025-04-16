@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import { join } from 'path';
-
-// Helper function to get database connection
-function getDb() {
-	const dbPath = join(process.cwd(), 'devbrain.db');
-	return new Database(dbPath);
-}
+import { getDb, closeDb } from '@/db';
+import { models } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
 	_request: NextRequest,
@@ -16,33 +11,23 @@ export async function GET(
 		const { id } = await params;
 		const db = getDb();
 
-		const model = db
-			.prepare(
-				`
-      SELECT id, name, is_downloaded as isDownloaded, parameters, size, use_case as useCase
-      FROM models
-      WHERE id = ?
-    `,
-			)
-			.get(id);
+		// Get the model by ID
+		const [model] = await db
+			.select()
+			.from(models)
+			.where(eq(models.id, id));
 
 		if (!model) {
-			db.close();
+			closeDb();
 			return NextResponse.json(
 				{ message: 'Model not found' },
 				{ status: 404 },
 			);
 		}
 
-		// Convert boolean value
-		const formattedModel = {
-			...(model as any),
-			isDownloaded: Boolean((model as any).isDownloaded),
-		};
+		// No need to convert boolean values as drizzle handles this
 
-		db.close();
-
-		return NextResponse.json(formattedModel);
+		return NextResponse.json(model);
 	} catch (error) {
 		const { id } = await params;
 		console.error(`Error fetching model ${id}:`, error);
@@ -50,6 +35,8 @@ export async function GET(
 			{ message: 'Failed to fetch model', error: String(error) },
 			{ status: 500 },
 		);
+	} finally {
+		closeDb();
 	}
 }
 
@@ -72,45 +59,32 @@ export async function PATCH(
 		const db = getDb();
 
 		// Check if model exists
-		const existingModel = db
-			.prepare('SELECT id FROM models WHERE id = ?')
-			.get(id);
+		const [existingModel] = await db
+			.select()
+			.from(models)
+			.where(eq(models.id, id));
 
 		if (!existingModel) {
-			db.close();
+			closeDb();
 			return NextResponse.json(
 				{ message: 'Model not found' },
 				{ status: 404 },
 			);
 		}
 
-		db.prepare(
-			`
-      UPDATE models
-      SET is_downloaded = ?
-      WHERE id = ?
-    `,
-		).run(isDownloaded ? 1 : 0, id);
+		// Update the model
+		await db
+			.update(models)
+			.set({ isDownloaded: isDownloaded })
+			.where(eq(models.id, id));
 
-		const updatedModel = db
-			.prepare(
-				`
-      SELECT id, name, is_downloaded as isDownloaded, parameters, size, use_case as useCase
-      FROM models
-      WHERE id = ?
-    `,
-			)
-			.get(id);
+		// Get the updated model
+		const [updatedModel] = await db
+			.select()
+			.from(models)
+			.where(eq(models.id, id));
 
-		// Convert boolean value
-		const formattedModel = {
-			...(updatedModel as any),
-			isDownloaded: Boolean((updatedModel as any).isDownloaded),
-		};
-
-		db.close();
-
-		return NextResponse.json(formattedModel);
+		return NextResponse.json(updatedModel);
 	} catch (error) {
 		const { id } = await params;
 		console.error(`Error updating model ${id}:`, error);
@@ -118,5 +92,7 @@ export async function PATCH(
 			{ message: 'Failed to update model', error: String(error) },
 			{ status: 500 },
 		);
+	} finally {
+		closeDb();
 	}
 }

@@ -1,130 +1,142 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import { join } from 'path';
-
-// Helper function to get database connection
-function getDb() {
-  const dbPath = join(process.cwd(), 'devbrain.db');
-  return new Database(dbPath);
-}
+import { getDb, closeDb } from '@/db';
+import { notebooks, messages } from '@/db/schema';
+import { eq, asc } from 'drizzle-orm';
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ notebookId: string }> }
+	_request: NextRequest,
+	{ params }: { params: Promise<{ notebookId: string }> },
 ) {
-  try {
-    const { notebookId } = await params;
-    const db = getDb();
+	try {
+		const { notebookId } = await params;
+		const db = getDb();
 
-    // Check if notebook exists
-    const notebook = db.prepare('SELECT id FROM notebooks WHERE id = ?').get(notebookId);
+		// Check if notebook exists
+		const [notebook] = await db
+			.select()
+			.from(notebooks)
+			.where(eq(notebooks.id, notebookId));
 
-    if (!notebook) {
-      db.close();
-      return NextResponse.json(
-        { message: 'Notebook not found' },
-        { status: 404 }
-      );
-    }
+		if (!notebook) {
+			closeDb();
+			return NextResponse.json(
+				{ message: 'Notebook not found' },
+				{ status: 404 },
+			);
+		}
 
-    const messages = db.prepare(`
-      SELECT id, content, role, notebook_id as notebookId, timestamp
-      FROM messages
-      WHERE notebook_id = ?
-      ORDER BY timestamp ASC
-    `).all(notebookId);
+		// Get messages for the notebook
+		const messagesData = await db
+			.select()
+			.from(messages)
+			.where(eq(messages.notebookId, notebookId))
+			.orderBy(asc(messages.timestamp));
 
-    // Convert timestamps to Date objects
-    const formattedMessages = messages.map((message: any) => ({
-      ...message,
-      timestamp: new Date(message.timestamp * 1000),
-    }));
+		// Format dates for JSON response
+		const formattedMessages = messagesData.map((message) => ({
+			...message,
+			timestamp: new Date(message.timestamp),
+		}));
 
-    db.close();
+		closeDb();
 
-    return NextResponse.json(formattedMessages);
-  } catch (error) {
-    const { notebookId } = await params;
-    console.error(`Error fetching messages for notebook ${notebookId}:`, error);
-    return NextResponse.json(
-      { message: 'Failed to fetch messages', error: String(error) },
-      { status: 500 }
-    );
-  }
+		return NextResponse.json(formattedMessages);
+	} catch (error) {
+		const { notebookId } = await params;
+		console.error(
+			`Error fetching messages for notebook ${notebookId}:`,
+			error,
+		);
+		return NextResponse.json(
+			{ message: 'Failed to fetch messages', error: String(error) },
+			{ status: 500 },
+		);
+	} finally {
+		closeDb();
+	}
 }
 
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ notebookId: string }> }
+	request: NextRequest,
+	{ params }: { params: Promise<{ notebookId: string }> },
 ) {
-  try {
-    const { notebookId } = await params;
-    const body = await request.json();
-    const { content, role } = body;
+	try {
+		const { notebookId } = await params;
+		const body = await request.json();
+		const { content, role } = body;
 
-    if (!content) {
-      return NextResponse.json(
-        { message: 'Content is required' },
-        { status: 400 }
-      );
-    }
+		if (!content) {
+			return NextResponse.json(
+				{ message: 'Content is required' },
+				{ status: 400 },
+			);
+		}
 
-    if (!role || !['user', 'assistant'].includes(role)) {
-      return NextResponse.json(
-        { message: 'Role must be either "user" or "assistant"' },
-        { status: 400 }
-      );
-    }
+		if (!role || !['user', 'assistant'].includes(role)) {
+			return NextResponse.json(
+				{ message: 'Role must be either "user" or "assistant"' },
+				{ status: 400 },
+			);
+		}
 
-    const db = getDb();
+		const db = getDb();
 
-    // Check if notebook exists
-    const notebook = db.prepare('SELECT id FROM notebooks WHERE id = ?').get(notebookId);
+		// Check if notebook exists
+		const [notebook] = await db
+			.select()
+			.from(notebooks)
+			.where(eq(notebooks.id, notebookId));
 
-    if (!notebook) {
-      db.close();
-      return NextResponse.json(
-        { message: 'Notebook not found' },
-        { status: 404 }
-      );
-    }
+		if (!notebook) {
+			closeDb();
+			return NextResponse.json(
+				{ message: 'Notebook not found' },
+				{ status: 404 },
+			);
+		}
 
-    const id = `${Date.now()}`;
-    const now = Math.floor(Date.now() / 1000);
+		const id = `${Date.now()}`;
+		const now = new Date();
 
-    db.prepare(`
-      INSERT INTO messages (id, content, role, notebook_id, timestamp)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, content, role, notebookId, now);
+		// Insert the new message
+		await db.insert(messages).values({
+			id,
+			content,
+			role: role as 'user' | 'assistant',
+			notebookId,
+			timestamp: now,
+		});
 
-    const message = db.prepare(`
-      SELECT id, content, role, notebook_id as notebookId, timestamp
-      FROM messages
-      WHERE id = ?
-    `).get(id);
+		// Get the inserted message
+		const [newMessage] = await db
+			.select()
+			.from(messages)
+			.where(eq(messages.id, id));
 
-    // Convert timestamp to Date object
-    const formattedMessage = {
-      ...(message as any),
-      timestamp: new Date((message as any).timestamp * 1000),
-    };
+		// Update notebook's updated_at timestamp
+		await db
+			.update(notebooks)
+			.set({ updatedAt: now })
+			.where(eq(notebooks.id, notebookId));
 
-    // Update notebook's updated_at timestamp
-    db.prepare(`
-      UPDATE notebooks
-      SET updated_at = ?
-      WHERE id = ?
-    `).run(now, notebookId);
+		// Format dates for JSON response
+		const formattedMessage = {
+			...newMessage,
+			timestamp: new Date(newMessage.timestamp),
+		};
 
-    db.close();
-
-    return NextResponse.json(formattedMessage, { status: 201 });
-  } catch (error) {
-    const { notebookId } = await params;
-    console.error(`Error creating message for notebook ${notebookId}:`, error);
-    return NextResponse.json(
-      { message: 'Failed to create message', error: String(error) },
-      { status: 500 }
-    );
-  }
+		return NextResponse.json(formattedMessage, { status: 201 });
+	} catch (error) {
+		const { notebookId } = await params;
+		console.error(
+			`Error creating message for notebook ${notebookId}:`,
+			error,
+		);
+		return NextResponse.json(
+			{ message: 'Failed to create message', error: String(error) },
+			{ status: 500 },
+		);
+	} finally {
+		closeDb();
+	}
 }

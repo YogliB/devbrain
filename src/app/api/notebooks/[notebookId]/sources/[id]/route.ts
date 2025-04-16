@@ -1,42 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import { join } from 'path';
-
-// Helper function to get database connection
-function getDb() {
-  const dbPath = join(process.cwd(), 'devbrain.db');
-  return new Database(dbPath);
-}
+import { getDb, closeDb } from '@/db';
+import { notebooks, sources } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ notebookId: string; id: string }> }
 ) {
   try {
     const { notebookId, id } = await params;
     const db = getDb();
 
-    const source = db.prepare(`
-      SELECT id, content, filename, tag, notebook_id as notebookId, created_at as createdAt
-      FROM sources
-      WHERE id = ? AND notebook_id = ?
-    `).get(id, notebookId);
+    // Get the source by ID and notebook ID
+    const [source] = await db
+      .select()
+      .from(sources)
+      .where(
+        and(
+          eq(sources.id, id),
+          eq(sources.notebookId, notebookId)
+        )
+      );
 
     if (!source) {
-      db.close();
+      closeDb();
       return NextResponse.json(
         { message: 'Source not found' },
         { status: 404 }
       );
     }
 
-    // Convert timestamp to Date object
+    // Format date for JSON response
     const formattedSource = {
-      ...(source as any),
-      createdAt: new Date((source as any).createdAt * 1000),
+      ...source,
+      createdAt: new Date(source.createdAt),
     };
 
-    db.close();
+    closeDb();
 
     return NextResponse.json(formattedSource);
   } catch (error) {
@@ -46,6 +46,8 @@ export async function GET(
       { message: 'Failed to fetch source', error: String(error) },
       { status: 500 }
     );
+  } finally {
+    closeDb();
   }
 }
 
@@ -68,46 +70,58 @@ export async function PUT(
     const db = getDb();
 
     // Check if source exists
-    const existingSource = db.prepare(
-      'SELECT id FROM sources WHERE id = ? AND notebook_id = ?'
-    ).get(id, notebookId);
+    const [existingSource] = await db
+      .select()
+      .from(sources)
+      .where(
+        and(
+          eq(sources.id, id),
+          eq(sources.notebookId, notebookId)
+        )
+      );
 
     if (!existingSource) {
-      db.close();
+      closeDb();
       return NextResponse.json(
         { message: 'Source not found' },
         { status: 404 }
       );
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now = new Date();
 
-    db.prepare(`
-      UPDATE sources
-      SET content = ?, filename = ?, tag = ?
-      WHERE id = ? AND notebook_id = ?
-    `).run(content, filename || null, tag || null, id, notebookId);
+    // Update the source
+    await db
+      .update(sources)
+      .set({
+        content,
+        filename: filename || null,
+        tag: tag || null
+      })
+      .where(
+        and(
+          eq(sources.id, id),
+          eq(sources.notebookId, notebookId)
+        )
+      );
 
-    const updatedSource = db.prepare(`
-      SELECT id, content, filename, tag, notebook_id as notebookId, created_at as createdAt
-      FROM sources
-      WHERE id = ?
-    `).get(id);
+    // Get the updated source
+    const [updatedSource] = await db
+      .select()
+      .from(sources)
+      .where(eq(sources.id, id));
 
-    // Convert timestamp to Date object
+    // Format date for JSON response
     const formattedSource = {
-      ...(updatedSource as any),
-      createdAt: new Date((updatedSource as any).createdAt * 1000),
+      ...updatedSource,
+      createdAt: new Date(updatedSource.createdAt),
     };
 
     // Update notebook's updated_at timestamp
-    db.prepare(`
-      UPDATE notebooks
-      SET updated_at = ?
-      WHERE id = ?
-    `).run(now, notebookId);
-
-    db.close();
+    await db
+      .update(notebooks)
+      .set({ updatedAt: now })
+      .where(eq(notebooks.id, notebookId));
 
     return NextResponse.json(formattedSource);
   } catch (error) {
@@ -117,11 +131,13 @@ export async function PUT(
       { message: 'Failed to update source', error: String(error) },
       { status: 500 }
     );
+  } finally {
+    closeDb();
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ notebookId: string; id: string }> }
 ) {
   try {
@@ -129,12 +145,18 @@ export async function DELETE(
     const db = getDb();
 
     // Check if source exists
-    const existingSource = db.prepare(
-      'SELECT id FROM sources WHERE id = ? AND notebook_id = ?'
-    ).get(id, notebookId);
+    const [existingSource] = await db
+      .select()
+      .from(sources)
+      .where(
+        and(
+          eq(sources.id, id),
+          eq(sources.notebookId, notebookId)
+        )
+      );
 
     if (!existingSource) {
-      db.close();
+      closeDb();
       return NextResponse.json(
         { message: 'Source not found' },
         { status: 404 }
@@ -142,17 +164,21 @@ export async function DELETE(
     }
 
     // Delete the source
-    db.prepare('DELETE FROM sources WHERE id = ? AND notebook_id = ?').run(id, notebookId);
+    await db
+      .delete(sources)
+      .where(
+        and(
+          eq(sources.id, id),
+          eq(sources.notebookId, notebookId)
+        )
+      );
 
     // Update notebook's updated_at timestamp
-    const now = Math.floor(Date.now() / 1000);
-    db.prepare(`
-      UPDATE notebooks
-      SET updated_at = ?
-      WHERE id = ?
-    `).run(now, notebookId);
-
-    db.close();
+    const now = new Date();
+    await db
+      .update(notebooks)
+      .set({ updatedAt: now })
+      .where(eq(notebooks.id, notebookId));
 
     return NextResponse.json({ message: 'Source deleted successfully' });
   } catch (error) {
@@ -162,5 +188,7 @@ export async function DELETE(
       { message: 'Failed to delete source', error: String(error) },
       { status: 500 }
     );
+  } finally {
+    closeDb();
   }
 }
