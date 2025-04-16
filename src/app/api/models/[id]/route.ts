@@ -41,14 +41,7 @@ export async function PATCH(
 	try {
 		const { id } = await params;
 		const body = await request.json();
-		const { isDownloaded } = body;
-
-		if (isDownloaded === undefined) {
-			return NextResponse.json(
-				{ message: 'isDownloaded field is required' },
-				{ status: 400 },
-			);
-		}
+		const { webLLMId } = body;
 
 		const db = getDb();
 
@@ -65,10 +58,17 @@ export async function PATCH(
 			);
 		}
 
-		await db
-			.update(models)
-			.set({ isDownloaded: isDownloaded })
-			.where(eq(models.id, id));
+		const updateData: Partial<typeof models.$inferInsert> = {};
+
+		// Only update fields that were provided
+		if (webLLMId !== undefined) {
+			updateData.webLLMId = webLLMId;
+		}
+
+		// If we have data to update
+		if (Object.keys(updateData).length > 0) {
+			await db.update(models).set(updateData).where(eq(models.id, id));
+		}
 
 		const [updatedModel] = await db
 			.select()

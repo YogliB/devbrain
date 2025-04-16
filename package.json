@@ -17,6 +17,7 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
+		"@mlc-ai/web-llm": "^0.2.78",
 		"@types/uuid": "^10.0.0",
 		"better-sqlite3": "^11.9.1",
 		"class-variance-authority": "^0.7.1",

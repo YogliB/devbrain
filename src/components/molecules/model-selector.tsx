@@ -1,9 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Check, ChevronDown, Download } from 'lucide-react';
+import {
+	Check,
+	ChevronDown,
+	Download,
+	AlertCircle,
+	Loader2,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Model } from '@/types/model';
+import { Model, ModelDownloadStatus } from '@/types/model';
 
 interface ModelSelectorProps {
 	className?: string;
@@ -40,6 +46,23 @@ export function ModelSelector({
 		setShowModelInfo(null);
 	};
 
+	// Helper to render the status icon based on download status
+	const renderStatusIcon = (model: Model) => {
+		if (model.isDownloaded) {
+			return <Check className="h-4 w-4 text-green-500" />;
+		}
+
+		if (model.downloadStatus === 'downloading') {
+			return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+		}
+
+		if (model.downloadStatus === 'failed') {
+			return <AlertCircle className="h-4 w-4 text-red-500" />;
+		}
+
+		return <Download className="h-4 w-4 text-muted-foreground" />;
+	};
+
 	return (
 		<div className={cn('relative', className)}>
 			<button
@@ -63,11 +86,7 @@ export function ModelSelector({
 							>
 								<span>{model.name}</span>
 								<span className="flex items-center">
-									{model.isDownloaded ? (
-										<Check className="h-4 w-4 text-green-500" />
-									) : (
-										<Download className="h-4 w-4 text-muted-foreground" />
-									)}
+									{renderStatusIcon(model)}
 								</span>
 							</li>
 						))}
@@ -94,6 +113,14 @@ export function ModelSelector({
 								<span className="font-medium">Use case:</span>{' '}
 								{showModelInfo.useCase}
 							</p>
+							{showModelInfo.webLLMId && (
+								<p>
+									<span className="font-medium">
+										WebLLM ID:
+									</span>{' '}
+									{showModelInfo.webLLMId}
+								</p>
+							)}
 						</div>
 						<div className="flex justify-end space-x-2">
 							<button
@@ -107,11 +134,50 @@ export function ModelSelector({
 									handleDownload(showModelInfo, e)
 								}
 								className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center"
+								disabled={
+									showModelInfo.downloadStatus ===
+									'downloading'
+								}
 							>
-								<Download className="h-4 w-4 mr-2" />
-								Download
+								{showModelInfo.downloadStatus ===
+								'downloading' ? (
+									<>
+										<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+										Downloading...
+									</>
+								) : (
+									<>
+										<Download className="h-4 w-4 mr-2" />
+										Download
+									</>
+								)}
 							</button>
 						</div>
+						{showModelInfo.downloadStatus === 'downloading' &&
+							showModelInfo.downloadProgress !== undefined && (
+								<div className="mt-4">
+									<div className="w-full bg-muted rounded-full h-2 mt-1">
+										<div
+											className="bg-primary h-2 rounded-full"
+											style={{
+												width: `${showModelInfo.downloadProgress}%`,
+											}}
+										/>
+									</div>
+									<p className="text-sm text-muted-foreground mt-1 text-right">
+										{Math.round(
+											showModelInfo.downloadProgress,
+										)}
+										% complete
+									</p>
+								</div>
+							)}
+						{showModelInfo.downloadStatus === 'failed' && (
+							<div className="mt-4 text-red-500 flex items-center">
+								<AlertCircle className="h-4 w-4 mr-2" />
+								Download failed. Please try again.
+							</div>
+						)}
 					</div>
 				</div>
 			)}

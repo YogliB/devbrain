@@ -1,14 +1,12 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const models = sqliteTable('models', {
 	id: text('id').primaryKey(),
 	name: text('name').notNull(),
-	isDownloaded: integer('is_downloaded', { mode: 'boolean' })
-		.notNull()
-		.default(false),
 	parameters: text('parameters').notNull(),
 	size: text('size').notNull(),
 	useCase: text('use_case').notNull(),
+	webLLMId: text('web_llm_id'),
 });
 
 export type Model = typeof models.$inferSelect;
