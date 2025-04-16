@@ -17,7 +17,18 @@ export function ChatMessage({ message, className }: ChatMessageProps) {
 
 	// Update the time string only on the client side
 	useEffect(() => {
-		setTimeString(message.timestamp.toLocaleTimeString());
+		if (message.timestamp) {
+			try {
+				// Ensure timestamp is a Date object
+				const date = message.timestamp instanceof Date
+					? message.timestamp
+					: new Date(message.timestamp);
+				setTimeString(date.toLocaleTimeString());
+			} catch (error) {
+				console.error('Error formatting timestamp:', error);
+				setTimeString(''); // Set empty string if there's an error
+			}
+		}
 	}, [message.timestamp]);
 
 	return (
