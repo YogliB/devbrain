@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,19 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
 	const { theme, setTheme } = useTheme();
+	// Add a state to track if the component has mounted
+	const [mounted, setMounted] = useState(false);
+
+	// After mounting, we can show the theme toggle
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// If not mounted yet, render a placeholder with the same dimensions
+	// to avoid layout shift
+	if (!mounted) {
+		return <div className={cn('flex items-center gap-2 h-9', className)} />;
+	}
 
 	return (
 		<div className={cn('flex items-center gap-2', className)}>

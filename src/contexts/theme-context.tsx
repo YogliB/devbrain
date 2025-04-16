@@ -13,11 +13,13 @@ interface ThemeProviderProps {
 interface ThemeProviderState {
 	theme: Theme;
 	setTheme: (theme: Theme) => void;
+	mounted: boolean;
 }
 
 const initialState: ThemeProviderState = {
 	theme: 'system',
 	setTheme: () => null,
+	mounted: false,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -28,15 +30,24 @@ export function ThemeProvider({
 	storageKey = 'devbrain-theme',
 	...props
 }: ThemeProviderProps) {
-	const [theme, setTheme] = useState<Theme>(() => {
-		// Check if we're in a browser environment
-		if (typeof window !== 'undefined') {
-			return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
-		}
-		return defaultTheme;
-	});
+	// Always start with the default theme on the server
+	const [theme, setTheme] = useState<Theme>(defaultTheme);
+	// Track if we're mounted to avoid hydration issues
+	const [mounted, setMounted] = useState(false);
 
+	// Once mounted, update the theme based on localStorage
 	useEffect(() => {
+		setMounted(true);
+		const storedTheme = localStorage.getItem(storageKey) as Theme;
+		if (storedTheme) {
+			setTheme(storedTheme);
+		}
+	}, [storageKey]);
+
+	// Apply theme to document
+	useEffect(() => {
+		if (!mounted) return;
+
 		const root = window.document.documentElement;
 		root.classList.remove('light', 'dark');
 
@@ -51,16 +62,15 @@ export function ThemeProvider({
 		}
 
 		root.classList.add(theme);
-	}, [theme]);
+	}, [theme, mounted]);
 
 	const value = {
 		theme,
 		setTheme: (theme: Theme) => {
-			if (typeof window !== 'undefined') {
-				localStorage.setItem(storageKey, theme);
-			}
+			localStorage.setItem(storageKey, theme);
 			setTheme(theme);
 		},
+		mounted,
 	};
 
 	return (

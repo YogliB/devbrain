@@ -1,4 +1,6 @@
-import React from 'react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
 import { User, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChatMessage as ChatMessageType } from '@/types/chat';
@@ -10,6 +12,13 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, className }: ChatMessageProps) {
 	const isUser = message.role === 'user';
+	// Add state to track client-side rendering
+	const [timeString, setTimeString] = useState<string>('');
+
+	// Update the time string only on the client side
+	useEffect(() => {
+		setTimeString(message.timestamp.toLocaleTimeString());
+	}, [message.timestamp]);
 
 	return (
 		<div
@@ -37,8 +46,8 @@ export function ChatMessage({ message, className }: ChatMessageProps) {
 				<div className="prose prose-neutral dark:prose-invert">
 					{message.content}
 				</div>
-				<div className="text-xs text-muted-foreground">
-					{message.timestamp.toLocaleTimeString()}
+				<div className="text-xs text-muted-foreground" suppressHydrationWarning>
+					{timeString}
 				</div>
 			</div>
 		</div>
