@@ -20,7 +20,6 @@ export function useAppInitialization() {
 	const [models, setModels] = useState<Model[]>([]);
 	const [selectedModel, setSelectedModel] = useState<Model | null>(null);
 
-	// Notebook functions
 	const fetchNotebooks = useCallback(async () => {
 		try {
 			const notebooksData = await notebooksAPI.getAll();
@@ -270,30 +269,24 @@ export function useAppInitialization() {
 		[models],
 	);
 
-	// Initialize app on mount
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				// Only force migrations in development mode
 				const isDev = process.env.NODE_ENV === 'development';
 				await initializeDatabase(isDev);
 
-				// Fetch notebooks
 				const notebooksData = await fetchNotebooks();
 
-				// Set first notebook as active if available
 				if (notebooksData.length > 0) {
 					const notebook = notebooksData[0];
 					setActiveNotebook(notebook);
 
-					// Fetch data for the active notebook
 					await Promise.all([
 						fetchSources(notebook.id),
 						fetchMessages(notebook.id),
 					]);
 				}
 
-				// Fetch models
 				await fetchModels();
 			} catch (error) {
 				console.error('Failed to initialize app:', error);
