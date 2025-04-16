@@ -21,7 +21,15 @@ export async function GET(
 			);
 		}
 
-		return NextResponse.json(model);
+		// Add runtime properties
+		const enhancedModel = {
+			...model,
+			isDownloaded: false, // Default to false, will be updated by client
+			downloadStatus: 'not-downloaded' as const,
+			downloadProgress: 0,
+		};
+
+		return NextResponse.json(enhancedModel);
 	} catch (error) {
 		const { id } = await params;
 		console.error(`Error fetching model ${id}:`, error);
@@ -41,7 +49,7 @@ export async function PATCH(
 	try {
 		const { id } = await params;
 		const body = await request.json();
-		const { webLLMId } = body;
+		const { webLLMId, isDownloaded } = body;
 
 		const db = getDb();
 
@@ -75,7 +83,14 @@ export async function PATCH(
 			.from(models)
 			.where(eq(models.id, id));
 
-		return NextResponse.json(updatedModel);
+		// Add runtime properties for the response
+		const enhancedModel = {
+			...updatedModel,
+			isDownloaded: isDownloaded !== undefined ? isDownloaded : false,
+			downloadStatus: isDownloaded ? 'downloaded' : 'not-downloaded',
+		};
+
+		return NextResponse.json(enhancedModel);
 	} catch (error) {
 		const { id } = await params;
 		console.error(`Error updating model ${id}:`, error);

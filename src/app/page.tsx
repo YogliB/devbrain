@@ -3,16 +3,15 @@
 import { MainLayout } from '@/components/templates/main-layout';
 import { suggestedQuestions } from '@/lib/data/suggestedQuestionsData';
 import { useAppInitialization } from '@/hooks/useAppInitialization';
+import { useModel } from '@/contexts/model-context';
 
 export default function Home() {
 	const {
-		isLoading,
+		isLoading: appLoading,
 		notebooks,
 		activeNotebook,
 		messages,
 		sources,
-		models,
-		selectedModel,
 		selectNotebook,
 		createNotebook,
 		deleteNotebook,
@@ -21,9 +20,19 @@ export default function Home() {
 		addSource,
 		updateSource,
 		deleteSource,
+	} = useAppInitialization();
+
+	// Use the model context for model-related state and functions
+	const {
+		models,
+		selectedModel,
+		isLoading: modelsLoading,
 		selectModel,
 		downloadModel,
-	} = useAppInitialization();
+	} = useModel();
+
+	// Combined loading state
+	const isLoading = appLoading || modelsLoading;
 
 	if (isLoading) {
 		return (

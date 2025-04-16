@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Model } from '@/types/model';
+import { ProgressBar } from '@/components/atoms/progress-bar';
 
 interface ModelSelectorProps {
 	className?: string;
@@ -156,20 +157,14 @@ export function ModelSelector({
 						{showModelInfo.downloadStatus === 'downloading' &&
 							showModelInfo.downloadProgress !== undefined && (
 								<div className="mt-4">
-									<div className="w-full bg-muted rounded-full h-2 mt-1">
-										<div
-											className="bg-primary h-2 rounded-full"
-											style={{
-												width: `${showModelInfo.downloadProgress}%`,
-											}}
-										/>
-									</div>
-									<p className="text-sm text-muted-foreground mt-1 text-right">
-										{Math.round(
-											showModelInfo.downloadProgress,
-										)}
-										% complete
-									</p>
+									<ProgressBar
+										progress={
+											showModelInfo.downloadProgress
+										}
+										showPercentage
+										size="md"
+										status="default"
+									/>
 								</div>
 							)}
 						{showModelInfo.downloadStatus === 'failed' && (

@@ -5,10 +5,11 @@ import { cn } from '@/lib/utils';
 import { TabButton } from '@/components/molecules/tab-button';
 import { ChatInterface } from '@/components/organisms/chat-interface';
 import { SourcesList } from '@/components/organisms/sources-list';
+import { ModelTest } from '@/components/molecules/model-test';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 
-type Tab = 'chat' | 'sources';
+type Tab = 'chat' | 'sources' | 'ai';
 
 interface ContentTabsProps {
 	messages: ChatMessage[];
@@ -51,6 +52,12 @@ export function ContentTabs({
 					>
 						Sources
 					</TabButton>
+					<TabButton
+						isActive={activeTab === 'ai'}
+						onClick={() => setActiveTab('ai')}
+					>
+						AI Test
+					</TabButton>
 				</div>
 			</div>
 
@@ -63,13 +70,15 @@ export function ContentTabs({
 						onSelectQuestion={onSelectQuestion}
 						disabled={sources.length === 0}
 					/>
-				) : (
+				) : activeTab === 'sources' ? (
 					<SourcesList
 						sources={sources}
 						onAddSource={onAddSource}
 						onUpdateSource={onUpdateSource}
 						onDeleteSource={onDeleteSource}
 					/>
+				) : (
+					<ModelTest />
 				)}
 			</div>
 		</div>

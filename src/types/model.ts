@@ -18,4 +18,5 @@ export type ModelDownloadStatus =
 	| 'not-downloaded'
 	| 'downloading'
 	| 'downloaded'
-	| 'failed';
+	| 'failed'
+	| 'cancelled';

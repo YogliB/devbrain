@@ -12,9 +12,17 @@ export async function GET() {
 			.from(models)
 			.orderBy(asc(models.name));
 
+		// Add runtime properties to each model
+		const enhancedModels = modelsData.map((model) => ({
+			...model,
+			isDownloaded: false, // Default to false, will be updated by client
+			downloadStatus: 'not-downloaded' as const,
+			downloadProgress: 0,
+		}));
+
 		closeDb();
 
-		return NextResponse.json(modelsData);
+		return NextResponse.json(enhancedModels);
 	} catch (error) {
 		console.error('Error fetching models:', error);
 		return NextResponse.json(
