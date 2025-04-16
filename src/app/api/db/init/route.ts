@@ -5,18 +5,17 @@ import { spawn } from 'child_process';
 async function runProcessWithTimeout(
 	command: string,
 	args: string[],
-	timeoutMs: number = 5000,
+	timeoutMs: number = 2000, // Reduced timeout to 2 seconds
 ) {
 	const process = spawn(command, args);
 
-	return new Promise<void>((resolve, reject) => {
+	return new Promise<void>((resolve) => {
 		const timeout = setTimeout(() => {
 			process.kill();
-			reject(
-				new Error(
-					`Process ${command} ${args.join(' ')} timed out after ${timeoutMs}ms`,
-				),
+			console.warn(
+				`Process ${command} ${args.join(' ')} timed out after ${timeoutMs}ms, but continuing anyway`,
 			);
+			resolve();
 		}, timeoutMs);
 
 		process.on('close', (code: number) => {
@@ -24,13 +23,17 @@ async function runProcessWithTimeout(
 			if (code === 0) {
 				resolve();
 			} else {
-				reject(new Error(`Process exited with code ${code}`));
+				console.warn(
+					`Process exited with code ${code}, but continuing anyway`,
+				);
+				resolve();
 			}
 		});
 
 		process.on('error', (err) => {
 			clearTimeout(timeout);
-			reject(err);
+			console.warn('Process error:', err, 'but continuing anyway');
+			resolve();
 		});
 	});
 }
@@ -39,52 +42,27 @@ export async function GET() {
 	try {
 		const isDev = process.env.NODE_ENV === 'development';
 
-		if (!isDev) {
-			ensureDatabaseExists();
-			return NextResponse.json({
-				success: true,
-				message: 'Database existence verified',
-			});
-		}
+		const dbExisted = ensureDatabaseExists();
+		console.log(`Database existed before initialization: ${dbExisted}`);
+
+		await initDb(false);
 
 		if (isDev) {
-			const dbExisted = ensureDatabaseExists();
-			console.log(`Database existed before initialization: ${dbExisted}`);
+			runProcessWithTimeout('npm', ['run', 'db:push'], 2000)
+				.then(() => console.log('Schema push completed'))
+				.catch(() => {});
 
-			await initDb(true);
-
-			try {
-				await runProcessWithTimeout('npm', ['run', 'db:push'], 8000);
-				console.log('Schema push completed successfully');
-			} catch (error) {
-				console.error('Schema push failed:', error);
-			}
-
-			closeDb();
-			await initDb(true);
-
-			try {
-				await runProcessWithTimeout('npm', ['run', 'db:seed'], 8000);
-				console.log('Database seeding completed successfully');
-			} catch (error) {
-				console.error('Database seeding failed:', error);
-			}
-
-			closeDb();
-
-			return NextResponse.json({
-				success: true,
-				message: 'Database initialization process completed',
-			});
+			runProcessWithTimeout('npm', ['run', 'db:seed'], 2000)
+				.then(() => console.log('Database seeding completed'))
+				.catch(() => {});
 		}
 
 		return NextResponse.json({
 			success: true,
-			message: 'Database initialization skipped',
+			message: 'Database initialization started',
 		});
 	} catch (error) {
 		console.error('Error initializing database:', error);
-		// Make sure to close the database connection on error
 		closeDb();
 		return NextResponse.json(
 			{

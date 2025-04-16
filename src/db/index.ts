@@ -82,23 +82,26 @@ export function closeDb() {
 
 export async function initDb(forceInit = false) {
 	try {
-		// Close any existing connection first
-		closeDb();
+		if (db && !forceInit) {
+			return db;
+		}
 
-		// Ensure the database file exists
+		if (forceInit) {
+			closeDb();
+		}
+
 		const dbExisted = ensureDatabaseExists();
 
-		// Get a fresh database connection
-		const db = getDb();
+		const dbInstance = getDb();
 
 		if (!dbExisted || forceInit) {
 			console.log('Database initialized');
 		}
 
-		return db;
+		return dbInstance;
 	} catch (error) {
 		console.error('Error in initDb:', error);
-		// Try to get a database connection even if initialization fails
+
 		try {
 			return getDb();
 		} catch (innerError) {

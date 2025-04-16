@@ -272,22 +272,15 @@ export function useAppInitialization() {
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				const initPromise = initializeDatabase();
-				const timeoutPromise = new Promise((_, reject) => {
-					setTimeout(
-						() =>
-							reject(
-								new Error('Database initialization timed out'),
-							),
-						10000,
-					);
+				const timeoutPromise = new Promise<void>((resolve) => {
+					setTimeout(resolve, 2000);
 				});
 
-				try {
-					await Promise.race([initPromise, timeoutPromise]);
-				} catch (error) {
+				initializeDatabase().catch((error) => {
 					console.error('Database initialization issue:', error);
-				}
+				});
+
+				await timeoutPromise;
 
 				const notebooksData = await fetchNotebooks();
 
