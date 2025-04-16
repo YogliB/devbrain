@@ -31,11 +31,11 @@ Alternatively, you can use the VS Code tasks:
 1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
 2. Type "Tasks: Run Task"
 3. Select one of the available tasks:
-   - `Next.js: dev` - Start the development server
-   - `Next.js: build` - Build the application for production
-   - `Next.js: start` - Start the production server
-   - `Next.js: lint` - Run ESLint
-   - `Next.js: format` - Format code with Prettier
+    - `Next.js: dev` - Start the development server
+    - `Next.js: build` - Build the application for production
+    - `Next.js: start` - Start the production server
+    - `Next.js: lint` - Run ESLint
+    - `Next.js: format` - Format code with Prettier
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

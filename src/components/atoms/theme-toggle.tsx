@@ -11,16 +11,13 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
 	const { theme, setTheme } = useTheme();
-	
+
 	const [mounted, setMounted] = useState(false);
 
-	
 	useEffect(() => {
 		setMounted(true);
 	}, []);
 
-	
-	
 	if (!mounted) {
 		return <div className={cn('flex items-center gap-2 h-9', className)} />;
 	}

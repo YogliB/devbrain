@@ -13,7 +13,6 @@ export async function GET() {
 			.from(notebooks)
 			.orderBy(notebooks.updatedAt);
 
-		
 		const formattedNotebooks = notebooksData.map((notebook) => ({
 			...notebook,
 			createdAt: new Date(notebook.createdAt),
@@ -49,7 +48,6 @@ export async function POST(request: NextRequest) {
 		const now = new Date();
 		const id = uuidv4();
 
-		
 		await db.insert(notebooks).values({
 			id,
 			title,
@@ -57,13 +55,11 @@ export async function POST(request: NextRequest) {
 			updatedAt: now,
 		});
 
-		
 		const [newNotebook] = await db
 			.select()
 			.from(notebooks)
 			.where(eq(notebooks.id, id));
 
-		
 		const formattedNotebook = {
 			...newNotebook,
 			createdAt: new Date(newNotebook.createdAt),

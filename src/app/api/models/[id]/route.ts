@@ -11,11 +11,7 @@ export async function GET(
 		const { id } = await params;
 		const db = getDb();
 
-		
-		const [model] = await db
-			.select()
-			.from(models)
-			.where(eq(models.id, id));
+		const [model] = await db.select().from(models).where(eq(models.id, id));
 
 		if (!model) {
 			closeDb();
@@ -24,8 +20,6 @@ export async function GET(
 				{ status: 404 },
 			);
 		}
-
-		
 
 		return NextResponse.json(model);
 	} catch (error) {
@@ -58,7 +52,6 @@ export async function PATCH(
 
 		const db = getDb();
 
-		
 		const [existingModel] = await db
 			.select()
 			.from(models)
@@ -72,13 +65,11 @@ export async function PATCH(
 			);
 		}
 
-		
 		await db
 			.update(models)
 			.set({ isDownloaded: isDownloaded })
 			.where(eq(models.id, id));
 
-		
 		const [updatedModel] = await db
 			.select()
 			.from(models)

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { File, Trash2, Save, Edit } from 'lucide-react';
@@ -42,7 +42,9 @@ export function SourceItem({
 				<div className="flex items-center gap-2">
 					<File className="h-4 w-4 text-muted-foreground" />
 					<span className="font-medium">
-						{source.filename || source.tag || `Source ${source.id.slice(0, 8)}`}
+						{source.filename ||
+							source.tag ||
+							`Source ${source.id.slice(0, 8)}`}
 					</span>
 				</div>
 				<div className="flex items-center gap-1">
@@ -89,7 +91,9 @@ export function SourceItem({
 						className="w-full min-h-[100px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					/>
 				) : (
-					<div className="whitespace-pre-wrap text-sm">{source.content}</div>
+					<div className="whitespace-pre-wrap text-sm">
+						{source.content}
+					</div>
 				)}
 			</div>
 		</div>

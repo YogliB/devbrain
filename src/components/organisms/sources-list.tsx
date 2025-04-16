@@ -22,7 +22,7 @@ export function SourcesList({
 	return (
 		<div className={cn('space-y-4', className)}>
 			<AddSourceForm onAddSource={onAddSource} />
-			
+
 			{sources.length === 0 ? (
 				<div className="text-center py-8 text-muted-foreground">
 					No sources added yet. Add a source to start inquiring.

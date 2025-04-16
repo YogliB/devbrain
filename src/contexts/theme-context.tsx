@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -30,12 +30,10 @@ export function ThemeProvider({
 	storageKey = 'devbrain-theme',
 	...props
 }: ThemeProviderProps) {
-	
 	const [theme, setTheme] = useState<Theme>(defaultTheme);
-	
+
 	const [mounted, setMounted] = useState(false);
 
-	
 	useEffect(() => {
 		setMounted(true);
 		const storedTheme = localStorage.getItem(storageKey) as Theme;
@@ -44,7 +42,6 @@ export function ThemeProvider({
 		}
 	}, [storageKey]);
 
-	
 	useEffect(() => {
 		if (!mounted) return;
 

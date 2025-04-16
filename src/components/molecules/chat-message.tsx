@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { User, Bot } from 'lucide-react';
@@ -12,21 +12,20 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, className }: ChatMessageProps) {
 	const isUser = message.role === 'user';
-	
+
 	const [timeString, setTimeString] = useState<string>('');
 
-	
 	useEffect(() => {
 		if (message.timestamp) {
 			try {
-				
-				const date = message.timestamp instanceof Date
-					? message.timestamp
-					: new Date(message.timestamp);
+				const date =
+					message.timestamp instanceof Date
+						? message.timestamp
+						: new Date(message.timestamp);
 				setTimeString(date.toLocaleTimeString());
 			} catch (error) {
 				console.error('Error formatting timestamp:', error);
-				setTimeString(''); 
+				setTimeString('');
 			}
 		}
 	}, [message.timestamp]);
@@ -57,7 +56,10 @@ export function ChatMessage({ message, className }: ChatMessageProps) {
 				<div className="prose prose-neutral dark:prose-invert">
 					{message.content}
 				</div>
-				<div className="text-xs text-muted-foreground" suppressHydrationWarning>
+				<div
+					className="text-xs text-muted-foreground"
+					suppressHydrationWarning
+				>
 					{timeString}
 				</div>
 			</div>

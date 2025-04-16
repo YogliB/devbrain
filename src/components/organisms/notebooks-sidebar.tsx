@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -39,11 +39,16 @@ export function NotebooksSidebar({
 			)}
 		>
 			<div className="flex items-center justify-between p-4 border-b border-sidebar-border">
-				<Logo iconOnly={isCollapsed} className="text-sidebar-foreground" />
+				<Logo
+					iconOnly={isCollapsed}
+					className="text-sidebar-foreground"
+				/>
 				<button
 					onClick={toggleCollapse}
 					className="p-1 rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
-					aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+					aria-label={
+						isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
+					}
 				>
 					{isCollapsed ? (
 						<ChevronRight className="h-5 w-5" />

@@ -28,7 +28,10 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				<ThemeProvider defaultTheme="system" storageKey="devbrain-theme">
+				<ThemeProvider
+					defaultTheme="system"
+					storageKey="devbrain-theme"
+				>
 					{children}
 				</ThemeProvider>
 			</body>

@@ -1,19 +1,16 @@
 const Database = require('better-sqlite3');
 const { join } = require('path');
 
-
 const dbPath = join(process.cwd(), 'devbrain.db');
 const db = new Database(dbPath);
 
 console.log('Seeding database...');
-
 
 const modelsCount = db.prepare('SELECT COUNT(*) as count FROM models').get();
 
 if (modelsCount.count === 0) {
 	console.log('Seeding models...');
 
-	
 	const stmt = db.prepare(`
     INSERT INTO models (id, name, is_downloaded, parameters, size, use_case)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -68,7 +65,6 @@ if (modelsCount.count === 0) {
 	console.log('Models seeded successfully');
 }
 
-
 const notebooksCount = db
 	.prepare('SELECT COUNT(*) as count FROM notebooks')
 	.get();
@@ -79,7 +75,6 @@ if (notebooksCount.count === 0) {
 	const notebookId = '1';
 	const now = Math.floor(Date.now() / 1000);
 
-	
 	db.prepare(
 		`
     INSERT INTO notebooks (id, title, created_at, updated_at)
@@ -87,7 +82,6 @@ if (notebooksCount.count === 0) {
   `,
 	).run(notebookId, 'Sample Notebook', now, now);
 
-	
 	const sourceStmt = db.prepare(`
     INSERT INTO sources (id, content, filename, notebook_id, created_at)
     VALUES (?, ?, ?, ?, ?)
@@ -109,7 +103,6 @@ if (notebooksCount.count === 0) {
 		now,
 	);
 
-	
 	const messageStmt = db.prepare(`
     INSERT INTO messages (id, content, role, notebook_id, timestamp)
     VALUES (?, ?, ?, ?, ?)
@@ -135,6 +128,5 @@ if (notebooksCount.count === 0) {
 }
 
 console.log('Database seeding completed');
-
 
 db.close();

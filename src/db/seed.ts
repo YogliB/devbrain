@@ -4,10 +4,8 @@ import { notebooks, sources, messages, models } from './schema';
 async function seed() {
 	console.log('Seeding database...');
 
-	
 	const db = await initDb();
 
-	
 	const existingModels = await db.select().from(models);
 
 	if (existingModels.length === 0) {
@@ -49,13 +47,11 @@ async function seed() {
 		console.log('Seeded models');
 	}
 
-	
 	const existingNotebooks = await db.select().from(notebooks);
 
 	if (existingNotebooks.length === 0) {
 		const notebookId = '1';
 
-		
 		await db.insert(notebooks).values({
 			id: notebookId,
 			title: 'Sample Notebook',
@@ -63,7 +59,6 @@ async function seed() {
 			updatedAt: new Date(),
 		});
 
-		
 		await db.insert(sources).values([
 			{
 				id: '1',
@@ -83,7 +78,6 @@ async function seed() {
 			},
 		]);
 
-		
 		await db.insert(messages).values([
 			{
 				id: '1',

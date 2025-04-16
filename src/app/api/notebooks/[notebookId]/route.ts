@@ -23,7 +23,6 @@ export async function GET(
 			);
 		}
 
-		
 		const formattedNotebook = {
 			...notebook,
 			createdAt: new Date(notebook.createdAt),
@@ -61,7 +60,6 @@ export async function PUT(
 
 		const db = getDb();
 
-		
 		const [existingNotebook] = await db
 			.select()
 			.from(notebooks)
@@ -76,7 +74,6 @@ export async function PUT(
 
 		const now = new Date();
 
-		
 		await db
 			.update(notebooks)
 			.set({
@@ -85,13 +82,11 @@ export async function PUT(
 			})
 			.where(eq(notebooks.id, notebookId));
 
-		
 		const [updatedNotebook] = await db
 			.select()
 			.from(notebooks)
 			.where(eq(notebooks.id, notebookId));
 
-		
 		const formattedNotebook = {
 			...updatedNotebook,
 			createdAt: new Date(updatedNotebook.createdAt),
@@ -119,7 +114,6 @@ export async function DELETE(
 		const { notebookId } = await params;
 		const db = getDb();
 
-		
 		const [existingNotebook] = await db
 			.select()
 			.from(notebooks)
@@ -132,7 +126,6 @@ export async function DELETE(
 			);
 		}
 
-		
 		await db.delete(notebooks).where(eq(notebooks.id, notebookId));
 
 		return NextResponse.json({ message: 'Notebook deleted successfully' });

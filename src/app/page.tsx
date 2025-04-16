@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/templates/main-layout';
@@ -6,8 +6,13 @@ import { Notebook } from '@/types/notebook';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 import { Model } from '@/types/model';
-import { initializeDatabase, notebooksAPI, sourcesAPI, messagesAPI, modelsAPI } from '@/lib/api';
-
+import {
+	initializeDatabase,
+	notebooksAPI,
+	sourcesAPI,
+	messagesAPI,
+	modelsAPI,
+} from '@/lib/api';
 
 const suggestedQuestions: SuggestedQuestion[] = [
 	{
@@ -16,7 +21,7 @@ const suggestedQuestions: SuggestedQuestion[] = [
 	},
 	{
 		id: '2',
-		text: 'What\'s the time complexity of BST operations?',
+		text: "What's the time complexity of BST operations?",
 	},
 	{
 		id: '3',
@@ -33,23 +38,18 @@ export default function Home() {
 	const [models, setModels] = useState<Model[]>([]);
 	const [selectedModel, setSelectedModel] = useState<Model | null>(null);
 
-	
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				
 				await initializeDatabase();
 
-				
 				const notebooksData = await notebooksAPI.getAll();
 				setNotebooks(notebooksData);
 
-				
 				if (notebooksData.length > 0) {
 					const notebook = notebooksData[0];
 					setActiveNotebook(notebook);
 
-					
 					const [sourcesData, messagesData] = await Promise.all([
 						sourcesAPI.getAll(notebook.id),
 						messagesAPI.getAll(notebook.id),
@@ -59,11 +59,9 @@ export default function Home() {
 					setMessages(messagesData);
 				}
 
-				
 				const modelsData = await modelsAPI.getAll();
 				setModels(modelsData);
 
-				
 				const downloadedModel = modelsData.find((m) => m.isDownloaded);
 				if (downloadedModel) {
 					setSelectedModel(downloadedModel);
@@ -78,11 +76,9 @@ export default function Home() {
 		initializeApp();
 	}, []);
 
-	
 	useEffect(() => {
 		if (!activeNotebook) return;
 
-		
 		const notebookId = activeNotebook!.id;
 
 		async function loadNotebookData() {
@@ -102,7 +98,6 @@ export default function Home() {
 		loadNotebookData();
 	}, [activeNotebook]);
 
-	
 	const handleSelectNotebook = async (notebook: Notebook) => {
 		setActiveNotebook(notebook);
 	};
@@ -110,7 +105,7 @@ export default function Home() {
 	const handleCreateNotebook = async () => {
 		try {
 			const newNotebook = await notebooksAPI.create(
-				`New Notebook ${notebooks.length + 1}`
+				`New Notebook ${notebooks.length + 1}`,
 			);
 			setNotebooks([...notebooks, newNotebook]);
 			setActiveNotebook(newNotebook);
@@ -122,7 +117,9 @@ export default function Home() {
 	const handleDeleteNotebook = async (notebook: Notebook) => {
 		try {
 			await notebooksAPI.delete(notebook.id);
-			const updatedNotebooks = notebooks.filter((n) => n.id !== notebook.id);
+			const updatedNotebooks = notebooks.filter(
+				(n) => n.id !== notebook.id,
+			);
 			setNotebooks(updatedNotebooks);
 
 			if (activeNotebook?.id === notebook.id) {
@@ -133,26 +130,23 @@ export default function Home() {
 		}
 	};
 
-	
 	const handleSendMessage = async (content: string) => {
 		if (!activeNotebook) return;
 
 		try {
-			
 			const userMessage = await messagesAPI.create(
 				activeNotebook.id,
 				content,
-				'user'
+				'user',
 			);
 			setMessages((prev) => [...prev, userMessage]);
 
-			
 			setTimeout(async () => {
 				try {
 					const assistantMessage = await messagesAPI.create(
 						activeNotebook.id,
 						`I received your message: "${content}". This is a mock response.`,
-						'assistant'
+						'assistant',
 					);
 					setMessages((prev) => [...prev, assistantMessage]);
 				} catch (error) {
@@ -168,7 +162,6 @@ export default function Home() {
 		handleSendMessage(question.text);
 	};
 
-	
 	const handleAddSource = async (content: string, filename?: string) => {
 		if (!activeNotebook) return;
 
@@ -176,7 +169,7 @@ export default function Home() {
 			const newSource = await sourcesAPI.create(
 				activeNotebook.id,
 				content,
-				filename
+				filename,
 			);
 			setSources((prev) => [...prev, newSource]);
 		} catch (error) {
@@ -192,11 +185,13 @@ export default function Home() {
 				activeNotebook.id,
 				source.id,
 				content,
-				source.filename
+				source.filename,
 			);
 
 			setSources((prev) =>
-				prev.map((s) => (s.id === updatedSource.id ? updatedSource : s))
+				prev.map((s) =>
+					s.id === updatedSource.id ? updatedSource : s,
+				),
 			);
 		} catch (error) {
 			console.error('Failed to update source:', error);
@@ -214,40 +209,36 @@ export default function Home() {
 		}
 	};
 
-	
 	const handleSelectModel = (model: Model) => {
 		setSelectedModel(model);
 	};
 
 	const handleDownloadModel = async (model: Model) => {
 		try {
-			
 			const updatingModels = models.map((m) =>
-				m.id === model.id ? { ...m, isDownloading: true } : m
+				m.id === model.id ? { ...m, isDownloading: true } : m,
 			);
 			setModels(updatingModels);
 
-			
 			await new Promise((resolve) => setTimeout(resolve, 2000));
 
-			
-			const updatedModel = await modelsAPI.updateDownloadStatus(model.id, true);
-
-			
-			setModels((prev) =>
-				prev.map((m) => (m.id === updatedModel.id ? updatedModel : m))
+			const updatedModel = await modelsAPI.updateDownloadStatus(
+				model.id,
+				true,
 			);
 
-			
+			setModels((prev) =>
+				prev.map((m) => (m.id === updatedModel.id ? updatedModel : m)),
+			);
+
 			setSelectedModel(updatedModel);
 		} catch (error) {
 			console.error('Failed to download model:', error);
 
-			
 			setModels((prev) =>
 				prev.map((m) =>
-					m.id === model.id ? { ...m, isDownloading: false } : m
-				)
+					m.id === model.id ? { ...m, isDownloading: false } : m,
+				),
 			);
 		}
 	};
@@ -256,8 +247,12 @@ export default function Home() {
 		return (
 			<div className="flex h-screen items-center justify-center">
 				<div className="text-center">
-					<h2 className="text-2xl font-semibold mb-2">Loading DevBrain</h2>
-					<p className="text-muted-foreground">Initializing database...</p>
+					<h2 className="text-2xl font-semibold mb-2">
+						Loading DevBrain
+					</h2>
+					<p className="text-muted-foreground">
+						Initializing database...
+					</p>
 				</div>
 			</div>
 		);

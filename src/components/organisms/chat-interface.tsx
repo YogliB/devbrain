@@ -1,6 +1,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { ChatMessage as ChatMessageType, SuggestedQuestion } from '@/types/chat';
+import {
+	ChatMessage as ChatMessageType,
+	SuggestedQuestion,
+} from '@/types/chat';
 import { ChatMessage } from '@/components/molecules/chat-message';
 import { ChatInput } from '@/components/molecules/chat-input';
 import { SuggestedQuestions } from '@/components/molecules/suggested-questions';
@@ -45,10 +48,7 @@ export function ChatInterface({
 					questions={suggestedQuestions}
 					onSelectQuestion={onSelectQuestion}
 				/>
-				<ChatInput
-					onSendMessage={onSendMessage}
-					disabled={disabled}
-				/>
+				<ChatInput onSendMessage={onSendMessage} disabled={disabled} />
 			</div>
 		</div>
 	);

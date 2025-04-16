@@ -7,13 +7,10 @@ export async function GET() {
 	try {
 		const db = getDb();
 
-		
 		const modelsData = await db
 			.select()
 			.from(models)
 			.orderBy(asc(models.name));
-
-		
 
 		closeDb();
 

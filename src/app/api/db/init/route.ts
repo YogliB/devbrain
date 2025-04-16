@@ -2,11 +2,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
 	try {
-		
 		const { spawn } = require('child_process');
 		const process = spawn('npm', ['run', 'db:init']);
 
-		
 		await new Promise<void>((resolve, reject) => {
 			process.on('close', (code: number) => {
 				if (code === 0) {

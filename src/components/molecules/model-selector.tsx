@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Check, ChevronDown, Download } from 'lucide-react';
@@ -103,7 +103,9 @@ export function ModelSelector({
 								Cancel
 							</button>
 							<button
-								onClick={(e) => handleDownload(showModelInfo, e)}
+								onClick={(e) =>
+									handleDownload(showModelInfo, e)
+								}
 								className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center"
 							>
 								<Download className="h-4 w-4 mr-2" />
