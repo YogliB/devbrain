@@ -2,13 +2,15 @@
 
 import { useState, useCallback } from 'react';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
-import { messagesAPI } from '@/lib/api';
+import { Source } from '@/types/source';
+import { messagesAPI, sourcesAPI } from '@/lib/api';
 import { webLLMService } from '@/lib/webllm';
 import { useModel } from '@/contexts/model-context';
 
 export function useChatWithAI(notebookId: string | null) {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isGenerating, setIsGenerating] = useState(false);
+	const [sources, setSources] = useState<Source[]>([]);
 	const { selectedModel, isModelDownloaded } = useModel();
 
 	const fetchMessages = async (notebookId: string) => {
@@ -20,6 +22,19 @@ export function useChatWithAI(notebookId: string | null) {
 			return messagesData;
 		} catch (error) {
 			console.error('Failed to fetch messages:', error);
+			return [];
+		}
+	};
+
+	const fetchSources = async (notebookId: string) => {
+		if (!notebookId) return [];
+
+		try {
+			const sourcesData = await sourcesAPI.getAll(notebookId);
+			setSources(sourcesData);
+			return sourcesData;
+		} catch (error) {
+			console.error('Failed to fetch sources:', error);
 			return [];
 		}
 	};
@@ -39,11 +54,17 @@ export function useChatWithAI(notebookId: string | null) {
 				);
 				setMessages((prev) => [...prev, userMessage]);
 
+				// Make sure we have the latest sources
+				const currentSources = await fetchSources(notebookId);
+
 				// Generate AI response
 				setIsGenerating(true);
 				try {
-					// Get response from the model
-					const aiResponse = await webLLMService.sendMessage(content);
+					// Get response from the model using sources as context
+					const aiResponse = await webLLMService.sendMessage(
+						content,
+						currentSources,
+					);
 
 					// Save the AI response to the database
 					const assistantMessage = await messagesAPI.create(
@@ -73,7 +94,7 @@ export function useChatWithAI(notebookId: string | null) {
 				return null;
 			}
 		},
-		[notebookId, selectedModel, isModelDownloaded],
+		[notebookId, selectedModel, isModelDownloaded, fetchSources],
 	);
 
 	const selectQuestion = useCallback(
@@ -89,8 +110,10 @@ export function useChatWithAI(notebookId: string | null) {
 	return {
 		messages,
 		isGenerating,
+		sources,
 		setMessages,
 		fetchMessages,
+		fetchSources,
 		sendMessage,
 		selectQuestion,
 		canSendMessages,

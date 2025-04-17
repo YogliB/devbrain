@@ -104,8 +104,11 @@ export function useAppInitialization() {
 				// Generate AI response
 				setIsGenerating(true);
 				try {
-					// Get response from the model
-					const aiResponse = await webLLMService.sendMessage(content);
+					// Get response from the model using sources as context
+					const aiResponse = await webLLMService.sendMessage(
+						content,
+						sources,
+					);
 
 					// Save the AI response to the database
 					const assistantMessage = await messagesAPI.create(

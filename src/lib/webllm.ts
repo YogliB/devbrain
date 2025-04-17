@@ -254,18 +254,71 @@ export class WebLLMService {
 	}
 
 	/**
+	 * Format sources into a context string for the LLM
+	 * @param sources The sources to include in the context
+	 * @returns A formatted string containing the sources
+	 */
+	private formatSourcesContext(
+		sources: Array<{ content: string; filename?: string }>,
+	): string {
+		if (!sources || sources.length === 0) {
+			return '';
+		}
+
+		let context =
+			'Here are the sources to use for answering the question:\n\n';
+
+		sources.forEach((source, index) => {
+			const sourceTitle = source.filename
+				? `Source ${index + 1}: ${source.filename}`
+				: `Source ${index + 1}`;
+			context += `${sourceTitle}\n${source.content}\n\n`;
+		});
+
+		return context;
+	}
+
+	/**
 	 * Send a message to the active model
 	 * @param message The message to send
+	 * @param sources Optional sources to provide as context
 	 * @returns The model's response
 	 */
-	public async sendMessage(message: string): Promise<string> {
+	public async sendMessage(
+		message: string,
+		sources?: Array<{ content: string; filename?: string }>,
+	): Promise<string> {
 		if (!this.activeEngine) {
 			throw new Error('No active model selected');
 		}
 
 		try {
+			const messages = [];
+
+			// Add system message with instructions if sources are provided
+			if (sources && sources.length > 0) {
+				const sourcesContext = this.formatSourcesContext(sources);
+				messages.push({
+					role: 'system',
+					content:
+						'You are a helpful assistant that answers questions based on the provided sources. ' +
+						'Use only the information from the sources to answer the question. ' +
+						'If the sources do not contain the information needed to answer the question, ' +
+						'say that you cannot answer based on the available information.\n\n' +
+						sourcesContext,
+				});
+			} else {
+				messages.push({
+					role: 'system',
+					content: 'You are a helpful assistant.',
+				});
+			}
+
+			// Add the user message
+			messages.push({ role: 'user', content: message });
+
 			const response = await this.activeEngine.chat.completions.create({
-				messages: [{ role: 'user', content: message }],
+				messages,
 				temperature: 0.7,
 				max_tokens: 800,
 			});
