@@ -52,5 +52,5 @@ drizzle-output/
 
 *storybook.log
 
-# Million Lint
-.million
+# WebLLM service worker
+public/webllm-sw.js

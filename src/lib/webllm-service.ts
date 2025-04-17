@@ -57,8 +57,10 @@ export function getWebLLMState(): WebLLMState {
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
 	if ('serviceWorker' in navigator) {
 		try {
-			const registration =
-				await navigator.serviceWorker.register('/webllm-sw.js');
+			const registration = await navigator.serviceWorker.register(
+				'/webllm-sw.js',
+				{ type: 'module' },
+			);
 
 			return registration;
 		} catch (error) {
