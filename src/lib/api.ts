@@ -106,6 +106,11 @@ export const messagesAPI = {
 			method: 'POST',
 			body: JSON.stringify({ content, role }),
 		}),
+
+	clear: (notebookId: string): Promise<{ message: string }> =>
+		fetchAPI(`/notebooks/${notebookId}/messages/clear`, {
+			method: 'DELETE',
+		}),
 };
 
 export const modelsAPI = {

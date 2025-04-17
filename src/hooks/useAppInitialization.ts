@@ -147,6 +147,19 @@ export function useAppInitialization() {
 		[sendMessage],
 	);
 
+	const clearMessages = useCallback(async () => {
+		if (!activeNotebook) return false;
+
+		try {
+			await messagesAPI.clear(activeNotebook.id);
+			setMessages([]);
+			return true;
+		} catch (error) {
+			console.error('Failed to clear messages:', error);
+			return false;
+		}
+	}, [activeNotebook]);
+
 	// Source functions
 	const fetchSources = useCallback(async (notebookId: string) => {
 		if (!notebookId) return [];
@@ -294,6 +307,7 @@ export function useAppInitialization() {
 
 		sendMessage,
 		selectQuestion,
+		clearMessages,
 
 		addSource,
 		updateSource,

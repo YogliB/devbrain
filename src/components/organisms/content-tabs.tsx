@@ -18,6 +18,7 @@ interface ContentTabsProps {
 	sources: Source[];
 	onSendMessage: (message: string) => void;
 	onSelectQuestion: (question: SuggestedQuestion) => void;
+	onClearMessages?: () => void;
 	onAddSource: (content: string, filename?: string) => void;
 	onUpdateSource: (source: Source, content: string) => void;
 	onDeleteSource: (source: Source) => void;
@@ -30,6 +31,7 @@ export function ContentTabs({
 	sources,
 	onSendMessage,
 	onSelectQuestion,
+	onClearMessages,
 	onAddSource,
 	onUpdateSource,
 	onDeleteSource,
@@ -87,6 +89,7 @@ export function ContentTabs({
 							// Set generating to false after a delay to simulate response time
 							setTimeout(() => setIsGenerating(false), 1500);
 						}}
+						onClearMessages={onClearMessages}
 						disabled={sources.length === 0}
 						modelAvailable={modelAvailable}
 						isGenerating={isGenerating}

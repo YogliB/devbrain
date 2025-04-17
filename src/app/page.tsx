@@ -18,6 +18,7 @@ export default function Home() {
 		deleteNotebook,
 		sendMessage,
 		selectQuestion,
+		clearMessages,
 		addSource,
 		updateSource,
 		deleteSource,
@@ -70,6 +71,7 @@ export default function Home() {
 			onDeleteNotebook={deleteNotebook}
 			onSendMessage={sendMessage}
 			onSelectQuestion={selectQuestion}
+			onClearMessages={clearMessages}
 			onAddSource={addSource}
 			onUpdateSource={updateSource}
 			onDeleteSource={deleteSource}

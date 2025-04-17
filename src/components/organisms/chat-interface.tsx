@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Download } from 'lucide-react';
+import { Download, Eraser } from 'lucide-react';
 import {
 	ChatMessage as ChatMessageType,
 	SuggestedQuestion,
@@ -14,6 +14,7 @@ interface ChatInterfaceProps {
 	suggestedQuestions: SuggestedQuestion[];
 	onSendMessage: (message: string) => void;
 	onSelectQuestion: (question: SuggestedQuestion) => void;
+	onClearMessages?: () => void;
 	disabled?: boolean;
 	modelAvailable?: boolean;
 	isGenerating?: boolean;
@@ -25,6 +26,7 @@ export function ChatInterface({
 	suggestedQuestions,
 	onSendMessage,
 	onSelectQuestion,
+	onClearMessages,
 	disabled = false,
 	modelAvailable = true,
 	isGenerating = false,
@@ -32,7 +34,19 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
 	return (
 		<div className={cn('flex flex-col h-full', className)}>
-			<div className="flex-grow overflow-y-auto">
+			<div className="flex-grow overflow-y-auto relative">
+				{messages.length > 0 && onClearMessages && (
+					<div className="absolute top-2 right-2 z-10">
+						<button
+							onClick={onClearMessages}
+							className="p-1.5 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+							title="Clear chat"
+							aria-label="Clear chat"
+						>
+							<Eraser className="h-4 w-4" />
+						</button>
+					</div>
+				)}
 				{messages.length === 0 ? (
 					<div className="h-full flex items-center justify-center text-muted-foreground">
 						{!modelAvailable ? (

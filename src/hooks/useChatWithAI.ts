@@ -107,6 +107,19 @@ export function useChatWithAI(notebookId: string | null) {
 		[selectedModel, isModelDownloaded],
 	);
 
+	const clearMessages = useCallback(async () => {
+		if (!notebookId) return false;
+
+		try {
+			await messagesAPI.clear(notebookId);
+			setMessages([]);
+			return true;
+		} catch (error) {
+			console.error('Failed to clear messages:', error);
+			return false;
+		}
+	}, [notebookId]);
+
 	return {
 		messages,
 		isGenerating,
@@ -117,5 +130,6 @@ export function useChatWithAI(notebookId: string | null) {
 		sendMessage,
 		selectQuestion,
 		canSendMessages,
+		clearMessages,
 	};
 }
