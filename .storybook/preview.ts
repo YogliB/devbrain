@@ -16,7 +16,8 @@ const preview: Preview = {
 			disable: true, // Disable background controls as we're using the theme
 		},
 		layout: 'centered',
-		actions: { argTypesRegex: '^on[A-Z].*' },
+		// Note: Instead of using argTypesRegex, use explicit actions with fn from @storybook/test
+		// Example: actions: { onClick: fn() }
 	},
 };
 
