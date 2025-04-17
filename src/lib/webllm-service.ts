@@ -54,22 +54,65 @@ export function getWebLLMState(): WebLLMState {
 	return currentState;
 }
 
-export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-	if ('serviceWorker' in navigator) {
+export async function registerServiceWorker(): Promise<void> {
+	if (window !== undefined || 'serviceWorker' in navigator) {
 		try {
+			if (navigator.serviceWorker.controller) {
+				return;
+			}
+
 			const registration = await navigator.serviceWorker.register(
 				'/webllm-sw.js',
 				{ type: 'module' },
 			);
 
-			return registration;
+			await new Promise<void>((resolve) => {
+				const checkController = () =>
+					!!navigator.serviceWorker.controller;
+
+				if (registration.active) {
+					if (checkController()) {
+						resolve();
+						return;
+					}
+
+					navigator.serviceWorker.ready.then(async (registration) => {
+						await registration.unregister();
+						const newRegistration =
+							await navigator.serviceWorker.register(
+								'/webllm-sw.js',
+								{ type: 'module' },
+							);
+						newRegistration.active?.postMessage('claim');
+					});
+
+					const interval = setInterval(() => {
+						if (checkController()) {
+							clearInterval(interval);
+							resolve();
+						}
+					}, 100);
+				} else {
+					registration.addEventListener('activate', () => {
+						registration.active?.postMessage('claim');
+
+						const interval = setInterval(() => {
+							if (checkController()) {
+								clearInterval(interval);
+								resolve();
+							}
+						}, 100);
+					});
+				}
+			});
 		} catch (error) {
-			console.error(`Service worker registration failed:`, error);
-			return null;
+			console.error(
+				'[Client] Service worker registration failed:',
+				error,
+			);
+			throw error;
 		}
 	}
-
-	return null;
 }
 
 export async function loadModel(): Promise<void> {
