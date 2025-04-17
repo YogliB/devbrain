@@ -46,7 +46,51 @@ export function useModelDownload() {
 
 				// Throttle state updates to prevent too many renders
 				let lastUpdateTime = 0;
-				const throttleInterval = 500; // ms
+				const throttleInterval = 100; // ms - reduced to make updates more frequent
+
+				// Set up a timer to simulate gradual progress updates
+				let lastReportedProgress = 0;
+				let progressTimer: NodeJS.Timeout | null = null;
+				let isDownloadActive = true;
+
+				// Function to simulate gradual progress
+				const simulateProgressUpdates = () => {
+					if (!isDownloadActive) return;
+
+					// Only simulate progress if we haven't received a real update in a while
+					const now = Date.now();
+					if (
+						now - lastUpdateTime > 1000 &&
+						lastReportedProgress > 0 &&
+						lastReportedProgress < 99
+					) {
+						// Increment progress slightly (0.5-2% at a time)
+						const increment = Math.random() * 1.5 + 0.5;
+						const newProgress = Math.min(
+							lastReportedProgress + increment,
+							99,
+						);
+
+						// Update state with simulated progress
+						setDownloadProgress((prev) => ({
+							...prev,
+							[model.id]: newProgress,
+						}));
+
+						// Update local tracking variable
+						latestProgress = newProgress;
+						lastReportedProgress = newProgress;
+						console.log(
+							`Simulated progress update: ${newProgress.toFixed(1)}%`,
+						);
+					}
+
+					// Schedule next update
+					progressTimer = setTimeout(simulateProgressUpdates, 800);
+				};
+
+				// Start the progress simulation timer
+				progressTimer = setTimeout(simulateProgressUpdates, 1000);
 
 				// Download the model with progress tracking
 				const updatedModel = await webLLMService.downloadModel(
@@ -55,6 +99,16 @@ export function useModelDownload() {
 						// Update local variables
 						latestProgress = progress;
 						latestStatus = status;
+						lastReportedProgress = progress;
+
+						// If status is not 'downloading', clear the timer
+						if (status !== 'downloading') {
+							isDownloadActive = false;
+							if (progressTimer) {
+								clearTimeout(progressTimer);
+								progressTimer = null;
+							}
+						}
 
 						// Throttle state updates
 						const now = Date.now();
@@ -73,6 +127,13 @@ export function useModelDownload() {
 						}
 					},
 				);
+
+				// Clean up the timer if it's still running
+				isDownloadActive = false;
+				if (progressTimer) {
+					clearTimeout(progressTimer);
+					progressTimer = null;
+				}
 
 				// Ensure final state is updated with the latest values
 				setDownloadProgress((prev) => ({

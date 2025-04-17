@@ -70,6 +70,17 @@ export class WebLLMService {
 					}
 				}
 
+				// Ensure progress is between 1 and 99 during download
+				// This prevents jumping from 0 to 100 without showing intermediate progress
+				if (progress <= 0 && report.text.includes('Downloading')) {
+					progress = 1; // Start at 1% to show some initial progress
+				} else if (
+					progress >= 100 &&
+					report.text.includes('Downloading')
+				) {
+					progress = 99; // Cap at 99% until fully complete
+				}
+
 				// Update the model's download progress
 				updatedModel.downloadProgress = progress;
 
