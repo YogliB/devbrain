@@ -3,7 +3,7 @@
 import React from 'react';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useModel } from '@/contexts/model-context';
+import { useModel as originalUseModel } from '@/contexts/model-context';
 import { MemoryError } from '@/lib/webllm';
 
 interface MemoryErrorAlertProps {
@@ -19,6 +19,16 @@ export function MemoryErrorAlert({
 	onSelectSmaller,
 	className = '',
 }: MemoryErrorAlertProps) {
+	// Allow for mocking in Storybook
+	const useModel = () => {
+		// @ts-ignore - This is for Storybook mocking
+		if (typeof window !== 'undefined' && window.useModelMock) {
+			// @ts-ignore - This is for Storybook mocking
+			return window.useModelMock;
+		}
+		return originalUseModel();
+	};
+
 	const { getMemoryError, clearMemoryError, getSmallerModelRecommendation } =
 		useModel();
 
