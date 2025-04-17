@@ -11,25 +11,17 @@ const meta: Meta<typeof ProgressBar> = {
 	argTypes: {
 		progress: {
 			control: { type: 'range', min: 0, max: 100, step: 1 },
-			description: 'Progress value (0-100)',
 		},
 		size: {
 			control: 'select',
 			options: ['sm', 'md', 'lg'],
-			description: 'Size of the progress bar',
 		},
 		showPercentage: {
 			control: 'boolean',
-			description: 'Show percentage text',
 		},
 		status: {
 			control: 'select',
 			options: ['default', 'success', 'error', 'warning'],
-			description: 'Status of the progress bar',
-		},
-		className: {
-			control: 'text',
-			description: 'Additional CSS classes',
 		},
 	},
 };
@@ -51,7 +43,6 @@ export const Small: Story = {
 		progress: 75,
 		size: 'sm',
 		showPercentage: true,
-		status: 'default',
 	},
 };
 
@@ -60,42 +51,29 @@ export const Large: Story = {
 		progress: 75,
 		size: 'lg',
 		showPercentage: true,
-		status: 'default',
-	},
-};
-
-export const WithPercentage: Story = {
-	args: {
-		progress: 65,
-		size: 'md',
-		showPercentage: true,
-		status: 'default',
 	},
 };
 
 export const Success: Story = {
 	args: {
 		progress: 100,
-		size: 'md',
-		showPercentage: true,
 		status: 'success',
+		showPercentage: true,
 	},
 };
 
 export const Error: Story = {
 	args: {
 		progress: 35,
-		size: 'md',
-		showPercentage: true,
 		status: 'error',
+		showPercentage: true,
 	},
 };
 
 export const Warning: Story = {
 	args: {
 		progress: 50,
-		size: 'md',
-		showPercentage: true,
 		status: 'warning',
+		showPercentage: true,
 	},
 };

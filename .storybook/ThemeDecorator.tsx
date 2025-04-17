@@ -1,13 +1,15 @@
 import React from 'react';
-import { ThemeProvider } from '@/contexts/theme-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { StorybookThemeProvider } from './storybook-theme-context';
 
 export const ThemeDecorator = (Story: React.ComponentType) => {
 	return (
-		<ThemeProvider defaultTheme="light" storageKey="devbrain-theme">
+		<StorybookThemeProvider defaultTheme="light">
 			<TooltipProvider>
-				<Story />
+				<div className="p-4">
+					<Story />
+				</div>
 			</TooltipProvider>
-		</ThemeProvider>
+		</StorybookThemeProvider>
 	);
 };
