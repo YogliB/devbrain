@@ -15,7 +15,6 @@ import { Model } from '@/types/model';
 import { ProgressBar } from '@/components/atoms/progress-bar';
 import { cn } from '@/lib/utils';
 import { useModel } from '@/contexts/model-context';
-import { MemoryErrorAlert } from './memory-error-alert';
 
 interface ModelDownloadCardProps {
 	model: Model;
@@ -32,10 +31,6 @@ export function ModelDownloadCard({
 	onRemove,
 	className,
 }: ModelDownloadCardProps) {
-	const { getMemoryError, clearMemoryError, getSmallerModelRecommendation } =
-		useModel();
-	const memoryError = getMemoryError(model.id);
-
 	const isDownloading = model.downloadStatus === 'downloading';
 	const isDownloaded =
 		(model.downloadStatus === 'downloaded' || model.isDownloaded) &&
@@ -44,36 +39,16 @@ export function ModelDownloadCard({
 	const hasFailed = model.downloadStatus === 'failed';
 	const wasCancelled = model.downloadStatus === 'cancelled';
 
-	// Handle retry after memory error
-	const handleRetry = () => {
-		clearMemoryError(model.id);
-		onDownload(model);
-	};
-
-	// Handle selecting a smaller model
-	const handleSelectSmaller = (smallerModelId: string) => {
-		// Get all models from context
-		const { models: contextModels } = useModel();
-		// Find the smaller model in the list
-		const smallerModel = contextModels.find((m) => m.id === smallerModelId);
-		if (smallerModel) {
-			clearMemoryError(model.id);
-			onDownload(smallerModel);
-		}
-	};
-
 	// Determine status icon and color
 	const StatusIcon = isDownloaded
 		? Check
 		: isDownloading
 			? Loader2
-			: memoryError
+			: hasFailed
 				? AlertCircle
-				: hasFailed
-					? AlertCircle
-					: wasCancelled
-						? XCircle
-						: Download;
+				: wasCancelled
+					? XCircle
+					: Download;
 
 	const statusColor = isDownloaded
 		? 'text-green-500'
@@ -107,7 +82,6 @@ export function ModelDownloadCard({
 		<div
 			className={cn(
 				'p-4 border border-border rounded-md bg-card shadow-sm',
-				memoryError ? 'border-red-300 dark:border-red-800' : '',
 				className,
 			)}
 		>

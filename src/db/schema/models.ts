@@ -6,7 +6,6 @@ export const models = sqliteTable('models', {
 	parameters: text('parameters').notNull(),
 	size: text('size').notNull(),
 	useCase: text('use_case').notNull(),
-	webLLMId: text('web_llm_id'),
 });
 
 export type Model = typeof models.$inferSelect;

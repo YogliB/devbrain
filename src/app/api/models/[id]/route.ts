@@ -49,7 +49,7 @@ export async function PATCH(
 	try {
 		const { id } = await params;
 		const body = await request.json();
-		const { webLLMId, isDownloaded } = body;
+		const { isDownloaded } = body;
 
 		const db = getDb();
 
@@ -66,26 +66,9 @@ export async function PATCH(
 			);
 		}
 
-		const updateData: Partial<typeof models.$inferInsert> = {};
-
-		// Only update fields that were provided
-		if (webLLMId !== undefined) {
-			updateData.webLLMId = webLLMId;
-		}
-
-		// If we have data to update
-		if (Object.keys(updateData).length > 0) {
-			await db.update(models).set(updateData).where(eq(models.id, id));
-		}
-
-		const [updatedModel] = await db
-			.select()
-			.from(models)
-			.where(eq(models.id, id));
-
 		// Add runtime properties for the response
 		const enhancedModel = {
-			...updatedModel,
+			...existingModel,
 			isDownloaded: isDownloaded !== undefined ? isDownloaded : false,
 			downloadStatus: isDownloaded ? 'downloaded' : 'not-downloaded',
 		};

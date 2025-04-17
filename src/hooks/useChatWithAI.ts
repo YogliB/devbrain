@@ -59,11 +59,8 @@ export function useChatWithAI(notebookId: string | null) {
 				// Generate AI response
 				setIsGenerating(true);
 				try {
-					// Get response from the model using sources as context
-					const aiResponse = await webLLMService.sendMessage(
-						content,
-						currentSources,
-					);
+					// Placeholder for AI response - will be implemented with new service
+					const aiResponse = `This is a placeholder response. The AI model integration is being reimplemented.\n\nYour message was: "${content}"\n\nSources: ${currentSources.length} source(s) available.`;
 
 					// Save the AI response to the database
 					const assistantMessage = await messagesAPI.create(

@@ -123,10 +123,4 @@ export const modelsAPI = {
 			method: 'PATCH',
 			body: JSON.stringify({ isDownloaded }),
 		}),
-
-	updateWebLLMId: (id: string, webLLMId: string): Promise<Model> =>
-		fetchAPI(`/models/${id}`, {
-			method: 'PATCH',
-			body: JSON.stringify({ webLLMId }),
-		}),
 };

@@ -6,10 +6,8 @@ import React, {
 	useState,
 	useEffect,
 	useCallback,
-	useRef,
 } from 'react';
 import { Model, ModelDownloadStatus } from '@/types/model';
-import { useModelDownload } from '@/hooks/useModelDownload';
 import { modelsAPI } from '@/lib/api';
 
 interface ModelContextType {
@@ -24,9 +22,6 @@ interface ModelContextType {
 	getDownloadProgress: (modelId: string) => number;
 	getDownloadStatus: (modelId: string) => ModelDownloadStatus;
 	isModelDownloaded: (modelId: string) => boolean;
-	getMemoryError: (modelId: string) => MemoryError | null;
-	clearMemoryError: (modelId: string) => void;
-	getSmallerModelRecommendation: (modelId: string) => string | null;
 }
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
@@ -35,58 +30,38 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 	const [models, setModels] = useState<Model[]>([]);
 	const [selectedModel, setSelectedModel] = useState<Model | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
-	// Use a ref to track when we need to refresh models
-	const shouldRefreshModels = useRef(true);
-
-	const {
-		downloadModel: downloadModelHook,
-		cancelDownload,
-		removeModel: removeModelHook,
-		isDownloading,
-		getDownloadProgress,
-		getDownloadStatus,
-		isModelDownloaded,
-		getMemoryError,
-		clearMemoryError,
-	} = useModelDownload();
+	// Track model download states
+	const [downloadStates, setDownloadStates] = useState<
+		Record<
+			string,
+			{
+				isDownloading: boolean;
+				progress: number;
+				status: ModelDownloadStatus;
+				isDownloaded: boolean;
+			}
+		>
+	>({});
 
 	// Fetch models from the API
 	useEffect(() => {
 		async function fetchModels() {
-			if (!shouldRefreshModels.current) return;
-
 			try {
 				setIsLoading(true);
 				const modelsData = await modelsAPI.getAll();
 
-				// First, provide the models to WebLLM service so it can check the cache
-				webLLMService.setAvailableModels(modelsData);
-
 				// Enhance models with runtime properties
 				const enhancedModels = modelsData.map((model) => {
-					// Get the current download status
-					const status = getDownloadStatus(model.id);
-					// If the model has a status (like 'cancelled'), use it
-					const downloadStatus: ModelDownloadStatus =
-						status !== 'not-downloaded'
-							? status
-							: isModelDownloaded(model.id)
-								? 'downloaded'
-								: 'not-downloaded';
-
-					// Check for memory errors
-					const hasMemoryError = webLLMService.hasMemoryError(
-						model.id,
-					);
-
-					// Ensure cancelled models and models with memory errors are never considered downloaded
-					const isModelDownloadedValue =
-						downloadStatus === 'downloaded' && !hasMemoryError;
+					// Get the current download status from state or default to not-downloaded
+					const state = downloadStates[model.id];
+					const downloadStatus = state?.status || 'not-downloaded';
+					const isDownloaded = state?.isDownloaded || false;
 
 					return {
 						...model,
-						isDownloaded: isModelDownloadedValue,
+						isDownloaded,
 						downloadStatus,
+						downloadProgress: state?.progress || 0,
 					};
 				});
 
@@ -98,13 +73,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 				);
 				if (downloadedModel) {
 					setSelectedModel(downloadedModel);
-					webLLMService.setActiveModel(downloadedModel.id);
 				} else if (enhancedModels.length > 0) {
 					setSelectedModel(enhancedModels[0]);
 				}
-
-				// Reset the refresh flag
-				shouldRefreshModels.current = false;
 			} catch (error) {
 				console.error('Failed to fetch models:', error);
 			} finally {
@@ -115,185 +86,215 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		fetchModels();
 	}, []); // Empty dependency array to avoid infinite loops
 
-	// Download a model
-	const downloadModel = useCallback(
-		async (model: Model): Promise<Model> => {
-			try {
-				const updatedModel = await downloadModelHook(model);
-
-				// Update the models list with the downloaded model
-				setModels((prev) =>
-					prev.map((m) =>
-						m.id === updatedModel.id
-							? {
-									...m,
-									isDownloaded: updatedModel.isDownloaded,
-									downloadStatus: updatedModel.downloadStatus,
-									downloadProgress:
-										updatedModel.downloadProgress,
-								}
-							: m,
-					),
-				);
-
-				// Set as selected model if it was successfully downloaded
-				if (updatedModel.downloadStatus === 'downloaded') {
-					setSelectedModel(updatedModel);
-					webLLMService.setActiveModel(updatedModel.id);
-				}
-
-				// Set the refresh flag to true for the next render
-				shouldRefreshModels.current = true;
-
-				return updatedModel;
-			} catch (error) {
-				console.error('Failed to download model:', error);
-
-				// Check if this is a memory error
-				if (
-					error instanceof Error &&
-					((error as any).type === 'out-of-memory' ||
-						error.message.includes('Out of memory') ||
-						error.message.includes('Cannot allocate Wasm memory'))
-				) {
-					// Update the models list to reflect the memory error
-					setModels((prev) =>
-						prev.map((m) =>
-							m.id === model.id
-								? {
-										...m,
-										isDownloaded: false,
-										downloadStatus: 'failed',
-										downloadProgress: 0,
-									}
-								: m,
-						),
-					);
-				}
-
-				throw error;
-			}
-		},
-		[downloadModelHook],
-	);
-
-	// Add a wrapper for cancelDownload to update the models state
-	const handleCancelDownload = useCallback(
+	// Check if a model is currently downloading
+	const isDownloading = useCallback(
 		(modelId: string): boolean => {
-			const result = cancelDownload(modelId);
-
-			if (result) {
-				// Update the models list to reflect the cancelled status
-				setModels((prev) =>
-					prev.map((m) =>
-						m.id === modelId
-							? {
-									...m,
-									isDownloaded: false,
-									downloadStatus: 'cancelled',
-									downloadProgress: 0,
-								}
-							: m,
-					),
-				);
-
-				// Set the refresh flag to true for the next render
-				shouldRefreshModels.current = true;
-			}
-
-			return result;
+			return downloadStates[modelId]?.isDownloading || false;
 		},
-		[cancelDownload],
+		[downloadStates],
 	);
 
-	// Add a wrapper for removeModel to update the models state
-	const handleRemoveModel = useCallback(
+	// Get the download progress for a model
+	const getDownloadProgress = useCallback(
+		(modelId: string): number => {
+			return downloadStates[modelId]?.progress || 0;
+		},
+		[downloadStates],
+	);
+
+	// Get the download status for a model
+	const getDownloadStatus = useCallback(
+		(modelId: string): ModelDownloadStatus => {
+			return downloadStates[modelId]?.status || 'not-downloaded';
+		},
+		[downloadStates],
+	);
+
+	// Check if a model is downloaded
+	const isModelDownloaded = useCallback(
 		(modelId: string): boolean => {
-			const result = removeModelHook(modelId);
-
-			if (result) {
-				// Update the models list to reflect the removed status
-				setModels((prev) =>
-					prev.map((m) =>
-						m.id === modelId
-							? {
-									...m,
-									isDownloaded: false,
-									downloadStatus: 'not-downloaded',
-									downloadProgress: 0,
-								}
-							: m,
-					),
-				);
-
-				// If this was the selected model, select another downloaded model or the first model
-				if (selectedModel && selectedModel.id === modelId) {
-					const downloadedModel = models.find(
-						(m) => m.isDownloaded && m.id !== modelId,
-					);
-					if (downloadedModel) {
-						setSelectedModel(downloadedModel);
-						webLLMService.setActiveModel(downloadedModel.id);
-					} else if (models.length > 0) {
-						setSelectedModel(models[0]);
-					} else {
-						setSelectedModel(null);
-					}
-				}
-
-				// Set the refresh flag to true for the next render
-				shouldRefreshModels.current = true;
-			}
-
-			return result;
+			return downloadStates[modelId]?.isDownloaded || false;
 		},
-		[removeModelHook, selectedModel, models],
+		[downloadStates],
 	);
 
-	/**
-	 * Get a smaller model recommendation based on a model ID
-	 * @param modelId The ID of the model to get a recommendation for
-	 * @returns The ID of a recommended smaller model, or null if none is available
-	 */
-	const getSmallerModelRecommendation = useCallback(
-		(modelId: string): string | null =>
-			webLLMService.getSmallerModelRecommendation(modelId),
-		[],
+	// Download a model (placeholder implementation)
+	const downloadModel = useCallback(async (model: Model): Promise<Model> => {
+		try {
+			// Set the model as downloading
+			setDownloadStates((prev) => ({
+				...prev,
+				[model.id]: {
+					isDownloading: true,
+					progress: 0,
+					status: 'downloading',
+					isDownloaded: false,
+				},
+			}));
+
+			// Simulate download progress
+			const updatedModel = {
+				...model,
+				isDownloaded: true,
+				downloadStatus: 'downloaded' as ModelDownloadStatus,
+				downloadProgress: 100,
+			};
+
+			// Update the download state
+			setDownloadStates((prev) => ({
+				...prev,
+				[model.id]: {
+					isDownloading: false,
+					progress: 100,
+					status: 'downloaded',
+					isDownloaded: true,
+				},
+			}));
+
+			// Update the models list
+			setModels((prev) =>
+				prev.map((m) => (m.id === updatedModel.id ? updatedModel : m)),
+			);
+
+			// Set as selected model
+			setSelectedModel(updatedModel);
+
+			return updatedModel;
+		} catch (error) {
+			console.error('Failed to download model:', error);
+
+			// Update the download state to failed
+			setDownloadStates((prev) => ({
+				...prev,
+				[model.id]: {
+					isDownloading: false,
+					progress: 0,
+					status: 'failed',
+					isDownloaded: false,
+				},
+			}));
+
+			// Update the models list
+			setModels((prev) =>
+				prev.map((m) =>
+					m.id === model.id
+						? {
+								...m,
+								isDownloaded: false,
+								downloadStatus: 'failed',
+								downloadProgress: 0,
+							}
+						: m,
+				),
+			);
+
+			throw error;
+		}
+	}, []);
+
+	// Cancel a model download
+	const cancelDownload = useCallback(
+		(modelId: string): boolean => {
+			// Only cancel if the model is downloading
+			if (!downloadStates[modelId]?.isDownloading) {
+				return false;
+			}
+
+			// Update the download state
+			setDownloadStates((prev) => ({
+				...prev,
+				[modelId]: {
+					isDownloading: false,
+					progress: 0,
+					status: 'cancelled',
+					isDownloaded: false,
+				},
+			}));
+
+			// Update the models list
+			setModels((prev) =>
+				prev.map((m) =>
+					m.id === modelId
+						? {
+								...m,
+								isDownloaded: false,
+								downloadStatus: 'cancelled',
+								downloadProgress: 0,
+							}
+						: m,
+				),
+			);
+
+			return true;
+		},
+		[downloadStates],
+	);
+
+	// Remove a downloaded model
+	const removeModel = useCallback(
+		(modelId: string): boolean => {
+			// Only remove if the model is downloaded
+			if (!downloadStates[modelId]?.isDownloaded) {
+				return false;
+			}
+
+			// Update the download state
+			setDownloadStates((prev) => {
+				const newState = { ...prev };
+				delete newState[modelId]; // Remove the model from the state
+				return newState;
+			});
+
+			// Update the models list
+			setModels((prev) =>
+				prev.map((m) =>
+					m.id === modelId
+						? {
+								...m,
+								isDownloaded: false,
+								downloadStatus: 'not-downloaded',
+								downloadProgress: 0,
+							}
+						: m,
+				),
+			);
+
+			// If this was the selected model, select another downloaded model or the first model
+			if (selectedModel && selectedModel.id === modelId) {
+				const downloadedModel = models.find(
+					(m) => m.isDownloaded && m.id !== modelId,
+				);
+				if (downloadedModel) {
+					setSelectedModel(downloadedModel);
+				} else if (models.length > 0) {
+					setSelectedModel(models[0]);
+				} else {
+					setSelectedModel(null);
+				}
+			}
+
+			return true;
+		},
+		[downloadStates, selectedModel, models],
 	);
 
 	// Select a model
 	const selectModel = useCallback((model: Model) => {
 		setSelectedModel(model);
-
-		// If the model is downloaded, set it as the active model
-		if (model.isDownloaded) {
-			webLLMService.setActiveModel(model.id);
-		}
 	}, []);
-
-	// Clean up resources when the component unmounts
-	useEffect(
-		() => () => {
-			webLLMService.cleanup();
-		},
-		[],
-	);
 
 	const value = {
 		models,
 		selectedModel,
 		isLoading,
 		downloadModel,
-		cancelDownload: handleCancelDownload,
-		removeModel: handleRemoveModel,
+		cancelDownload,
+		removeModel,
 		selectModel,
 		isDownloading,
 		getDownloadProgress,
 		getDownloadStatus,
 		isModelDownloaded,
-		getMemoryError,
-		clearMemoryError,
-		getSmallerModelRecommendation,
 	};
 
 	return (

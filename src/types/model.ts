@@ -4,7 +4,6 @@ export interface Model {
 	parameters: string;
 	size: string;
 	useCase: string;
-	webLLMId?: string; // ID used by WebLLM to reference the model
 
 	// Runtime-only properties (not stored in DB)
 	isDownloaded?: boolean;

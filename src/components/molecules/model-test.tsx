@@ -2,11 +2,10 @@
 
 import React, { useState } from 'react';
 import { useModel } from '@/contexts/model-context';
-import { webLLMService } from '@/lib/webllm';
 import { ModelDownloadCard } from '@/components/molecules/model-download-card';
 
 /**
- * A test component to verify WebLLM integration
+ * A test component to verify model integration
  */
 export function ModelTest() {
 	const {
@@ -41,7 +40,8 @@ export function ModelTest() {
 		setIsGenerating(true);
 
 		try {
-			const result = await webLLMService.sendMessage(prompt);
+			// Placeholder for model response - will be implemented with new service
+			const result = `This is a placeholder response. The AI model integration is being reimplemented.\n\nYour prompt was: "${prompt}"`;
 			setResponse(result);
 		} catch (err) {
 			console.error('Error generating response:', err);
@@ -56,7 +56,7 @@ export function ModelTest() {
 	return (
 		<div className="p-4 border border-border rounded-md">
 			<h3 className="text-lg font-semibold mb-4">
-				Test WebLLM Integration
+				Test Model Integration
 			</h3>
 
 			<div className="mb-4">
