@@ -54,19 +54,20 @@ export function getWebLLMState(): WebLLMState {
 	return currentState;
 }
 
-export function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
 	if ('serviceWorker' in navigator) {
 		try {
-			return navigator.serviceWorker.register('/webllm-sw.js', {
-				type: 'module',
-				scope: '/',
-			});
+			const registration =
+				await navigator.serviceWorker.register('/webllm-sw.js');
+
+			return registration;
 		} catch (error) {
 			console.error(`Service worker registration failed:`, error);
-			return Promise.resolve(null);
+			return null;
 		}
 	}
-	return Promise.resolve(null);
+
+	return null;
 }
 
 export async function loadModel(): Promise<void> {

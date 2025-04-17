@@ -5,3 +5,7 @@ let handler;
 self.addEventListener('activate', () => {
   handler = new mlcllm.ServiceWorkerMLCEngineHandler();
 });
+
+self.onmessage = (msg) => {
+  handler.onmessage(msg);
+};
