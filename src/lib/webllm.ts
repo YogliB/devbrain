@@ -1,6 +1,16 @@
 import * as webllm from '@mlc-ai/web-llm';
 import { Model, ModelDownloadStatus } from '@/types/model';
 
+// Memory error types
+export type MemoryErrorType = 'out-of-memory' | 'allocation-failed' | 'unknown';
+
+// Memory error interface
+export interface MemoryError extends Error {
+	type: MemoryErrorType;
+	modelId: string;
+	recommendation: string;
+}
+
 /**
  * WebLLM service for managing model downloads and inference
  */
@@ -10,6 +20,8 @@ export class WebLLMService {
 	private activeEngine: webllm.MLCEngineInterface | null = null;
 	private activeModelId: string | null = null;
 	private downloadControllers: Map<string, AbortController> = new Map();
+	// Track memory errors
+	private memoryErrors: Map<string, MemoryError> = new Map();
 
 	private constructor() {
 		// Initialize engines from cache when service is created
@@ -103,20 +115,64 @@ export class WebLLMService {
 			// Create the engine with progress tracking
 			// Note: We're using a custom approach to handle abort since WebLLM doesn't directly support it
 			// We'll check the abort signal in our progress callback
-			const engine = await webllm.CreateMLCEngine(webLLMModelId, {
-				initProgressCallback: (report) => {
-					// Check if the download has been aborted
-					if (abortController.signal.aborted) {
-						throw new DOMException(
-							'Download aborted by user',
-							'AbortError',
-						);
-					}
-					// Otherwise, call the original callback
-					initProgressCallback(report);
-				},
-				logLevel: 'INFO',
-			});
+			let engine;
+
+			try {
+				// Clear any previous memory errors for this model
+				this.memoryErrors.delete(model.id);
+
+				// Configure memory options to handle constraints better
+				const engineOptions: webllm.MLCEngineOptions = {
+					initProgressCallback: (report) => {
+						// Check if the download has been aborted
+						if (abortController.signal.aborted) {
+							throw new DOMException(
+								'Download aborted by user',
+								'AbortError',
+							);
+						}
+						// Otherwise, call the original callback
+						initProgressCallback(report);
+					},
+					logLevel: 'INFO',
+				};
+
+				// Create the engine with the configured options
+				engine = await webllm.CreateMLCEngine(
+					webLLMModelId,
+					engineOptions,
+				);
+			} catch (error) {
+				// Handle WebAssembly memory errors
+				if (
+					error instanceof Error &&
+					(error.message.includes('Out of memory') ||
+						error.message.includes('Cannot allocate Wasm memory'))
+				) {
+					// Create a structured memory error
+					const memError: MemoryError = {
+						name: 'WebAssemblyMemoryError',
+						message: `Not enough memory to load model ${model.name}. Try a smaller model or free up browser memory.`,
+						type: 'out-of-memory',
+						modelId: model.id,
+						recommendation:
+							'Try using a smaller model like TinyLlama, or restart your browser to free up memory.',
+					};
+
+					// Store the error for future reference
+					this.memoryErrors.set(model.id, memError);
+					console.error(
+						`Memory error for model ${model.id}:`,
+						memError,
+					);
+
+					// Rethrow with more information
+					throw memError;
+				}
+
+				// Rethrow other errors
+				throw error;
+			}
 
 			// Store the engine for future use
 			this.engines.set(model.id, engine);
@@ -211,6 +267,32 @@ export class WebLLMService {
 	 */
 	public getActiveModelId(): string | null {
 		return this.activeModelId;
+	}
+
+	/**
+	 * Get memory error for a model if one exists
+	 * @param modelId The ID of the model to check
+	 * @returns The memory error or null if none exists
+	 */
+	public getMemoryError(modelId: string): MemoryError | null {
+		return this.memoryErrors.get(modelId) || null;
+	}
+
+	/**
+	 * Check if a model has a memory error
+	 * @param modelId The ID of the model to check
+	 * @returns True if the model has a memory error, false otherwise
+	 */
+	public hasMemoryError(modelId: string): boolean {
+		return this.memoryErrors.has(modelId);
+	}
+
+	/**
+	 * Clear memory error for a model
+	 * @param modelId The ID of the model to clear error for
+	 */
+	public clearMemoryError(modelId: string): void {
+		this.memoryErrors.delete(modelId);
 	}
 
 	/**
@@ -577,6 +659,43 @@ export class WebLLMService {
 	}
 
 	/**
+	 * Get a smaller model recommendation based on a model ID
+	 * @param modelId The ID of the model to get a recommendation for
+	 * @returns The ID of a recommended smaller model, or null if none is available
+	 */
+	public getSmallerModelRecommendation(modelId: string): string | null {
+		// Get the model
+		const model = this.models.find((m) => m.id === modelId);
+		if (!model) return null;
+
+		// Model size hierarchy from smallest to largest
+		const modelSizeHierarchy = [
+			'TinyLlama', // Smallest
+			'Phi-3',
+			'Llama 3',
+			'Mistral', // Largest
+		];
+
+		// Find the current model's position in the hierarchy
+		const currentIndex = modelSizeHierarchy.findIndex((name) =>
+			model.name.includes(name),
+		);
+
+		// If model not found in hierarchy or already the smallest, return null
+		if (currentIndex <= 0) return null;
+
+		// Get the next smaller model name
+		const smallerModelName = modelSizeHierarchy[currentIndex - 1];
+
+		// Find a model with that name
+		const smallerModel = this.models.find((m) =>
+			m.name.includes(smallerModelName),
+		);
+
+		return smallerModel?.id || null;
+	}
+
+	/**
 	 * Clean up resources when the service is no longer needed
 	 */
 	public async cleanup(): Promise<void> {
@@ -593,6 +712,9 @@ export class WebLLMService {
 		this.engines.clear();
 		this.activeEngine = null;
 		this.activeModelId = null;
+
+		// Clear memory errors
+		this.memoryErrors.clear();
 	}
 }
 

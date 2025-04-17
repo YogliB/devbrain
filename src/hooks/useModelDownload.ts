@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Model, ModelDownloadStatus } from '@/types/model';
-import { webLLMService } from '@/lib/webllm';
+import { webLLMService, MemoryError } from '@/lib/webllm';
 import { modelsAPI } from '@/lib/api';
 
 /**
@@ -17,6 +17,9 @@ export function useModelDownload() {
 	>({});
 	const [downloadStatus, setDownloadStatus] = useState<
 		Record<string, ModelDownloadStatus>
+	>({});
+	const [memoryErrors, setMemoryErrors] = useState<
+		Record<string, MemoryError>
 	>({});
 
 	/**
@@ -168,7 +171,52 @@ export function useModelDownload() {
 			} catch (error) {
 				console.error('Failed to download model:', error);
 
-				// Mark as failed
+				// Check if this is a memory error
+				if (
+					error instanceof Error &&
+					(error.message.includes('Out of memory') ||
+						error.message.includes('Cannot allocate Wasm memory') ||
+						(error as any).type === 'out-of-memory')
+				) {
+					// Get the structured memory error if available
+					const memError =
+						webLLMService.getMemoryError(model.id) ||
+						({
+							name: 'WebAssemblyMemoryError',
+							message: `Not enough memory to load model ${model.name}. Try a smaller model or free up browser memory.`,
+							type: 'out-of-memory',
+							modelId: model.id,
+							recommendation:
+								'Try using a smaller model like TinyLlama, or restart your browser to free up memory.',
+						} as MemoryError);
+
+					// Store the memory error
+					setMemoryErrors((prev) => ({
+						...prev,
+						[model.id]: memError,
+					}));
+
+					// Mark as failed
+					setDownloadingModels((prev) => ({
+						...prev,
+						[model.id]: false,
+					}));
+					setDownloadStatus((prev) => ({
+						...prev,
+						[model.id]: 'failed',
+					}));
+
+					// Get a recommendation for a smaller model
+					const recommendedModelId =
+						webLLMService.getSmallerModelRecommendation(model.id);
+					if (recommendedModelId) {
+						memError.recommendation = `Try using a smaller model like ${recommendedModelId}, or restart your browser to free up memory.`;
+					}
+
+					throw memError;
+				}
+
+				// Mark as failed for other errors
 				setDownloadingModels((prev) => ({
 					...prev,
 					[model.id]: false,
@@ -229,6 +277,18 @@ export function useModelDownload() {
 				);
 				return false;
 			}
+
+			// If the model has a memory error, it's not downloaded
+			if (
+				memoryErrors[modelId] ||
+				webLLMService.hasMemoryError(modelId)
+			) {
+				console.log(
+					`Model ${modelId} has memory error, returning false from hook`,
+				);
+				return false;
+			}
+
 			// Otherwise, check with the WebLLM service
 			const result = webLLMService.isModelDownloaded(modelId);
 
@@ -246,30 +306,70 @@ export function useModelDownload() {
 
 			return result;
 		},
-		[downloadStatus],
+		[downloadStatus, memoryErrors],
 	);
+
+	/**
+	 * Get memory error for a model
+	 * @param modelId The ID of the model to check
+	 * @returns The memory error or null if none exists
+	 */
+	const getMemoryError = useCallback(
+		(modelId: string): MemoryError | null => {
+			// Check local state first
+			if (memoryErrors[modelId]) {
+				return memoryErrors[modelId];
+			}
+
+			// Then check the WebLLM service
+			return webLLMService.getMemoryError(modelId);
+		},
+		[memoryErrors],
+	);
+
+	/**
+	 * Clear memory error for a model
+	 * @param modelId The ID of the model to clear error for
+	 */
+	const clearMemoryError = useCallback((modelId: string): void => {
+		// Clear from local state
+		setMemoryErrors((prev) => {
+			const newErrors = { ...prev };
+			delete newErrors[modelId];
+			return newErrors;
+		});
+
+		// Clear from WebLLM service
+		webLLMService.clearMemoryError(modelId);
+	}, []);
 
 	/**
 	 * Cancel a model download
 	 * @param modelId The ID of the model to cancel download for
 	 * @returns True if the download was cancelled, false if no download was in progress
 	 */
-	const cancelDownload = useCallback((modelId: string): boolean => {
-		// First update our local state to prevent any further progress updates
-		setDownloadingModels((prev) => ({ ...prev, [modelId]: false }));
-		setDownloadStatus((prev) => ({ ...prev, [modelId]: 'cancelled' }));
-		setDownloadProgress((prev) => ({ ...prev, [modelId]: 0 }));
+	const cancelDownload = useCallback(
+		(modelId: string): boolean => {
+			// First update our local state to prevent any further progress updates
+			setDownloadingModels((prev) => ({ ...prev, [modelId]: false }));
+			setDownloadStatus((prev) => ({ ...prev, [modelId]: 'cancelled' }));
+			setDownloadProgress((prev) => ({ ...prev, [modelId]: 0 }));
 
-		// Then cancel the download in the WebLLM service
-		const wasCancelled = webLLMService.cancelDownload(modelId);
+			// Clear any memory errors
+			clearMemoryError(modelId);
 
-		if (wasCancelled) {
-			// Log cancellation for debugging
-			console.log(`Download cancelled for model ${modelId}`);
-		}
+			// Then cancel the download in the WebLLM service
+			const wasCancelled = webLLMService.cancelDownload(modelId);
 
-		return wasCancelled;
-	}, []);
+			if (wasCancelled) {
+				// Log cancellation for debugging
+				console.log(`Download cancelled for model ${modelId}`);
+			}
+
+			return wasCancelled;
+		},
+		[clearMemoryError],
+	);
 
 	return {
 		downloadModel,
@@ -278,5 +378,7 @@ export function useModelDownload() {
 		getDownloadProgress,
 		getDownloadStatus,
 		isModelDownloaded,
+		getMemoryError,
+		clearMemoryError,
 	};
 }

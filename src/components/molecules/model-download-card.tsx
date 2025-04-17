@@ -8,10 +8,13 @@ import {
 	AlertCircle,
 	XCircle,
 	XSquare,
+	RefreshCcw,
 } from 'lucide-react';
 import { Model } from '@/types/model';
 import { ProgressBar } from '@/components/atoms/progress-bar';
 import { cn } from '@/lib/utils';
+import { useModel } from '@/contexts/model-context';
+import { MemoryErrorAlert } from './memory-error-alert';
 
 interface ModelDownloadCardProps {
 	model: Model;
@@ -26,6 +29,10 @@ export function ModelDownloadCard({
 	onCancel,
 	className,
 }: ModelDownloadCardProps) {
+	const { getMemoryError, clearMemoryError, getSmallerModelRecommendation } =
+		useModel();
+	const memoryError = getMemoryError(model.id);
+
 	const isDownloading = model.downloadStatus === 'downloading';
 	const isDownloaded =
 		(model.downloadStatus === 'downloaded' || model.isDownloaded) &&
@@ -33,21 +40,41 @@ export function ModelDownloadCard({
 
 	// Debug logging
 	console.log(
-		`Model ${model.id} status: ${model.downloadStatus}, isDownloaded: ${isDownloaded}, wasCancelled: ${model.downloadStatus === 'cancelled'}`,
+		`Model ${model.id} status: ${model.downloadStatus}, isDownloaded: ${isDownloaded}, wasCancelled: ${model.downloadStatus === 'cancelled'}, hasMemoryError: ${!!memoryError}`,
 	);
 	const hasFailed = model.downloadStatus === 'failed';
 	const wasCancelled = model.downloadStatus === 'cancelled';
+
+	// Handle retry after memory error
+	const handleRetry = () => {
+		clearMemoryError(model.id);
+		onDownload(model);
+	};
+
+	// Handle selecting a smaller model
+	const handleSelectSmaller = (smallerModelId: string) => {
+		// Get all models from context
+		const { models: contextModels } = useModel();
+		// Find the smaller model in the list
+		const smallerModel = contextModels.find((m) => m.id === smallerModelId);
+		if (smallerModel) {
+			clearMemoryError(model.id);
+			onDownload(smallerModel);
+		}
+	};
 
 	// Determine status icon and color
 	const StatusIcon = isDownloaded
 		? Check
 		: isDownloading
 			? Loader2
-			: hasFailed
+			: memoryError
 				? AlertCircle
-				: wasCancelled
-					? XCircle
-					: Download;
+				: hasFailed
+					? AlertCircle
+					: wasCancelled
+						? XCircle
+						: Download;
 
 	const statusColor = isDownloaded
 		? 'text-green-500'
@@ -81,6 +108,7 @@ export function ModelDownloadCard({
 		<div
 			className={cn(
 				'p-4 border border-border rounded-md bg-card shadow-sm',
+				memoryError ? 'border-red-300 dark:border-red-800' : '',
 				className,
 			)}
 		>
@@ -96,6 +124,16 @@ export function ModelDownloadCard({
 					<span className="text-xs">{statusText}</span>
 				</div>
 			</div>
+
+			{/* Memory error alert */}
+			{memoryError && (
+				<MemoryErrorAlert
+					modelId={model.id}
+					onRetry={handleRetry}
+					onSelectSmaller={handleSelectSmaller}
+					className="mt-1 mb-3"
+				/>
+			)}
 
 			<div className="space-y-1 mb-3 text-xs text-muted-foreground">
 				<p>
@@ -168,7 +206,7 @@ export function ModelDownloadCard({
 				)}
 			</button>
 
-			{hasFailed && (
+			{hasFailed && !memoryError && (
 				<div className="mt-2 text-xs text-red-500 flex items-center gap-1">
 					<AlertCircle className="h-3 w-3" />
 					Download failed. Please try again.

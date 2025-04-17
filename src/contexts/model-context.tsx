@@ -11,7 +11,7 @@ import React, {
 import { Model, ModelDownloadStatus } from '@/types/model';
 import { useModelDownload } from '@/hooks/useModelDownload';
 import { modelsAPI } from '@/lib/api';
-import { webLLMService } from '@/lib/webllm';
+import { webLLMService, MemoryError } from '@/lib/webllm';
 
 interface ModelContextType {
 	models: Model[];
@@ -24,6 +24,9 @@ interface ModelContextType {
 	getDownloadProgress: (modelId: string) => number;
 	getDownloadStatus: (modelId: string) => ModelDownloadStatus;
 	isModelDownloaded: (modelId: string) => boolean;
+	getMemoryError: (modelId: string) => MemoryError | null;
+	clearMemoryError: (modelId: string) => void;
+	getSmallerModelRecommendation: (modelId: string) => string | null;
 }
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
@@ -42,6 +45,8 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		getDownloadProgress,
 		getDownloadStatus,
 		isModelDownloaded,
+		getMemoryError,
+		clearMemoryError,
 	} = useModelDownload();
 
 	// Fetch models from the API
@@ -68,13 +73,18 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 								? 'downloaded'
 								: 'not-downloaded';
 
-					// Ensure cancelled models are never considered downloaded
+					// Check for memory errors
+					const hasMemoryError = webLLMService.hasMemoryError(
+						model.id,
+					);
+
+					// Ensure cancelled models and models with memory errors are never considered downloaded
 					const isModelDownloadedValue =
-						downloadStatus === 'downloaded';
+						downloadStatus === 'downloaded' && !hasMemoryError;
 
 					// Debug logging
 					console.log(
-						`Model ${model.id} enhanced with status: ${downloadStatus}, isDownloaded: ${isModelDownloadedValue}`,
+						`Model ${model.id} enhanced with status: ${downloadStatus}, isDownloaded: ${isModelDownloadedValue}, hasMemoryError: ${hasMemoryError}`,
 					);
 
 					return {
@@ -142,6 +152,29 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 				return updatedModel;
 			} catch (error) {
 				console.error('Failed to download model:', error);
+
+				// Check if this is a memory error
+				if (
+					error instanceof Error &&
+					((error as any).type === 'out-of-memory' ||
+						error.message.includes('Out of memory') ||
+						error.message.includes('Cannot allocate Wasm memory'))
+				) {
+					// Update the models list to reflect the memory error
+					setModels((prev) =>
+						prev.map((m) =>
+							m.id === model.id
+								? {
+										...m,
+										isDownloaded: false,
+										downloadStatus: 'failed',
+										downloadProgress: 0,
+									}
+								: m,
+						),
+					);
+				}
+
 				throw error;
 			}
 		},
@@ -177,6 +210,18 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		[cancelDownload],
 	);
 
+	/**
+	 * Get a smaller model recommendation based on a model ID
+	 * @param modelId The ID of the model to get a recommendation for
+	 * @returns The ID of a recommended smaller model, or null if none is available
+	 */
+	const getSmallerModelRecommendation = useCallback(
+		(modelId: string): string | null => {
+			return webLLMService.getSmallerModelRecommendation(modelId);
+		},
+		[],
+	);
+
 	// Select a model
 	const selectModel = useCallback((model: Model) => {
 		setSelectedModel(model);
@@ -206,6 +251,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		getDownloadProgress,
 		getDownloadStatus,
 		isModelDownloaded,
+		getMemoryError,
+		clearMemoryError,
+		getSmallerModelRecommendation,
 	};
 
 	return (
