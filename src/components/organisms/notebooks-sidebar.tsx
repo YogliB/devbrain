@@ -62,7 +62,7 @@ export function NotebooksSidebar({
 				<button
 					onClick={onCreateNotebook}
 					className={cn(
-						'flex items-center gap-2 w-full px-3 py-2 rounded-md bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 transition-colors',
+						'flex items-center gap-2 w-full px-3 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors',
 						isCollapsed && 'justify-center',
 					)}
 				>

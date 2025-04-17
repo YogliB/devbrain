@@ -29,7 +29,7 @@ export function NotebookItem({
 			className={cn(
 				'group flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors',
 				isActive
-					? 'bg-sidebar-primary text-sidebar-primary-foreground'
+					? 'bg-sidebar-primary/10 text-sidebar-foreground font-medium'
 					: 'hover:bg-sidebar-accent text-sidebar-foreground',
 			)}
 			title={isCollapsed ? notebook.title : undefined}
@@ -43,7 +43,7 @@ export function NotebookItem({
 						className={cn(
 							'opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md',
 							isActive
-								? 'hover:bg-sidebar-primary-foreground/10'
+								? 'hover:bg-sidebar-foreground/10'
 								: 'hover:bg-sidebar-accent-foreground/10',
 						)}
 						aria-label="Delete notebook"
