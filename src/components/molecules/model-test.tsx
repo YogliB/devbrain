@@ -17,6 +17,7 @@ export function ModelTest() {
 		isModelDownloaded,
 		downloadModel,
 		cancelDownload,
+		removeModel,
 	} = useModel();
 	const [prompt, setPrompt] = useState('');
 	const [response, setResponse] = useState('');
@@ -79,6 +80,7 @@ export function ModelTest() {
 								}}
 								onDownload={downloadModel}
 								onCancel={cancelDownload}
+								onRemove={removeModel}
 							/>
 						);
 					})}

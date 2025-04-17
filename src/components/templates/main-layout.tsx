@@ -34,6 +34,7 @@ interface MainLayoutProps {
 	onSelectModel: (model: Model) => void;
 	onDownloadModel: (model: Model) => void;
 	onCancelDownload?: (modelId: string) => boolean;
+	onRemoveModel?: (modelId: string) => boolean;
 	className?: string;
 }
 
@@ -60,6 +61,7 @@ export function MainLayout({
 	onSelectModel,
 	onDownloadModel,
 	onCancelDownload,
+	onRemoveModel,
 	className,
 }: MainLayoutProps) {
 	return (
@@ -84,6 +86,7 @@ export function MainLayout({
 								onSelectModel={onSelectModel}
 								onDownloadModel={onDownloadModel}
 								onCancelDownload={onCancelDownload}
+								onRemoveModel={onRemoveModel}
 								isDownloading={isDownloading}
 								className="w-48"
 							/>

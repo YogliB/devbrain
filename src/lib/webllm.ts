@@ -696,6 +696,63 @@ export class WebLLMService {
 	}
 
 	/**
+	 * Remove a downloaded model from the cache
+	 * @param modelId The ID of the model to remove
+	 * @returns True if the model was removed, false if it wasn't downloaded
+	 */
+	public removeModel(modelId: string): boolean {
+		// Check if the model is currently downloading and cancel if needed
+		if (this.isDownloading(modelId)) {
+			this.cancelDownload(modelId);
+		}
+
+		// Check if the model is in the engines map
+		if (!this.engines.has(modelId)) {
+			console.log(
+				`Model ${modelId} not found in engines map, nothing to remove`,
+			);
+			return false;
+		}
+
+		// If this is the active model, clear the active model
+		if (this.activeModelId === modelId) {
+			this.activeEngine = null;
+			this.activeModelId = null;
+			console.log(`Cleared active model because ${modelId} was removed`);
+		}
+
+		// Remove the engine from the engines map
+		this.engines.delete(modelId);
+		console.log(`Removed engine for model ${modelId}`);
+
+		// Clear any memory errors for this model
+		this.memoryErrors.delete(modelId);
+
+		// Add to cancelled models set to ensure it's not considered downloaded
+		if (!this._cancelledModels) {
+			this._cancelledModels = new Set<string>();
+		}
+		this._cancelledModels.add(modelId);
+
+		// Try to clear the model from WebLLM's cache
+		try {
+			// WebLLM doesn't provide a direct API to clear cache for a specific model
+			// We would need to use browser APIs to clear IndexedDB storage
+			// This is a placeholder for future implementation
+			console.log(
+				`Note: WebLLM doesn't provide a direct API to clear cache for a specific model`,
+			);
+			console.log(
+				`The model will be removed from memory but may still exist in browser cache`,
+			);
+		} catch (error) {
+			console.error(`Error clearing cache for model ${modelId}:`, error);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Clean up resources when the service is no longer needed
 	 */
 	public async cleanup(): Promise<void> {

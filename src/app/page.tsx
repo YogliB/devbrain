@@ -33,6 +33,7 @@ export default function Home() {
 		downloadModel,
 		isModelDownloaded,
 		cancelDownload,
+		removeModel,
 		isDownloading,
 	} = useModel();
 
@@ -80,6 +81,7 @@ export default function Home() {
 			onSelectModel={selectModel}
 			onDownloadModel={downloadModel}
 			onCancelDownload={cancelDownload}
+			onRemoveModel={removeModel}
 		/>
 	);
 }

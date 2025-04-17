@@ -8,6 +8,7 @@ import {
 	AlertCircle,
 	Loader2,
 	XCircle,
+	Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Model, ModelDownloadStatus } from '@/types/model';
@@ -20,6 +21,7 @@ interface ModelSelectorProps {
 	onSelectModel: (model: Model) => void;
 	onDownloadModel: (model: Model) => void;
 	onCancelDownload?: (modelId: string) => boolean;
+	onRemoveModel?: (modelId: string) => boolean;
 	isDownloading?: (modelId: string) => boolean;
 }
 
@@ -30,6 +32,7 @@ export function ModelSelector({
 	onSelectModel,
 	onDownloadModel,
 	onCancelDownload,
+	onRemoveModel,
 	isDownloading,
 }: ModelSelectorProps) {
 	const [isOpen, setIsOpen] = useState(false);
@@ -150,6 +153,25 @@ export function ModelSelector({
 
 			// Cancel the download
 			onCancelDownload(model.id);
+		}
+	};
+
+	const handleRemoveModel = (model: Model, e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (onRemoveModel) {
+			// Log the action
+			console.log('Removing model:', {
+				id: model.id,
+				name: model.name,
+			});
+
+			// Remove the model
+			onRemoveModel(model.id);
+
+			// Close the model info dialog if it's open
+			if (showModelInfo && showModelInfo.id === model.id) {
+				setShowModelInfo(null);
+			}
 		}
 	};
 
@@ -274,12 +296,22 @@ export function ModelSelector({
 							<li
 								key={model.id}
 								onClick={() => handleModelSelect(model)}
-								className="px-4 py-2 hover:bg-muted cursor-pointer flex items-center justify-between"
+								className="px-4 py-2 hover:bg-muted cursor-pointer flex items-center justify-between group"
 							>
 								<span>{model.name}</span>
-								<span className="flex items-center">
+								<div className="flex items-center gap-2">
+									{model.isDownloaded && onRemoveModel && (
+										<button
+											onClick={(e) =>
+												handleRemoveModel(model, e)
+											}
+											className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-opacity"
+										>
+											<Trash2 className="h-4 w-4" />
+										</button>
+									)}
 									{renderStatusIcon(model)}
-								</span>
+								</div>
 							</li>
 						))}
 					</ul>
@@ -334,6 +366,18 @@ export function ModelSelector({
 									>
 										<XCircle className="h-4 w-4 mr-2" />
 										Cancel
+									</button>
+								</div>
+							) : showModelInfo.isDownloaded && onRemoveModel ? (
+								<div className="flex space-x-2">
+									<button
+										onClick={(e) =>
+											handleRemoveModel(showModelInfo, e)
+										}
+										className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center"
+									>
+										<Trash2 className="h-4 w-4 mr-2" />
+										Remove
 									</button>
 								</div>
 							) : (

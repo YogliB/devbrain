@@ -9,6 +9,7 @@ import {
 	XCircle,
 	XSquare,
 	RefreshCcw,
+	Trash2,
 } from 'lucide-react';
 import { Model } from '@/types/model';
 import { ProgressBar } from '@/components/atoms/progress-bar';
@@ -20,6 +21,7 @@ interface ModelDownloadCardProps {
 	model: Model;
 	onDownload: (model: Model) => void;
 	onCancel?: (modelId: string) => void;
+	onRemove?: (modelId: string) => void;
 	className?: string;
 }
 
@@ -27,6 +29,7 @@ export function ModelDownloadCard({
 	model,
 	onDownload,
 	onCancel,
+	onRemove,
 	className,
 }: ModelDownloadCardProps) {
 	const { getMemoryError, clearMemoryError, getSmallerModelRecommendation } =
@@ -171,6 +174,15 @@ export function ModelDownloadCard({
 						>
 							<XSquare className="h-3 w-3" />
 							Cancel download
+						</button>
+					)}
+					{isDownloaded && onRemove && (
+						<button
+							onClick={() => onRemove(model.id)}
+							className="mt-1 text-xs text-red-500 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+						>
+							<Trash2 className="h-3 w-3" />
+							Remove model
 						</button>
 					)}
 				</div>

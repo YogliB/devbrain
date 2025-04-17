@@ -371,9 +371,52 @@ export function useModelDownload() {
 		[clearMemoryError],
 	);
 
+	/**
+	 * Remove a downloaded model
+	 * @param modelId The ID of the model to remove
+	 * @returns True if the model was removed, false if it wasn't downloaded
+	 */
+	const removeModel = useCallback(
+		(modelId: string): boolean => {
+			// First update our local state
+			setDownloadingModels((prev) => ({ ...prev, [modelId]: false }));
+			setDownloadStatus((prev) => ({
+				...prev,
+				[modelId]: 'not-downloaded',
+			}));
+			setDownloadProgress((prev) => ({ ...prev, [modelId]: 0 }));
+
+			// Clear any memory errors
+			clearMemoryError(modelId);
+
+			// Then remove the model in the WebLLM service
+			const wasRemoved = webLLMService.removeModel(modelId);
+
+			if (wasRemoved) {
+				// Log removal for debugging
+				console.log(`Model ${modelId} removed successfully`);
+
+				// Update the model in the database to mark as not downloaded
+				try {
+					// This is an async operation but we don't need to await it
+					modelsAPI.updateDownloadStatus(modelId, false);
+				} catch (error) {
+					console.error(
+						'Failed to update model download status in database:',
+						error,
+					);
+				}
+			}
+
+			return wasRemoved;
+		},
+		[clearMemoryError],
+	);
+
 	return {
 		downloadModel,
 		cancelDownload,
+		removeModel,
 		isDownloading,
 		getDownloadProgress,
 		getDownloadStatus,

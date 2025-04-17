@@ -19,6 +19,7 @@ interface ModelContextType {
 	isLoading: boolean;
 	downloadModel: (model: Model) => Promise<Model>;
 	cancelDownload: (modelId: string) => boolean;
+	removeModel: (modelId: string) => boolean;
 	selectModel: (model: Model) => void;
 	isDownloading: (modelId: string) => boolean;
 	getDownloadProgress: (modelId: string) => number;
@@ -41,6 +42,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 	const {
 		downloadModel: downloadModelHook,
 		cancelDownload,
+		removeModel: removeModelHook,
 		isDownloading,
 		getDownloadProgress,
 		getDownloadStatus,
@@ -210,6 +212,50 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		[cancelDownload],
 	);
 
+	// Add a wrapper for removeModel to update the models state
+	const handleRemoveModel = useCallback(
+		(modelId: string): boolean => {
+			const result = removeModelHook(modelId);
+
+			if (result) {
+				// Update the models list to reflect the removed status
+				setModels((prev) =>
+					prev.map((m) =>
+						m.id === modelId
+							? {
+									...m,
+									isDownloaded: false,
+									downloadStatus: 'not-downloaded',
+									downloadProgress: 0,
+								}
+							: m,
+					),
+				);
+
+				// If this was the selected model, select another downloaded model or the first model
+				if (selectedModel && selectedModel.id === modelId) {
+					const downloadedModel = models.find(
+						(m) => m.isDownloaded && m.id !== modelId,
+					);
+					if (downloadedModel) {
+						setSelectedModel(downloadedModel);
+						webLLMService.setActiveModel(downloadedModel.id);
+					} else if (models.length > 0) {
+						setSelectedModel(models[0]);
+					} else {
+						setSelectedModel(null);
+					}
+				}
+
+				// Set the refresh flag to true for the next render
+				shouldRefreshModels.current = true;
+			}
+
+			return result;
+		},
+		[removeModelHook, selectedModel, models],
+	);
+
 	/**
 	 * Get a smaller model recommendation based on a model ID
 	 * @param modelId The ID of the model to get a recommendation for
@@ -246,6 +292,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		isLoading,
 		downloadModel,
 		cancelDownload: handleCancelDownload,
+		removeModel: handleRemoveModel,
 		selectModel,
 		isDownloading,
 		getDownloadProgress,
