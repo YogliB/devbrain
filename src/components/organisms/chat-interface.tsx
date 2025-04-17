@@ -76,10 +76,12 @@ export function ChatInterface({
 			</div>
 
 			<div className="mt-4 space-y-4">
-				<SuggestedQuestions
-					questions={suggestedQuestions}
-					onSelectQuestion={onSelectQuestion}
-				/>
+				{!disabled && (
+					<SuggestedQuestions
+						questions={suggestedQuestions}
+						onSelectQuestion={onSelectQuestion}
+					/>
+				)}
 				<ChatInput
 					onSendMessage={onSendMessage}
 					disabled={disabled || isGenerating}
