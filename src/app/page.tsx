@@ -25,14 +25,10 @@ export default function Home() {
 	} = useAppInitialization();
 
 	// Use the model context for model availability check only
-	const {
-		selectedModel,
-		isLoading: modelsLoading,
-		isModelDownloaded,
-	} = useModel();
+	const { modelAvailable } = useModel();
 
-	// Combined loading state
-	const isLoading = appLoading || modelsLoading;
+	// Loading state
+	const isLoading = appLoading;
 
 	if (isLoading) {
 		return (
@@ -57,9 +53,7 @@ export default function Home() {
 			suggestedQuestions={suggestedQuestions}
 			sources={sources}
 			isGenerating={isGenerating}
-			modelAvailable={
-				selectedModel !== null && isModelDownloaded(selectedModel.id)
-			}
+			modelAvailable={modelAvailable}
 			onSelectNotebook={selectNotebook}
 			onCreateNotebook={createNotebook}
 			onDeleteNotebook={deleteNotebook}

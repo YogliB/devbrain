@@ -19,7 +19,7 @@ export function useAppInitialization() {
 	const [isGenerating, setIsGenerating] = useState(false);
 
 	// Get model information from context
-	const { selectedModel, isModelDownloaded } = useModel();
+	const { modelAvailable } = useModel();
 
 	const fetchNotebooks = useCallback(async () => {
 		try {
@@ -88,8 +88,7 @@ export function useAppInitialization() {
 	const sendMessage = useCallback(
 		async (content: string) => {
 			if (!activeNotebook) return null;
-			if (!selectedModel) return null;
-			if (!isModelDownloaded(selectedModel.id)) return null;
+			if (!modelAvailable) return null;
 
 			try {
 				// Create and save user message
@@ -135,7 +134,7 @@ export function useAppInitialization() {
 				return null;
 			}
 		},
-		[activeNotebook, selectedModel, isModelDownloaded],
+		[activeNotebook, modelAvailable],
 	);
 
 	const selectQuestion = useCallback(

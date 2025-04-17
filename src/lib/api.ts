@@ -1,7 +1,6 @@
 import { Notebook } from '@/types/notebook';
 import { Source } from '@/types/source';
 import { ChatMessage } from '@/types/chat';
-import { Model } from '@/types/model';
 
 const API_URL = '/api';
 
@@ -110,17 +109,5 @@ export const messagesAPI = {
 	clear: (notebookId: string): Promise<{ message: string }> =>
 		fetchAPI(`/notebooks/${notebookId}/messages/clear`, {
 			method: 'DELETE',
-		}),
-};
-
-export const modelsAPI = {
-	getAll: (): Promise<Model[]> => fetchAPI('/models'),
-
-	get: (id: string): Promise<Model> => fetchAPI(`/models/${id}`),
-
-	updateDownloadStatus: (id: string, isDownloaded: boolean): Promise<Model> =>
-		fetchAPI(`/models/${id}`, {
-			method: 'PATCH',
-			body: JSON.stringify({ isDownloaded }),
 		}),
 };

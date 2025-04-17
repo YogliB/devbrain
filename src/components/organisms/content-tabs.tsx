@@ -41,11 +41,7 @@ export function ContentTabs({
 	const [isGenerating, setIsGenerating] = useState(false);
 
 	// Get model information from context
-	const { selectedModel, isModelDownloaded } = useModel();
-
-	// Check if a model is available for chat
-	const modelAvailable =
-		selectedModel !== null && isModelDownloaded(selectedModel.id);
+	const { modelAvailable } = useModel();
 
 	return (
 		<div className={cn('flex flex-col h-full', className)}>

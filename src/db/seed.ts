@@ -1,47 +1,10 @@
 import { initDb } from './index';
-import { notebooks, sources, messages, models } from './schema';
+import { notebooks, sources, messages } from './schema';
 
 async function seed() {
 	console.log('Seeding database...');
 
 	const db = await initDb();
-
-	const existingModels = await db.select().from(models);
-
-	if (existingModels.length === 0) {
-		await db.insert(models).values([
-			{
-				id: '1',
-				name: 'TinyLlama',
-				parameters: '1.1B',
-				size: '600MB',
-				useCase: 'Fast responses, lower accuracy',
-			},
-			{
-				id: '2',
-				name: 'Mistral',
-				parameters: '7B',
-				size: '4GB',
-				useCase: 'Balanced performance and accuracy',
-			},
-			{
-				id: '3',
-				name: 'Phi-3',
-				parameters: '3.8B',
-				size: '2.2GB',
-				useCase: 'Optimized for coding tasks',
-			},
-			{
-				id: '4',
-				name: 'Llama 3',
-				parameters: '8B',
-				size: '4.5GB',
-				useCase: 'High accuracy, slower responses',
-			},
-		]);
-
-		console.log('Seeded models');
-	}
 
 	const existingNotebooks = await db.select().from(notebooks);
 

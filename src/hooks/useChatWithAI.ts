@@ -10,7 +10,7 @@ export function useChatWithAI(notebookId: string | null) {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [sources, setSources] = useState<Source[]>([]);
-	const { selectedModel, isModelDownloaded } = useModel();
+	const { modelAvailable } = useModel();
 
 	const fetchMessages = async (notebookId: string) => {
 		if (!notebookId) return [];
@@ -41,8 +41,7 @@ export function useChatWithAI(notebookId: string | null) {
 	const sendMessage = useCallback(
 		async (content: string) => {
 			if (!notebookId) return null;
-			if (!selectedModel) return null;
-			if (!isModelDownloaded(selectedModel.id)) return null;
+			if (!modelAvailable) return null;
 
 			try {
 				// Create and save user message
@@ -90,7 +89,7 @@ export function useChatWithAI(notebookId: string | null) {
 				return null;
 			}
 		},
-		[notebookId, selectedModel, isModelDownloaded, fetchSources],
+		[notebookId, modelAvailable, fetchSources],
 	);
 
 	const selectQuestion = useCallback(
@@ -98,10 +97,7 @@ export function useChatWithAI(notebookId: string | null) {
 		[sendMessage],
 	);
 
-	const canSendMessages = useCallback(
-		() => selectedModel !== null && isModelDownloaded(selectedModel.id),
-		[selectedModel, isModelDownloaded],
-	);
+	const canSendMessages = useCallback(() => modelAvailable, [modelAvailable]);
 
 	const clearMessages = useCallback(async () => {
 		if (!notebookId) return false;
