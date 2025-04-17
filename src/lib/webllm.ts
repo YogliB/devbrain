@@ -11,7 +11,10 @@ export class WebLLMService {
 	private activeModelId: string | null = null;
 	private downloadControllers: Map<string, AbortController> = new Map();
 
-	private constructor() {}
+	private constructor() {
+		// Initialize engines from cache when service is created
+		this.initializeEnginesFromCache();
+	}
 
 	/**
 	 * Get the singleton instance of WebLLMService
@@ -218,14 +221,32 @@ export class WebLLMService {
 			return false;
 		}
 
-		// Otherwise, check if the engine exists
-		const result = this.engines.has(modelId);
-		console.log(`isModelDownloaded check for ${modelId}: ${result}`);
-		return result;
+		// First check if the engine exists in memory
+		if (this.engines.has(modelId)) {
+			console.log(`Model ${modelId} engine exists in memory`);
+			return true;
+		}
+
+		// If not in memory, check if it exists in the cache and initialize it if needed
+		const model = this.models.find((m) => m.id === modelId);
+		if (model) {
+			this.checkAndInitializeEngine(model);
+			// After initialization attempt, check again if the engine exists
+			const result = this.engines.has(modelId);
+			console.log(
+				`Model ${modelId} engine initialized from cache: ${result}`,
+			);
+			return result;
+		}
+
+		console.log(`Model ${modelId} not found in memory or cache`);
+		return false;
 	}
 
 	// Track cancelled models to ensure they're never considered downloaded
 	private _cancelledModels: Set<string> | null = null;
+	// Track available models
+	private models: Model[] = [];
 
 	/**
 	 * Get the WebLLM model ID for a model
@@ -293,7 +314,10 @@ export class WebLLMService {
 		}
 
 		try {
-			const messages = [];
+			const messages: Array<{
+				role: 'system' | 'user' | 'assistant';
+				content: string;
+			}> = [];
 
 			// Add system message with instructions if sources are provided
 			if (sources && sources.length > 0) {
@@ -317,8 +341,9 @@ export class WebLLMService {
 			// Add the user message
 			messages.push({ role: 'user', content: message });
 
+			// Cast messages to any to avoid TypeScript errors with WebLLM's API
 			const response = await this.activeEngine.chat.completions.create({
-				messages,
+				messages: messages as any,
 				temperature: 0.7,
 				max_tokens: 800,
 			});
@@ -416,6 +441,128 @@ export class WebLLMService {
 	 */
 	public isDownloading(modelId: string): boolean {
 		return this.downloadControllers.has(modelId);
+	}
+
+	/**
+	 * Set available models for cache checking
+	 * @param models The available models
+	 */
+	public setAvailableModels(models: Model[]): void {
+		this.models = models;
+		// Check if any of these models are already in the cache
+		this.initializeEnginesFromCache();
+	}
+
+	/**
+	 * Initialize engines from cached models
+	 */
+	private async initializeEnginesFromCache(): Promise<void> {
+		// Skip if we're not in a browser environment or if there are no models
+		if (typeof window === 'undefined' || !this.models.length) {
+			return;
+		}
+
+		console.log('Checking for cached models...');
+
+		// For each model, check if it's in the cache and initialize its engine
+		for (const model of this.models) {
+			await this.checkAndInitializeEngine(model);
+		}
+	}
+
+	/**
+	 * Check if a model is in the cache and initialize its engine if it is
+	 * @param model The model to check
+	 */
+	private async checkAndInitializeEngine(model: Model): Promise<boolean> {
+		try {
+			// Skip if the engine is already initialized or if the model was cancelled
+			if (
+				this.engines.has(model.id) ||
+				(this._cancelledModels && this._cancelledModels.has(model.id))
+			) {
+				return this.engines.has(model.id);
+			}
+
+			// Get the WebLLM model ID
+			const webLLMModelId = this.getWebLLMModelId(model);
+
+			// Check if the model exists in the cache by creating an engine
+			// WebLLM will use the cached model if it exists
+			// We use a silent progress callback to avoid UI updates
+			const silentProgressCallback = () => {};
+
+			try {
+				// Try to create the engine - this will use the cached model if it exists
+				// If the model is not in the cache, this will start downloading it
+				// We'll abort the download if it's not in the cache
+				const abortController = new AbortController();
+
+				// Set a timeout to abort if it takes too long (indicating a download)
+				const timeoutId = setTimeout(() => {
+					console.log(
+						`Model ${model.id} not in cache, aborting initialization`,
+					);
+					abortController.abort();
+				}, 1000); // Abort after 1 second if it's downloading
+
+				const engine = await webllm.CreateMLCEngine(webLLMModelId, {
+					initProgressCallback: (report) => {
+						// If we get a progress report with a low percentage, it means the model is downloading
+						// Abort the download in this case
+						if (
+							report.progress !== undefined &&
+							report.progress < 50
+						) {
+							console.log(
+								`Model ${model.id} is downloading (${report.progress}%), aborting`,
+							);
+							abortController.abort();
+						}
+						silentProgressCallback();
+					},
+					logLevel: 'INFO',
+				});
+
+				// Clear the timeout since we successfully created the engine
+				clearTimeout(timeoutId);
+
+				// If we get here, the model was in the cache
+				console.log(
+					`Model ${model.id} found in cache, engine initialized`,
+				);
+
+				// Store the engine
+				this.engines.set(model.id, engine);
+
+				// Set as active engine if we don't have one yet
+				if (!this.activeEngine) {
+					this.activeEngine = engine;
+					this.activeModelId = model.id;
+				}
+
+				return true;
+			} catch (error) {
+				// If the error is an AbortError, it means we aborted the download
+				if (
+					error instanceof DOMException &&
+					error.name === 'AbortError'
+				) {
+					console.log(
+						`Model ${model.id} initialization aborted - not in cache`,
+					);
+				} else {
+					console.error(
+						`Error checking cache for model ${model.id}:`,
+						error,
+					);
+				}
+				return false;
+			}
+		} catch (error) {
+			console.error(`Error checking cache for model ${model.id}:`, error);
+			return false;
+		}
 	}
 
 	/**

@@ -53,6 +53,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 				setIsLoading(true);
 				const modelsData = await modelsAPI.getAll();
 
+				// First, provide the models to WebLLM service so it can check the cache
+				webLLMService.setAvailableModels(modelsData);
+
 				// Enhance models with runtime properties
 				const enhancedModels = modelsData.map((model) => {
 					// Get the current download status
