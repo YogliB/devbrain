@@ -6,7 +6,7 @@ export type ChatCompletionRequestMessage = {
 	name?: string;
 };
 
-export const MODEL_ID = 'DeepSeek-Llama-8B-q4f16_1-MLC';
+export const MODEL_ID = 'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC';
 
 export type ModelStatus = 'not-loaded' | 'loading' | 'loaded' | 'error';
 
