@@ -5,12 +5,13 @@ import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 import { messagesAPI, sourcesAPI } from '@/lib/api';
 import { useModel } from '@/contexts/model-context';
+import { ChatCompletionRequestMessage } from '@/lib/webllm-service';
 
 export function useChatWithAI(notebookId: string | null) {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [sources, setSources] = useState<Source[]>([]);
-	const { modelAvailable } = useModel();
+	const { modelAvailable, generateResponse } = useModel();
 
 	const fetchMessages = async (notebookId: string) => {
 		if (!notebookId) return [];
@@ -58,8 +59,30 @@ export function useChatWithAI(notebookId: string | null) {
 				// Generate AI response
 				setIsGenerating(true);
 				try {
-					// Placeholder for AI response - will be implemented with new service
-					const aiResponse = `This is a placeholder response. The AI model integration is being reimplemented.\n\nYour message was: "${content}"\n\nSources: ${currentSources.length} source(s) available.`;
+					// Prepare messages for the AI model
+					const aiMessages: ChatCompletionRequestMessage[] = [
+						{
+							role: 'system',
+							content: `You are a helpful AI assistant that answers questions based on the provided sources.
+${currentSources.length > 0 ? 'Use the following sources to answer the question:' : 'No sources are available, so answer based on your general knowledge.'}
+
+${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename || `Source ${index + 1}`}\n${source.content}`).join('\n\n')}`,
+						},
+						...messages
+							.filter(
+								(msg) =>
+									msg.role === 'user' ||
+									msg.role === 'assistant',
+							)
+							.map((msg) => ({
+								role: msg.role as 'user' | 'assistant',
+								content: msg.content,
+							})),
+						{ role: 'user', content },
+					];
+
+					// Generate response using WebLLM
+					const aiResponse = await generateResponse(aiMessages);
 
 					// Save the AI response to the database
 					const assistantMessage = await messagesAPI.create(
@@ -89,7 +112,7 @@ export function useChatWithAI(notebookId: string | null) {
 				return null;
 			}
 		},
-		[notebookId, modelAvailable, fetchSources],
+		[notebookId, modelAvailable, fetchSources, generateResponse, messages],
 	);
 
 	const selectQuestion = useCallback(
