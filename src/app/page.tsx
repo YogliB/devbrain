@@ -33,6 +33,7 @@ export default function Home() {
 		downloadModel,
 		isModelDownloaded,
 		cancelDownload,
+		isDownloading,
 	} = useModel();
 
 	// Combined loading state
@@ -66,6 +67,7 @@ export default function Home() {
 			modelAvailable={
 				selectedModel !== null && isModelDownloaded(selectedModel.id)
 			}
+			isDownloading={isDownloading}
 			onSelectNotebook={selectNotebook}
 			onCreateNotebook={createNotebook}
 			onDeleteNotebook={deleteNotebook}

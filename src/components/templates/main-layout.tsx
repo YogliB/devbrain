@@ -21,6 +21,7 @@ interface MainLayoutProps {
 	selectedModel: Model | null;
 	isGenerating?: boolean;
 	modelAvailable?: boolean;
+	isDownloading?: (modelId: string) => boolean;
 	onSelectNotebook: (notebook: Notebook) => void;
 	onCreateNotebook: () => void;
 	onDeleteNotebook: (notebook: Notebook) => void;
@@ -46,6 +47,7 @@ export function MainLayout({
 	selectedModel,
 	isGenerating = false,
 	modelAvailable = false,
+	isDownloading,
 	onSelectNotebook,
 	onCreateNotebook,
 	onDeleteNotebook,
@@ -82,6 +84,7 @@ export function MainLayout({
 								onSelectModel={onSelectModel}
 								onDownloadModel={onDownloadModel}
 								onCancelDownload={onCancelDownload}
+								isDownloading={isDownloading}
 								className="w-48"
 							/>
 						</div>
