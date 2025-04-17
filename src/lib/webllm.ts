@@ -1,6 +1,21 @@
 import * as webllm from '@mlc-ai/web-llm';
 import { Model, ModelDownloadStatus } from '@/types/model';
 
+// Custom fetch function to use our proxy API
+const proxyFetch = (url: string, init?: RequestInit): Promise<Response> => {
+	// Encode the URL to handle special characters
+	const encodedUrl = encodeURIComponent(url);
+	// Use our proxy API route
+	return fetch(`/api/proxy/model?url=${encodedUrl}`, init);
+};
+
+// Define the type for WebLLM engine options
+interface CustomMLCEngineOptions {
+	initProgressCallback?: (report: any) => void;
+	logLevel?: string;
+	customFetch?: (url: string, init?: RequestInit) => Promise<Response>;
+}
+
 // Memory error types
 export type MemoryErrorType = 'out-of-memory' | 'allocation-failed' | 'unknown';
 
@@ -122,7 +137,7 @@ export class WebLLMService {
 				this.memoryErrors.delete(model.id);
 
 				// Configure memory options to handle constraints better
-				const engineOptions: webllm.MLCEngineOptions = {
+				const engineOptions: CustomMLCEngineOptions = {
 					initProgressCallback: (report) => {
 						// Check if the download has been aborted
 						if (abortController.signal.aborted) {
@@ -137,11 +152,12 @@ export class WebLLMService {
 					logLevel: 'INFO',
 				};
 
-				// Create the engine with the configured options
-				engine = await webllm.CreateMLCEngine(
-					webLLMModelId,
-					engineOptions,
-				);
+				// Create the engine with the configured options and our proxy fetch
+				engine = await webllm.CreateMLCEngine(webLLMModelId, {
+					...engineOptions,
+					// Override the fetch function to use our proxy
+					customFetch: proxyFetch,
+				} as any);
 			} catch (error) {
 				// Handle WebAssembly memory errors
 				if (
@@ -543,7 +559,10 @@ export class WebLLMService {
 	public setAvailableModels(models: Model[]): void {
 		this.models = models;
 		// Check if any of these models are already in the cache
-		this.initializeEnginesFromCache();
+		// Use setTimeout to delay cache checking to avoid blocking the UI
+		setTimeout(() => {
+			this.initializeEnginesFromCache();
+		}, 2000); // Delay cache checking by 2 seconds
 	}
 
 	/**
@@ -557,9 +576,28 @@ export class WebLLMService {
 
 		console.log('Checking for cached models...');
 
-		// For each model, check if it's in the cache and initialize its engine
-		for (const model of this.models) {
-			await this.checkAndInitializeEngine(model);
+		// Only check the smallest model (TinyLlama) at startup to avoid memory issues
+		// Sort models by size (using our hierarchy) and only check the smallest one
+		const modelSizeHierarchy = [
+			'TinyLlama', // Smallest
+			'Phi-3',
+			'Llama 3',
+			'Mistral', // Largest
+		];
+
+		// Find the smallest model available
+		let smallestModel: Model | undefined;
+		for (const modelName of modelSizeHierarchy) {
+			smallestModel = this.models.find((m) => m.name.includes(modelName));
+			if (smallestModel) break;
+		}
+
+		// If we found a model, check if it's in the cache
+		if (smallestModel) {
+			console.log(
+				`Only checking smallest model (${smallestModel.name}) at startup to avoid memory issues`,
+			);
+			await this.checkAndInitializeEngine(smallestModel);
 		}
 	}
 
@@ -599,57 +637,96 @@ export class WebLLMService {
 					abortController.abort();
 				}, 1000); // Abort after 1 second if it's downloading
 
-				const engine = await webllm.CreateMLCEngine(webLLMModelId, {
-					initProgressCallback: (report) => {
-						// If we get a progress report with a low percentage, it means the model is downloading
-						// Abort the download in this case
-						if (
-							report.progress !== undefined &&
-							report.progress < 50
-						) {
-							console.log(
-								`Model ${model.id} is downloading (${report.progress}%), aborting`,
-							);
-							abortController.abort();
-						}
-						silentProgressCallback();
-					},
-					logLevel: 'INFO',
-				});
+				try {
+					const engine = await webllm.CreateMLCEngine(webLLMModelId, {
+						initProgressCallback: (report: any) => {
+							// If we get a progress report with a low percentage, it means the model is downloading
+							// Abort the download in this case
+							if (
+								report.progress !== undefined &&
+								report.progress < 50
+							) {
+								console.log(
+									`Model ${model.id} is downloading (${report.progress}%), aborting`,
+								);
+								abortController.abort();
+							}
+							silentProgressCallback();
+						},
+						logLevel: 'INFO',
+						// Use our proxy fetch function
+						customFetch: proxyFetch,
+					} as any);
 
-				// Clear the timeout since we successfully created the engine
-				clearTimeout(timeoutId);
+					// Clear the timeout since we successfully created the engine
+					clearTimeout(timeoutId);
 
-				// If we get here, the model was in the cache
-				console.log(
-					`Model ${model.id} found in cache, engine initialized`,
-				);
-
-				// Store the engine
-				this.engines.set(model.id, engine);
-
-				// Set as active engine if we don't have one yet
-				if (!this.activeEngine) {
-					this.activeEngine = engine;
-					this.activeModelId = model.id;
-				}
-
-				return true;
-			} catch (error) {
-				// If the error is an AbortError, it means we aborted the download
-				if (
-					error instanceof DOMException &&
-					error.name === 'AbortError'
-				) {
+					// If we get here, the model was in the cache
 					console.log(
-						`Model ${model.id} initialization aborted - not in cache`,
+						`Model ${model.id} found in cache, engine initialized`,
 					);
-				} else {
-					console.error(
-						`Error checking cache for model ${model.id}:`,
-						error,
-					);
+
+					// Store the engine
+					this.engines.set(model.id, engine);
+
+					// Set as active engine if we don't have one yet
+					if (!this.activeEngine) {
+						this.activeEngine = engine;
+						this.activeModelId = model.id;
+					}
+
+					return true;
+				} catch (error) {
+					// Handle memory errors specifically
+					if (
+						error instanceof Error &&
+						(error.message.includes('Out of memory') ||
+							error.message.includes(
+								'Cannot allocate Wasm memory',
+							))
+					) {
+						// Create a structured memory error
+						const memError: MemoryError = {
+							name: 'WebAssemblyMemoryError',
+							message: `Not enough memory to check model ${model.name}. This is normal at startup.`,
+							type: 'out-of-memory',
+							modelId: model.id,
+							recommendation:
+								'No action needed. You can still download models manually.',
+						};
+
+						// Store the error for future reference
+						this.memoryErrors.set(model.id, memError);
+
+						// Just log a simple message for memory errors during cache check
+						console.log(
+							`Memory limit reached checking model ${model.id} cache. This is normal.`,
+						);
+						return false;
+					}
+
+					// If the error is an AbortError, it means we aborted the download
+					if (
+						error instanceof DOMException &&
+						error.name === 'AbortError'
+					) {
+						console.log(
+							`Model ${model.id} initialization aborted - not in cache`,
+						);
+					} else {
+						console.error(
+							`Error checking cache for model ${model.id}:`,
+							error,
+						);
+					}
+					return false;
 				}
+			} catch (error) {
+				// No need to clear timeout here as it's handled in the inner try/catch
+				console.error(
+					`Error checking cache for model ${model.id}:`,
+					error,
+				);
 				return false;
 			}
 		} catch (error) {
