@@ -111,11 +111,6 @@ export class WebLLMService {
 				// Update the model's download progress
 				updatedModel.downloadProgress = progress;
 
-				// Log progress for debugging
-				console.log(
-					`Model download progress: ${progress}%, ${report.text}`,
-				);
-
 				// Call the progress callback if provided
 				if (progressCallback) {
 					progressCallback(progress, 'downloading');
@@ -253,9 +248,6 @@ export class WebLLMService {
 					this._cancelledModels = new Set<string>();
 				}
 				this._cancelledModels.add(model.id);
-				console.log(
-					`Added ${model.id} to cancelled models set (from catch block)`,
-				);
 			}
 
 			return failedModel;
@@ -324,15 +316,11 @@ export class WebLLMService {
 
 		// If the model was cancelled, it's not downloaded
 		if (this._cancelledModels.has(modelId)) {
-			console.log(
-				`Model ${modelId} was cancelled, returning false for isModelDownloaded`,
-			);
 			return false;
 		}
 
 		// First check if the engine exists in memory
 		if (this.engines.has(modelId)) {
-			console.log(`Model ${modelId} engine exists in memory`);
 			return true;
 		}
 
@@ -342,13 +330,10 @@ export class WebLLMService {
 			this.checkAndInitializeEngine(model);
 			// After initialization attempt, check again if the engine exists
 			const result = this.engines.has(modelId);
-			console.log(
-				`Model ${modelId} engine initialized from cache: ${result}`,
-			);
+
 			return result;
 		}
 
-		console.log(`Model ${modelId} not found in memory or cache`);
 		return false;
 	}
 
@@ -476,22 +461,17 @@ export class WebLLMService {
 			this._cancelledModels = new Set<string>();
 		}
 		this._cancelledModels.add(modelId);
-		console.log(`Added ${modelId} to cancelled models set`);
 
 		// Remove the engine from the engines map if it exists
 		// This ensures isModelDownloaded returns false for cancelled models
 		if (this.engines.has(modelId)) {
 			this.engines.delete(modelId);
-			console.log(`Removed engine for cancelled model ${modelId}`);
 		}
 
 		// If this was the active model, clear the active model
 		if (this.activeModelId === modelId) {
 			this.activeEngine = null;
 			this.activeModelId = null;
-			console.log(
-				`Cleared active model because ${modelId} was cancelled`,
-			);
 		}
 
 		// Check if there's an active download to cancel
@@ -500,7 +480,7 @@ export class WebLLMService {
 			// Abort the download
 			controller.abort();
 			this.downloadControllers.delete(modelId);
-			console.log(`Cancelled download for model ${modelId}`);
+
 			return true;
 		}
 
@@ -513,10 +493,6 @@ export class WebLLMService {
 	 * Cancel all ongoing downloads
 	 */
 	private cancelAllDownloads(): void {
-		console.log(
-			`Cancelling ${this.downloadControllers.size} ongoing downloads`,
-		);
-
 		// Initialize cancelled models set if it doesn't exist
 		if (!this._cancelledModels) {
 			this._cancelledModels = new Set<string>();
@@ -535,10 +511,7 @@ export class WebLLMService {
 			// Remove the engine from the engines map if it exists
 			if (this.engines.has(modelId)) {
 				this.engines.delete(modelId);
-				console.log(`Removed engine for cancelled model ${modelId}`);
 			}
-
-			console.log(`Cancelled download for model ${modelId}`);
 		}
 		this.downloadControllers.clear();
 	}
@@ -574,8 +547,6 @@ export class WebLLMService {
 			return;
 		}
 
-		console.log('Checking for cached models...');
-
 		// Only check the smallest model (TinyLlama) at startup to avoid memory issues
 		// Sort models by size (using our hierarchy) and only check the smallest one
 		const modelSizeHierarchy = [
@@ -594,9 +565,6 @@ export class WebLLMService {
 
 		// If we found a model, check if it's in the cache
 		if (smallestModel) {
-			console.log(
-				`Only checking smallest model (${smallestModel.name}) at startup to avoid memory issues`,
-			);
 			await this.checkAndInitializeEngine(smallestModel);
 		}
 	}
@@ -631,9 +599,6 @@ export class WebLLMService {
 
 				// Set a timeout to abort if it takes too long (indicating a download)
 				const timeoutId = setTimeout(() => {
-					console.log(
-						`Model ${model.id} not in cache, aborting initialization`,
-					);
 					abortController.abort();
 				}, 1000); // Abort after 1 second if it's downloading
 
@@ -646,9 +611,6 @@ export class WebLLMService {
 								report.progress !== undefined &&
 								report.progress < 50
 							) {
-								console.log(
-									`Model ${model.id} is downloading (${report.progress}%), aborting`,
-								);
 								abortController.abort();
 							}
 							silentProgressCallback();
@@ -662,9 +624,6 @@ export class WebLLMService {
 					clearTimeout(timeoutId);
 
 					// If we get here, the model was in the cache
-					console.log(
-						`Model ${model.id} found in cache, engine initialized`,
-					);
 
 					// Store the engine
 					this.engines.set(model.id, engine);
@@ -699,9 +658,7 @@ export class WebLLMService {
 						this.memoryErrors.set(model.id, memError);
 
 						// Just log a simple message for memory errors during cache check
-						console.log(
-							`Memory limit reached checking model ${model.id} cache. This is normal.`,
-						);
+
 						return false;
 					}
 
@@ -710,9 +667,6 @@ export class WebLLMService {
 						error instanceof DOMException &&
 						error.name === 'AbortError'
 					) {
-						console.log(
-							`Model ${model.id} initialization aborted - not in cache`,
-						);
 					} else {
 						console.error(
 							`Error checking cache for model ${model.id}:`,
@@ -785,9 +739,6 @@ export class WebLLMService {
 
 		// Check if the model is in the engines map
 		if (!this.engines.has(modelId)) {
-			console.log(
-				`Model ${modelId} not found in engines map, nothing to remove`,
-			);
 			return false;
 		}
 
@@ -795,7 +746,6 @@ export class WebLLMService {
 		if (this.activeModelId === modelId) {
 			this.activeEngine = null;
 			this.activeModelId = null;
-			console.log(`Cleared active model because ${modelId} was removed`);
 		}
 
 		// Remove the engine from the engines map
@@ -816,12 +766,6 @@ export class WebLLMService {
 			// WebLLM doesn't provide a direct API to clear cache for a specific model
 			// We would need to use browser APIs to clear IndexedDB storage
 			// This is a placeholder for future implementation
-			console.log(
-				`Note: WebLLM doesn't provide a direct API to clear cache for a specific model`,
-			);
-			console.log(
-				`The model will be removed from memory but may still exist in browser cache`,
-			);
 		} catch (error) {
 			console.error(`Error clearing cache for model ${modelId}:`, error);
 		}
@@ -835,7 +779,6 @@ export class WebLLMService {
 	public async cleanup(): Promise<void> {
 		// Clean up all engines
 		// WebLLM doesn't have a specific cleanup method, but we'll log for debugging
-		console.log(`Cleaning up ${this.engines.size} WebLLM engines`);
 
 		// If WebLLM adds cleanup methods in the future, we would iterate through engines here
 

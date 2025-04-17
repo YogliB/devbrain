@@ -37,23 +37,8 @@ export function ModelSelector({
 }: ModelSelectorProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showModelInfo, setShowModelInfo] = useState<Model | null>(null);
-	const [localModels, setLocalModels] = useState<Model[]>(models);
-
 	// Update local models when props change
 	useEffect(() => {
-		// Log incoming models for debugging
-		console.log(
-			'Models from props:',
-			models.map((m) => ({
-				id: m.id,
-				name: m.name,
-				status: m.downloadStatus,
-			})),
-		);
-
-		// Always update local models to reflect the latest state
-		setLocalModels(models);
-
 		// If the selected model is one of the updated models, update it too
 		if (selectedModel) {
 			const updatedSelectedModel = models.find(
@@ -67,16 +52,6 @@ export function ModelSelector({
 						selectedModel.isDownloaded)
 			) {
 				// Only update if the status has changed
-				console.log('Updating selected model:', {
-					old: {
-						status: selectedModel.downloadStatus,
-						isDownloaded: selectedModel.isDownloaded,
-					},
-					new: {
-						status: updatedSelectedModel.downloadStatus,
-						isDownloaded: updatedSelectedModel.isDownloaded,
-					},
-				});
 				onSelectModel(updatedSelectedModel);
 			}
 		}
@@ -94,16 +69,6 @@ export function ModelSelector({
 						showModelInfo.downloadProgress)
 			) {
 				// Only update if the status or progress has changed
-				console.log('Updating model info:', {
-					old: {
-						status: showModelInfo.downloadStatus,
-						progress: showModelInfo.downloadProgress,
-					},
-					new: {
-						status: updatedModelInfo.downloadStatus,
-						progress: updatedModelInfo.downloadProgress,
-					},
-				});
 				setShowModelInfo(updatedModelInfo);
 			}
 		}
@@ -130,13 +95,6 @@ export function ModelSelector({
 			downloadProgress: 0,
 		};
 
-		// Log the action
-		console.log('Starting download for model:', {
-			id: modelToDownload.id,
-			name: modelToDownload.name,
-			status: modelToDownload.downloadStatus,
-		});
-
 		// Start the download with the updated model
 		onDownloadModel(modelToDownload);
 		setShowModelInfo(null);
@@ -145,12 +103,6 @@ export function ModelSelector({
 	const handleCancelDownload = (model: Model, e: React.MouseEvent) => {
 		e.stopPropagation();
 		if (onCancelDownload) {
-			// Log the action
-			console.log('Cancelling download for model:', {
-				id: model.id,
-				name: model.name,
-			});
-
 			// Cancel the download
 			onCancelDownload(model.id);
 		}
@@ -159,12 +111,6 @@ export function ModelSelector({
 	const handleRemoveModel = (model: Model, e: React.MouseEvent) => {
 		e.stopPropagation();
 		if (onRemoveModel) {
-			// Log the action
-			console.log('Removing model:', {
-				id: model.id,
-				name: model.name,
-			});
-
 			// Remove the model
 			onRemoveModel(model.id);
 
@@ -181,13 +127,6 @@ export function ModelSelector({
 		const modelIsDownloading = isDownloading
 			? isDownloading(model.id)
 			: model.downloadStatus === 'downloading';
-
-		// Debug logging to see what's happening
-		console.log(`Rendering status icon for model ${model.id}:`, {
-			isDownloaded: model.isDownloaded,
-			downloadStatus: model.downloadStatus,
-			modelIsDownloading,
-		});
 
 		if (model.isDownloaded) {
 			return <Check className="h-4 w-4 text-green-500" />;
@@ -214,31 +153,6 @@ export function ModelSelector({
 		const isAnyModelDownloading = isDownloading
 			? models.some((model) => isDownloading(model.id))
 			: models.some((model) => model.downloadStatus === 'downloading');
-
-		// Debug logging to see what's happening
-		console.log('Model selector state:', {
-			modelsFromProps: models.map((m) => ({
-				id: m.id,
-				name: m.name,
-				status: m.downloadStatus,
-			})),
-			localModels: localModels.map((m) => ({
-				id: m.id,
-				name: m.name,
-				status: m.downloadStatus,
-			})),
-			isAnyModelDownloading,
-			selectedModel: selectedModel
-				? {
-						id: selectedModel.id,
-						name: selectedModel.name,
-						status: selectedModel.downloadStatus,
-					}
-				: null,
-			isDownloadingFunction: isDownloading
-				? 'available'
-				: 'not available',
-		});
 
 		if (!selectedModel) {
 			return (

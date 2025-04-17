@@ -83,9 +83,6 @@ export function useModelDownload() {
 						// Update local tracking variable
 						latestProgress = newProgress;
 						lastReportedProgress = newProgress;
-						console.log(
-							`Simulated progress update: ${newProgress.toFixed(1)}%`,
-						);
 					}
 
 					// Schedule next update
@@ -272,9 +269,6 @@ export function useModelDownload() {
 		(modelId: string): boolean => {
 			// If the model status is 'cancelled', it's not downloaded
 			if (downloadStatus[modelId] === 'cancelled') {
-				console.log(
-					`Model ${modelId} has cancelled status, returning false from hook`,
-				);
 				return false;
 			}
 
@@ -283,9 +277,6 @@ export function useModelDownload() {
 				memoryErrors[modelId] ||
 				webLLMService.hasMemoryError(modelId)
 			) {
-				console.log(
-					`Model ${modelId} has memory error, returning false from hook`,
-				);
 				return false;
 			}
 
@@ -295,9 +286,6 @@ export function useModelDownload() {
 			// If the WebLLM service says it's not downloaded but our status says it is,
 			// update our status to match reality
 			if (!result && downloadStatus[modelId] === 'downloaded') {
-				console.log(
-					`Fixing inconsistent state: WebLLM says ${modelId} is not downloaded but status was 'downloaded'`,
-				);
 				setDownloadStatus((prev) => ({
 					...prev,
 					[modelId]: 'not-downloaded',
@@ -362,8 +350,6 @@ export function useModelDownload() {
 			const wasCancelled = webLLMService.cancelDownload(modelId);
 
 			if (wasCancelled) {
-				// Log cancellation for debugging
-				console.log(`Download cancelled for model ${modelId}`);
 			}
 
 			return wasCancelled;
@@ -393,9 +379,6 @@ export function useModelDownload() {
 			const wasRemoved = webLLMService.removeModel(modelId);
 
 			if (wasRemoved) {
-				// Log removal for debugging
-				console.log(`Model ${modelId} removed successfully`);
-
 				// Update the model in the database to mark as not downloaded
 				try {
 					// This is an async operation but we don't need to await it

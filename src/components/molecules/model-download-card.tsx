@@ -41,10 +41,6 @@ export function ModelDownloadCard({
 		(model.downloadStatus === 'downloaded' || model.isDownloaded) &&
 		model.downloadStatus !== 'cancelled';
 
-	// Debug logging
-	console.log(
-		`Model ${model.id} status: ${model.downloadStatus}, isDownloaded: ${isDownloaded}, wasCancelled: ${model.downloadStatus === 'cancelled'}, hasMemoryError: ${!!memoryError}`,
-	);
 	const hasFailed = model.downloadStatus === 'failed';
 	const wasCancelled = model.downloadStatus === 'cancelled';
 

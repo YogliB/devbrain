@@ -84,11 +84,6 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 					const isModelDownloadedValue =
 						downloadStatus === 'downloaded' && !hasMemoryError;
 
-					// Debug logging
-					console.log(
-						`Model ${model.id} enhanced with status: ${downloadStatus}, isDownloaded: ${isModelDownloadedValue}, hasMemoryError: ${hasMemoryError}`,
-					);
-
 					return {
 						...model,
 						isDownloaded: isModelDownloadedValue,
