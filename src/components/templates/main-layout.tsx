@@ -19,6 +19,8 @@ interface MainLayoutProps {
 	sources: Source[];
 	models: Model[];
 	selectedModel: Model | null;
+	isGenerating?: boolean;
+	modelAvailable?: boolean;
 	onSelectNotebook: (notebook: Notebook) => void;
 	onCreateNotebook: () => void;
 	onDeleteNotebook: (notebook: Notebook) => void;
@@ -29,6 +31,7 @@ interface MainLayoutProps {
 	onDeleteSource: (source: Source) => void;
 	onSelectModel: (model: Model) => void;
 	onDownloadModel: (model: Model) => void;
+	onCancelDownload?: (modelId: string) => boolean;
 	className?: string;
 }
 
@@ -40,6 +43,8 @@ export function MainLayout({
 	sources,
 	models,
 	selectedModel,
+	isGenerating = false,
+	modelAvailable = false,
 	onSelectNotebook,
 	onCreateNotebook,
 	onDeleteNotebook,
@@ -50,6 +55,7 @@ export function MainLayout({
 	onDeleteSource,
 	onSelectModel,
 	onDownloadModel,
+	onCancelDownload,
 	className,
 }: MainLayoutProps) {
 	return (
@@ -73,6 +79,7 @@ export function MainLayout({
 								selectedModel={selectedModel}
 								onSelectModel={onSelectModel}
 								onDownloadModel={onDownloadModel}
+								onCancelDownload={onCancelDownload}
 								className="w-48"
 							/>
 						</div>

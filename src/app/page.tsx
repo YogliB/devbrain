@@ -12,6 +12,7 @@ export default function Home() {
 		activeNotebook,
 		messages,
 		sources,
+		isGenerating,
 		selectNotebook,
 		createNotebook,
 		deleteNotebook,
@@ -29,6 +30,8 @@ export default function Home() {
 		isLoading: modelsLoading,
 		selectModel,
 		downloadModel,
+		isModelDownloaded,
+		cancelDownload,
 	} = useModel();
 
 	// Combined loading state
@@ -58,6 +61,10 @@ export default function Home() {
 			sources={sources}
 			models={models}
 			selectedModel={selectedModel}
+			isGenerating={isGenerating}
+			modelAvailable={
+				selectedModel !== null && isModelDownloaded(selectedModel.id)
+			}
 			onSelectNotebook={selectNotebook}
 			onCreateNotebook={createNotebook}
 			onDeleteNotebook={deleteNotebook}
@@ -68,6 +75,7 @@ export default function Home() {
 			onDeleteSource={deleteSource}
 			onSelectModel={selectModel}
 			onDownloadModel={downloadModel}
+			onCancelDownload={cancelDownload}
 		/>
 	);
 }

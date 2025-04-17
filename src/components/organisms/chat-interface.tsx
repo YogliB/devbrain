@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Download } from 'lucide-react';
 import {
 	ChatMessage as ChatMessageType,
 	SuggestedQuestion,
@@ -14,6 +15,8 @@ interface ChatInterfaceProps {
 	onSendMessage: (message: string) => void;
 	onSelectQuestion: (question: SuggestedQuestion) => void;
 	disabled?: boolean;
+	modelAvailable?: boolean;
+	isGenerating?: boolean;
 	className?: string;
 }
 
@@ -23,6 +26,8 @@ export function ChatInterface({
 	onSendMessage,
 	onSelectQuestion,
 	disabled = false,
+	modelAvailable = true,
+	isGenerating = false,
 	className,
 }: ChatInterfaceProps) {
 	return (
@@ -30,9 +35,22 @@ export function ChatInterface({
 			<div className="flex-grow overflow-y-auto">
 				{messages.length === 0 ? (
 					<div className="h-full flex items-center justify-center text-muted-foreground">
-						{disabled
-							? 'Add data to start inquiring...'
-							: 'Send a message to start the conversation'}
+						{!modelAvailable ? (
+							<div className="flex flex-col items-center gap-2 text-center">
+								<Download className="h-8 w-8 text-muted-foreground" />
+								<div>
+									<p>No AI model available</p>
+									<p className="text-sm text-muted-foreground">
+										Please download a model to start
+										chatting
+									</p>
+								</div>
+							</div>
+						) : disabled ? (
+							'Add data to start inquiring...'
+						) : (
+							'Send a message to start the conversation'
+						)}
 					</div>
 				) : (
 					<div className="divide-y divide-border">
@@ -48,7 +66,16 @@ export function ChatInterface({
 					questions={suggestedQuestions}
 					onSelectQuestion={onSelectQuestion}
 				/>
-				<ChatInput onSendMessage={onSendMessage} disabled={disabled} />
+				<ChatInput
+					onSendMessage={onSendMessage}
+					disabled={disabled || isGenerating}
+					modelAvailable={modelAvailable}
+					disabledReason={
+						isGenerating
+							? 'Generating response...'
+							: 'Add data to start inquiring...'
+					}
+				/>
 			</div>
 		</div>
 	);

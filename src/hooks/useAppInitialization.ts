@@ -8,6 +8,8 @@ import {
 import { Notebook } from '@/types/notebook';
 import { Source } from '@/types/source';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
+import { webLLMService } from '@/lib/webllm';
+import { useModel } from '@/contexts/model-context';
 
 export function useAppInitialization() {
 	const [isLoading, setIsLoading] = useState(true);
@@ -15,6 +17,10 @@ export function useAppInitialization() {
 	const [activeNotebook, setActiveNotebook] = useState<Notebook | null>(null);
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [sources, setSources] = useState<Source[]>([]);
+	const [isGenerating, setIsGenerating] = useState(false);
+
+	// Get model information from context
+	const { selectedModel, isModelDownloaded } = useModel();
 
 	const fetchNotebooks = useCallback(async () => {
 		try {
@@ -83,8 +89,11 @@ export function useAppInitialization() {
 	const sendMessage = useCallback(
 		async (content: string) => {
 			if (!activeNotebook) return null;
+			if (!selectedModel) return null;
+			if (!isModelDownloaded(selectedModel.id)) return null;
 
 			try {
+				// Create and save user message
 				const userMessage = await messagesAPI.create(
 					activeNotebook.id,
 					content,
@@ -92,22 +101,34 @@ export function useAppInitialization() {
 				);
 				setMessages((prev) => [...prev, userMessage]);
 
-				// Simulate assistant response
-				setTimeout(async () => {
-					try {
-						const assistantMessage = await messagesAPI.create(
-							activeNotebook.id,
-							`I received your message: "${content}". This is a mock response.`,
-							'assistant',
-						);
-						setMessages((prev) => [...prev, assistantMessage]);
-					} catch (error) {
-						console.error(
-							'Failed to create assistant message:',
-							error,
-						);
-					}
-				}, 1000);
+				// Generate AI response
+				setIsGenerating(true);
+				try {
+					// Get response from the model
+					const aiResponse = await webLLMService.sendMessage(content);
+
+					// Save the AI response to the database
+					const assistantMessage = await messagesAPI.create(
+						activeNotebook.id,
+						aiResponse,
+						'assistant',
+					);
+
+					setMessages((prev) => [...prev, assistantMessage]);
+				} catch (error) {
+					console.error('Failed to generate AI response:', error);
+
+					// Create an error message
+					const errorMessage = await messagesAPI.create(
+						activeNotebook.id,
+						`Error generating response: ${error instanceof Error ? error.message : String(error)}`,
+						'assistant',
+					);
+
+					setMessages((prev) => [...prev, errorMessage]);
+				} finally {
+					setIsGenerating(false);
+				}
 
 				return userMessage;
 			} catch (error) {
@@ -115,7 +136,7 @@ export function useAppInitialization() {
 				return null;
 			}
 		},
-		[activeNotebook],
+		[activeNotebook, selectedModel, isModelDownloaded],
 	);
 
 	const selectQuestion = useCallback(
@@ -262,6 +283,7 @@ export function useAppInitialization() {
 		activeNotebook,
 		messages,
 		sources,
+		isGenerating,
 
 		selectNotebook,
 		createNotebook,

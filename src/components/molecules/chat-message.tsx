@@ -12,10 +12,11 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, className }: ChatMessageProps) {
 	const isUser = message.role === 'user';
-
+	const [mounted, setMounted] = useState(false);
 	const [timeString, setTimeString] = useState<string>('');
 
 	useEffect(() => {
+		setMounted(true);
 		if (message.timestamp) {
 			try {
 				const date =
@@ -56,12 +57,16 @@ export function ChatMessage({ message, className }: ChatMessageProps) {
 				<div className="prose prose-neutral dark:prose-invert">
 					{message.content}
 				</div>
-				<div
-					className="text-xs text-muted-foreground"
-					suppressHydrationWarning
-				>
-					{timeString}
-				</div>
+				{mounted ? (
+					<div className="text-xs text-muted-foreground">
+						{timeString}
+					</div>
+				) : (
+					<div className="text-xs text-muted-foreground opacity-0">
+						{/* Invisible placeholder to maintain layout during hydration */}
+						00:00:00
+					</div>
+				)}
 			</div>
 		</div>
 	);

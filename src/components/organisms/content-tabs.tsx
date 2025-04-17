@@ -8,6 +8,7 @@ import { SourcesList } from '@/components/organisms/sources-list';
 import { ModelTest } from '@/components/molecules/model-test';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
+import { useModel } from '@/contexts/model-context';
 
 type Tab = 'chat' | 'sources' | 'ai';
 
@@ -35,6 +36,14 @@ export function ContentTabs({
 	className,
 }: ContentTabsProps) {
 	const [activeTab, setActiveTab] = useState<Tab>('chat');
+	const [isGenerating, setIsGenerating] = useState(false);
+
+	// Get model information from context
+	const { selectedModel, isModelDownloaded } = useModel();
+
+	// Check if a model is available for chat
+	const modelAvailable =
+		selectedModel !== null && isModelDownloaded(selectedModel.id);
 
 	return (
 		<div className={cn('flex flex-col h-full', className)}>
@@ -66,9 +75,21 @@ export function ContentTabs({
 					<ChatInterface
 						messages={messages}
 						suggestedQuestions={suggestedQuestions}
-						onSendMessage={onSendMessage}
-						onSelectQuestion={onSelectQuestion}
+						onSendMessage={(message) => {
+							setIsGenerating(true);
+							onSendMessage(message);
+							// Set generating to false after a delay to simulate response time
+							setTimeout(() => setIsGenerating(false), 1500);
+						}}
+						onSelectQuestion={(question) => {
+							setIsGenerating(true);
+							onSelectQuestion(question);
+							// Set generating to false after a delay to simulate response time
+							setTimeout(() => setIsGenerating(false), 1500);
+						}}
 						disabled={sources.length === 0}
+						modelAvailable={modelAvailable}
+						isGenerating={isGenerating}
 					/>
 				) : activeTab === 'sources' ? (
 					<SourcesList

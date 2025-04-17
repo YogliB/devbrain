@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
 	onSendMessage: (message: string) => void;
 	disabled?: boolean;
+	modelAvailable?: boolean;
 	placeholder?: string;
 	className?: string;
+	disabledReason?: string;
 }
 
 export function ChatInput({
 	onSendMessage,
 	disabled = false,
+	modelAvailable = true,
 	placeholder = 'Type your message...',
 	className,
+	disabledReason = 'Add data to start inquiring...',
 }: ChatInputProps) {
 	const [message, setMessage] = useState('');
 
@@ -35,11 +39,13 @@ export function ChatInput({
 					value={message}
 					onChange={(e) => setMessage(e.target.value)}
 					placeholder={
-						disabled
-							? 'Add data to start inquiring...'
-							: placeholder
+						!modelAvailable
+							? 'Please download a model first'
+							: disabled
+								? disabledReason
+								: placeholder
 					}
-					disabled={disabled}
+					disabled={disabled || !modelAvailable}
 					rows={1}
 					className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 					onKeyDown={(e) => {
@@ -50,13 +56,21 @@ export function ChatInput({
 					}}
 				/>
 			</div>
-			<button
-				type="submit"
-				disabled={disabled || !message.trim()}
-				className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-			>
-				<Send className="h-4 w-4" />
-			</button>
+			<div className="relative">
+				{!modelAvailable && (
+					<div className="absolute -top-8 right-0 text-xs text-amber-500 flex items-center gap-1">
+						<AlertCircle className="h-3 w-3" />
+						<span>No model available</span>
+					</div>
+				)}
+				<button
+					type="submit"
+					disabled={disabled || !modelAvailable || !message.trim()}
+					className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+				>
+					<Send className="h-4 w-4" />
+				</button>
+			</div>
 		</form>
 	);
 }

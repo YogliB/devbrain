@@ -7,6 +7,7 @@ import {
 	Download,
 	AlertCircle,
 	Loader2,
+	XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Model } from '@/types/model';
@@ -18,6 +19,7 @@ interface ModelSelectorProps {
 	selectedModel: Model | null;
 	onSelectModel: (model: Model) => void;
 	onDownloadModel: (model: Model) => void;
+	onCancelDownload?: (modelId: string) => boolean;
 }
 
 export function ModelSelector({
@@ -26,6 +28,7 @@ export function ModelSelector({
 	selectedModel,
 	onSelectModel,
 	onDownloadModel,
+	onCancelDownload,
 }: ModelSelectorProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showModelInfo, setShowModelInfo] = useState<Model | null>(null);
@@ -47,6 +50,13 @@ export function ModelSelector({
 		setShowModelInfo(null);
 	};
 
+	const handleCancelDownload = (model: Model, e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (onCancelDownload) {
+			onCancelDownload(model.id);
+		}
+	};
+
 	// Helper to render the status icon based on download status
 	const renderStatusIcon = (model: Model) => {
 		if (model.isDownloaded) {
@@ -59,6 +69,10 @@ export function ModelSelector({
 
 		if (model.downloadStatus === 'failed') {
 			return <AlertCircle className="h-4 w-4 text-red-500" />;
+		}
+
+		if (model.downloadStatus === 'cancelled') {
+			return <XCircle className="h-4 w-4 text-amber-500" />;
 		}
 
 		return <Download className="h-4 w-4 text-muted-foreground" />;
@@ -130,29 +144,36 @@ export function ModelSelector({
 							>
 								Cancel
 							</button>
-							<button
-								onClick={(e) =>
-									handleDownload(showModelInfo, e)
-								}
-								className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center"
-								disabled={
-									showModelInfo.downloadStatus ===
-									'downloading'
-								}
-							>
-								{showModelInfo.downloadStatus ===
-								'downloading' ? (
-									<>
-										<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-										Downloading...
-									</>
-								) : (
-									<>
-										<Download className="h-4 w-4 mr-2" />
-										Download
-									</>
-								)}
-							</button>
+							{showModelInfo.downloadStatus === 'downloading' ? (
+								<div className="flex space-x-2">
+									<button
+										onClick={(e) =>
+											handleCancelDownload(
+												showModelInfo,
+												e,
+											)
+										}
+										className="px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 flex items-center"
+									>
+										<XCircle className="h-4 w-4 mr-2" />
+										Cancel
+									</button>
+								</div>
+							) : (
+								<button
+									onClick={(e) =>
+										handleDownload(showModelInfo, e)
+									}
+									className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center"
+									disabled={
+										showModelInfo.downloadStatus ===
+										'downloading'
+									}
+								>
+									<Download className="h-4 w-4 mr-2" />
+									Download
+								</button>
+							)}
 						</div>
 						{showModelInfo.downloadStatus === 'downloading' &&
 							showModelInfo.downloadProgress !== undefined && (
@@ -171,6 +192,12 @@ export function ModelSelector({
 							<div className="mt-4 text-red-500 flex items-center">
 								<AlertCircle className="h-4 w-4 mr-2" />
 								Download failed. Please try again.
+							</div>
+						)}
+						{showModelInfo.downloadStatus === 'cancelled' && (
+							<div className="mt-4 text-amber-500 flex items-center">
+								<XCircle className="h-4 w-4 mr-2" />
+								Download cancelled.
 							</div>
 						)}
 					</div>
