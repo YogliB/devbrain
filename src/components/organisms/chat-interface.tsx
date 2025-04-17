@@ -8,6 +8,11 @@ import {
 import { ChatMessage } from '@/components/molecules/chat-message';
 import { ChatInput } from '@/components/molecules/chat-input';
 import { SuggestedQuestions } from '@/components/molecules/suggested-questions';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ChatInterfaceProps {
 	messages: ChatMessageType[];
@@ -36,15 +41,21 @@ export function ChatInterface({
 		<div className={cn('flex flex-col h-full', className)}>
 			<div className="flex-grow overflow-y-auto relative">
 				{messages.length > 0 && onClearMessages && (
-					<div className="absolute top-2 right-2 z-10">
-						<button
-							onClick={onClearMessages}
-							className="p-1.5 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-							title="Clear chat"
-							aria-label="Clear chat"
-						>
-							<Eraser className="h-4 w-4" />
-						</button>
+					<div className="fixed bottom-20 right-4 z-20">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<button
+									onClick={onClearMessages}
+									className="p-2 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all"
+									aria-label="Clear chat"
+								>
+									<Eraser className="h-5 w-5" />
+								</button>
+							</TooltipTrigger>
+							<TooltipContent sideOffset={5}>
+								Clear chat history
+							</TooltipContent>
+						</Tooltip>
 					</div>
 				)}
 				{messages.length === 0 ? (

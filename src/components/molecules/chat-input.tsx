@@ -57,12 +57,6 @@ export function ChatInput({
 				/>
 			</div>
 			<div className="relative">
-				{!modelAvailable && (
-					<div className="absolute -top-8 right-0 text-xs text-amber-500 flex items-center gap-1">
-						<AlertCircle className="h-3 w-3" />
-						<span>No model available</span>
-					</div>
-				)}
 				<button
 					type="submit"
 					disabled={disabled || !modelAvailable || !message.trim()}
