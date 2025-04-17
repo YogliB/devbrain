@@ -51,3 +51,6 @@ next-env.d.ts
 drizzle-output/
 
 *storybook.log
+
+# Million Lint
+.million
