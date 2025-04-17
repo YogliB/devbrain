@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { ModelProvider } from '@/contexts/model-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ServiceWorkerRegistrar } from '@/components/atoms/service-worker-registrar';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -35,7 +36,10 @@ export default function RootLayout({
 					storageKey="devbrain-theme"
 				>
 					<TooltipProvider>
-						<ModelProvider>{children}</ModelProvider>
+						<ModelProvider>
+							<ServiceWorkerRegistrar />
+							{children}
+						</ModelProvider>
 					</TooltipProvider>
 				</ThemeProvider>
 			</body>

@@ -1,4 +1,5 @@
 import * as webllm from '@mlc-ai/web-llm';
+import { CreateServiceWorkerMLCEngine } from '@mlc-ai/web-llm';
 
 export type ChatCompletionRequestMessage = {
 	role: 'system' | 'user' | 'assistant' | 'function';
@@ -6,7 +7,7 @@ export type ChatCompletionRequestMessage = {
 	name?: string;
 };
 
-export const MODEL_ID = 'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC';
+export const MODEL_ID = 'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC';
 
 export type ModelStatus = 'not-loaded' | 'loading' | 'loaded' | 'error';
 
@@ -53,6 +54,22 @@ export function getWebLLMState(): WebLLMState {
 	return currentState;
 }
 
+// Register the service worker
+export function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+	if ('serviceWorker' in navigator) {
+		try {
+			return navigator.serviceWorker.register('/webllm-sw.js', {
+				type: 'module',
+				scope: '/',
+			});
+		} catch (error) {
+			console.error(`Service worker registration failed:`, error);
+			return Promise.resolve(null);
+		}
+	}
+	return Promise.resolve(null);
+}
+
 export async function loadModel(): Promise<void> {
 	if (currentState.status === 'loading' || currentState.status === 'loaded') {
 		return;
@@ -64,29 +81,70 @@ export async function loadModel(): Promise<void> {
 		progressText: 'Initializing model...',
 	});
 
-	try {
-		const engine = await webllm.CreateMLCEngine(MODEL_ID, {
-			initProgressCallback: (report: webllm.InitProgressReport) => {
-				let progress = 0;
-				if (report.progress !== undefined) {
-					progress = Math.min(Math.round(report.progress * 100), 100);
-				}
+	let useServiceWorker = false;
+	if ('serviceWorker' in navigator) {
+		try {
+			await registerServiceWorker();
+			useServiceWorker = true;
+		} catch (error) {
+			console.warn(
+				'Service worker registration failed, falling back to regular engine:',
+				error,
+			);
+			useServiceWorker = false;
+		}
+	}
 
-				updateState({
-					progress,
-					progressText: report.text,
-				});
-			},
+	try {
+		updateState({
+			progressText: `Loading model: ${MODEL_ID}...`,
 		});
+
+		let engine;
+		if (useServiceWorker) {
+			engine = await CreateServiceWorkerMLCEngine(MODEL_ID, {
+				initProgressCallback: (report: webllm.InitProgressReport) => {
+					let progress = 0;
+					if (report.progress !== undefined) {
+						progress = Math.min(
+							Math.round(report.progress * 100),
+							100,
+						);
+					}
+
+					updateState({
+						progress,
+						progressText: report.text,
+					});
+				},
+			});
+		} else {
+			engine = await webllm.CreateMLCEngine(MODEL_ID, {
+				initProgressCallback: (report: webllm.InitProgressReport) => {
+					let progress = 0;
+					if (report.progress !== undefined) {
+						progress = Math.min(
+							Math.round(report.progress * 100),
+							100,
+						);
+					}
+
+					updateState({
+						progress,
+						progressText: report.text,
+					});
+				},
+			});
+		}
 
 		updateState({
 			status: 'loaded',
 			progress: 100,
-			progressText: 'Model loaded successfully',
+			progressText: `Model loaded successfully`,
 			engine,
 		});
 	} catch (error) {
-		console.error('Failed to load model:', error);
+		console.error(`Failed to load model ${MODEL_ID}:`, error);
 		updateState({
 			status: 'error',
 			progress: 0,
