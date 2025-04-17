@@ -65,6 +65,7 @@
 		"husky": "^9.1.7",
 		"lint-staged": "^15.5.1",
 		"playwright": "^1.51.1",
+		"postcss": "^8.5.3",
 		"prettier": "^3.5.3",
 		"storybook": "^8.6.12",
 		"tailwindcss": "^4",
