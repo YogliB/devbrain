@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 import { messagesAPI, sourcesAPI } from '@/lib/api';
-import { webLLMService } from '@/lib/webllm';
 import { useModel } from '@/contexts/model-context';
 
 export function useChatWithAI(notebookId: string | null) {

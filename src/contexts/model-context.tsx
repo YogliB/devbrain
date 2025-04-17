@@ -11,7 +11,6 @@ import React, {
 import { Model, ModelDownloadStatus } from '@/types/model';
 import { useModelDownload } from '@/hooks/useModelDownload';
 import { modelsAPI } from '@/lib/api';
-import { webLLMService, MemoryError } from '@/lib/webllm';
 
 interface ModelContextType {
 	models: Model[];
@@ -257,9 +256,8 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 	 * @returns The ID of a recommended smaller model, or null if none is available
 	 */
 	const getSmallerModelRecommendation = useCallback(
-		(modelId: string): string | null => {
-			return webLLMService.getSmallerModelRecommendation(modelId);
-		},
+		(modelId: string): string | null =>
+			webLLMService.getSmallerModelRecommendation(modelId),
 		[],
 	);
 
