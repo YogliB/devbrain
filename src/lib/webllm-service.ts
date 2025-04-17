@@ -1,170 +1,166 @@
 import * as webllm from '@mlc-ai/web-llm';
 
-// Re-export the ChatCompletionRequestMessage type
 export type ChatCompletionRequestMessage = {
 	role: 'system' | 'user' | 'assistant' | 'function';
 	content: string;
 	name?: string;
 };
 
-// The model ID for Deepseek LLaMA 8B q4f16_1
-const MODEL_ID = 'DeepSeek-Llama-8B-q4f16_1-MLC';
+export const MODEL_ID = 'DeepSeek-Llama-8B-q4f16_1-MLC';
 
 export type ModelStatus = 'not-loaded' | 'loading' | 'loaded' | 'error';
-export type ProgressCallback = (progress: number, text: string) => void;
 
-export interface WebLLMServiceState {
+export interface WebLLMState {
 	status: ModelStatus;
 	progress: number;
 	progressText: string;
 	error?: string;
+	engine: webllm.MLCEngineInterface | null;
 }
 
-export class WebLLMService {
-	private engine: webllm.MLCEngineInterface | null = null;
-	private state: WebLLMServiceState = {
-		status: 'not-loaded',
-		progress: 0,
-		progressText: 'Model not loaded',
+export const initialWebLLMState: WebLLMState = {
+	status: 'not-loaded',
+	progress: 0,
+	progressText: 'Model not loaded',
+	engine: null,
+	error: undefined,
+};
+
+let currentState = { ...initialWebLLMState };
+let listeners: ((state: WebLLMState) => void)[] = [];
+
+function updateState(newState: Partial<WebLLMState>): void {
+	currentState = { ...currentState, ...newState };
+	notifyListeners();
+}
+
+function notifyListeners(): void {
+	listeners.forEach((listener) => listener(currentState));
+}
+
+export function addStateListener(
+	listener: (state: WebLLMState) => void,
+): () => void {
+	listeners.push(listener);
+	listener(currentState);
+
+	return () => {
+		listeners = listeners.filter((l) => l !== listener);
 	};
-	private stateListeners: ((state: WebLLMServiceState) => void)[] = [];
+}
 
-	constructor() {
-		// Check if the model is already in the cache
-		this.checkModelCache();
+export function getWebLLMState(): WebLLMState {
+	return currentState;
+}
+
+export async function loadModel(): Promise<void> {
+	if (currentState.status === 'loading' || currentState.status === 'loaded') {
+		return;
 	}
 
-	private async checkModelCache() {
-		// This is a placeholder - WebLLM doesn't have a direct API to check if a model is cached
-		// We'll rely on the browser's cache mechanism
-	}
+	updateState({
+		status: 'loading',
+		progress: 0,
+		progressText: 'Initializing model...',
+	});
 
-	private updateState(newState: Partial<WebLLMServiceState>) {
-		this.state = { ...this.state, ...newState };
-		this.notifyListeners();
-	}
+	try {
+		const engine = await webllm.CreateMLCEngine(MODEL_ID, {
+			initProgressCallback: (report: webllm.InitProgressReport) => {
+				let progress = 0;
+				if (report.progress !== undefined) {
+					progress = Math.min(Math.round(report.progress * 100), 100);
+				}
 
-	private notifyListeners() {
-		for (const listener of this.stateListeners) {
-			listener(this.state);
-		}
-	}
-
-	public addStateListener(listener: (state: WebLLMServiceState) => void) {
-		this.stateListeners.push(listener);
-		// Immediately notify with current state
-		listener(this.state);
-		return () => {
-			this.stateListeners = this.stateListeners.filter(
-				(l) => l !== listener,
-			);
-		};
-	}
-
-	public async loadModel() {
-		if (this.state.status === 'loading' || this.state.status === 'loaded') {
-			return;
-		}
-
-		this.updateState({
-			status: 'loading',
-			progress: 0,
-			progressText: 'Initializing model...',
+				updateState({
+					progress,
+					progressText: report.text,
+				});
+			},
 		});
 
-		try {
-			// Initialize the WebLLM engine with progress callback
-			this.engine = await webllm.CreateMLCEngine(MODEL_ID, {
-				initProgressCallback: (report: webllm.InitProgressReport) => {
-					// Calculate progress percentage if possible
-					let progress = 0;
-					if (
-						report.progress !== undefined &&
-						report.total !== undefined
-					) {
-						progress = Math.round(
-							(report.progress / report.total) * 100,
-						);
-					}
-
-					this.updateState({
-						progress,
-						progressText: report.text,
-					});
-				},
-			});
-
-			this.updateState({
-				status: 'loaded',
-				progress: 100,
-				progressText: 'Model loaded successfully',
-			});
-		} catch (error) {
-			console.error('Failed to load model:', error);
-			this.updateState({
-				status: 'error',
-				progress: 0,
-				progressText: 'Failed to load model',
-				error: error instanceof Error ? error.message : String(error),
-			});
-		}
-	}
-
-	public async generateResponse(
-		messages: ChatCompletionRequestMessage[],
-	): Promise<string> {
-		if (!this.engine || this.state.status !== 'loaded') {
-			throw new Error('Model not loaded');
-		}
-
-		try {
-			const response = await this.engine.chat.completions.create({
-				messages,
-				temperature: 0.7,
-				max_tokens: 1024,
-			});
-
-			return response.choices[0].message.content;
-		} catch (error) {
-			console.error('Error generating response:', error);
-			throw error;
-		}
-	}
-
-	public async generateStreamingResponse(
-		messages: ChatCompletionRequestMessage[],
-		onChunk: (chunk: string) => void,
-	): Promise<string> {
-		if (!this.engine || this.state.status !== 'loaded') {
-			throw new Error('Model not loaded');
-		}
-
-		try {
-			const chunks = await this.engine.chat.completions.create({
-				messages,
-				temperature: 0.7,
-				max_tokens: 1024,
-				stream: true,
-			});
-
-			let fullResponse = '';
-			for await (const chunk of chunks) {
-				const content = chunk.choices[0]?.delta.content || '';
-				fullResponse += content;
-				onChunk(content);
-			}
-
-			return fullResponse;
-		} catch (error) {
-			console.error('Error generating streaming response:', error);
-			throw error;
-		}
-	}
-
-	public getState(): WebLLMServiceState {
-		return this.state;
+		updateState({
+			status: 'loaded',
+			progress: 100,
+			progressText: 'Model loaded successfully',
+			engine,
+		});
+	} catch (error) {
+		console.error('Failed to load model:', error);
+		updateState({
+			status: 'error',
+			progress: 0,
+			progressText: 'Failed to load model',
+			error: error instanceof Error ? error.message : String(error),
+		});
 	}
 }
 
-// Create a singleton instance
-export const webLLMService = new WebLLMService();
+export async function generateResponse(
+	messages: ChatCompletionRequestMessage[],
+): Promise<string> {
+	if (!currentState.engine || currentState.status !== 'loaded') {
+		throw new Error('Model not loaded');
+	}
+
+	try {
+		const webllmMessages = messages.map((msg) => ({
+			role: msg.role,
+			content: msg.content,
+			...(msg.name ? { name: msg.name } : {}),
+		}));
+
+		const response = await currentState.engine.chat.completions.create({
+			// @ts-expect-error - WebLLM has specific type requirements
+			messages: webllmMessages,
+			temperature: 0.7,
+			max_tokens: 1024,
+		});
+
+		return response.choices[0].message.content || '';
+	} catch (error) {
+		console.error('Error generating response:', error);
+		throw error;
+	}
+}
+
+export async function generateStreamingResponse(
+	messages: ChatCompletionRequestMessage[],
+	onChunk: (chunk: string) => void,
+): Promise<string> {
+	if (!currentState.engine || currentState.status !== 'loaded') {
+		throw new Error('Model not loaded');
+	}
+
+	try {
+		const webllmMessages = messages.map((msg) => ({
+			role: msg.role,
+			content: msg.content,
+			...(msg.name ? { name: msg.name } : {}),
+		}));
+
+		const chunks = await currentState.engine.chat.completions.create({
+			// @ts-expect-error - WebLLM has specific type requirements
+			messages: webllmMessages,
+			temperature: 0.7,
+			max_tokens: 1024,
+			stream: true,
+		});
+
+		let fullResponse = '';
+		for await (const chunk of chunks) {
+			const content = chunk.choices[0]?.delta.content || '';
+			fullResponse += content;
+			onChunk(content);
+		}
+
+		return fullResponse;
+	} catch (error) {
+		console.error('Error generating streaming response:', error);
+		throw error;
+	}
+}
+
+loadModel().catch((error) => {
+	console.error('Failed to initialize model loading:', error);
+});

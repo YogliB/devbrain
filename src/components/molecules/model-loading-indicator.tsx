@@ -4,7 +4,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { ProgressBar } from '@/components/atoms/progress-bar';
 import { useModel } from '@/contexts/model-context';
-import { Download, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Download, AlertCircle } from 'lucide-react';
 
 interface ModelLoadingIndicatorProps {
 	className?: string;

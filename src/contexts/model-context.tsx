@@ -1,12 +1,19 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { webLLMService, WebLLMServiceState } from '@/lib/webllm-service';
-import { ChatCompletionRequestMessage } from '@/lib/webllm-service';
+import {
+	WebLLMState,
+	getWebLLMState,
+	addStateListener,
+	loadModel,
+	generateResponse,
+	generateStreamingResponse,
+	ChatCompletionRequestMessage,
+} from '@/lib/webllm-service';
 
 interface ModelContextType {
 	modelAvailable: boolean;
-	modelStatus: WebLLMServiceState['status'];
+	modelStatus: WebLLMState['status'];
 	modelProgress: number;
 	modelProgressText: string;
 	loadModel: () => Promise<void>;
@@ -30,17 +37,11 @@ const ModelContext = createContext<ModelContextType>({
 });
 
 export function ModelProvider({ children }: { children: React.ReactNode }) {
-	const [state, setState] = useState<WebLLMServiceState>(
-		webLLMService.getState(),
-	);
+	const [state, setState] = useState<WebLLMState>(getWebLLMState());
 
 	useEffect(() => {
-		// Subscribe to state changes from the WebLLM service
-		const unsubscribe = webLLMService.addStateListener(setState);
-
-		// Start loading the model automatically
-		webLLMService.loadModel();
-
+		const unsubscribe = addStateListener(setState);
+		loadModel();
 		return unsubscribe;
 	}, []);
 
@@ -49,10 +50,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		modelStatus: state.status,
 		modelProgress: state.progress,
 		modelProgressText: state.progressText,
-		loadModel: webLLMService.loadModel.bind(webLLMService),
-		generateResponse: webLLMService.generateResponse.bind(webLLMService),
-		generateStreamingResponse:
-			webLLMService.generateStreamingResponse.bind(webLLMService),
+		loadModel,
+		generateResponse,
+		generateStreamingResponse,
 	};
 
 	return (
