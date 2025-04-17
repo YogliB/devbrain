@@ -24,17 +24,11 @@ export default function Home() {
 		deleteSource,
 	} = useAppInitialization();
 
-	// Use the model context for model-related state and functions
+	// Use the model context for model availability check only
 	const {
-		models,
 		selectedModel,
 		isLoading: modelsLoading,
-		selectModel,
-		downloadModel,
 		isModelDownloaded,
-		cancelDownload,
-		removeModel,
-		isDownloading,
 	} = useModel();
 
 	// Combined loading state
@@ -62,13 +56,10 @@ export default function Home() {
 			messages={messages}
 			suggestedQuestions={suggestedQuestions}
 			sources={sources}
-			models={models}
-			selectedModel={selectedModel}
 			isGenerating={isGenerating}
 			modelAvailable={
 				selectedModel !== null && isModelDownloaded(selectedModel.id)
 			}
-			isDownloading={isDownloading}
 			onSelectNotebook={selectNotebook}
 			onCreateNotebook={createNotebook}
 			onDeleteNotebook={deleteNotebook}
@@ -78,10 +69,6 @@ export default function Home() {
 			onAddSource={addSource}
 			onUpdateSource={updateSource}
 			onDeleteSource={deleteSource}
-			onSelectModel={selectModel}
-			onDownloadModel={downloadModel}
-			onCancelDownload={cancelDownload}
-			onRemoveModel={removeModel}
 		/>
 	);
 }
