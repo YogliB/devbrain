@@ -54,7 +54,6 @@ export function getWebLLMState(): WebLLMState {
 	return currentState;
 }
 
-// Register the service worker
 export function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
 	if ('serviceWorker' in navigator) {
 		try {
