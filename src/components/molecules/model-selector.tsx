@@ -3,7 +3,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useModel } from '@/contexts/model-context';
-import { Button } from '@/components/ui/button';
 import { Cpu } from 'lucide-react';
 import { ModelLoadingIndicator } from './model-loading-indicator';
 
