@@ -111,3 +111,22 @@ export const messagesAPI = {
 			method: 'DELETE',
 		}),
 };
+
+export const suggestedQuestionsAPI = {
+	getAll: (notebookId: string): Promise<SuggestedQuestion[]> =>
+		fetchAPI(`/notebooks/${notebookId}/suggested-questions`),
+
+	save: (
+		notebookId: string,
+		questions: { text: string }[],
+	): Promise<SuggestedQuestion[]> =>
+		fetchAPI(`/notebooks/${notebookId}/suggested-questions`, {
+			method: 'POST',
+			body: JSON.stringify({ questions }),
+		}),
+
+	clear: (notebookId: string): Promise<{ message: string }> =>
+		fetchAPI(`/notebooks/${notebookId}/suggested-questions`, {
+			method: 'DELETE',
+		}),
+};
