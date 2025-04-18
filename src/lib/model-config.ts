@@ -9,7 +9,7 @@ export interface ModelConfig {
 
 export const AVAILABLE_MODELS: ModelConfig[] = [
 	{
-		id: 'DeepSeek-R1-Distill-Qwen-14B-q4f16_1',
+		id: 'DeepSeek-R1-Distill-Qwen-14B-q4f16_1-MLC',
 		name: 'DeepSeek R1 Distill Qwen 14B',
 		description:
 			'High-quality 14B parameter model with excellent reasoning capabilities',
@@ -18,7 +18,7 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
 		requiresWebGPU: true,
 	},
 	{
-		id: 'Qwen2.5-7B-Instruct-q4f16_1',
+		id: 'Qwen2.5-7B-Instruct-q4f16_1-MLC',
 		name: 'Qwen 2.5 7B Instruct',
 		description: 'Balanced 7B parameter model with good performance',
 		size: 4000, // Approximate size in MB
@@ -26,7 +26,7 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
 		requiresWebGPU: true,
 	},
 	{
-		id: 'gemma-2b-it-q4f16_1',
+		id: 'gemma-2b-it-q4f16_1-MLC',
 		name: 'Gemma 2B Instruct',
 		description:
 			'Lightweight 2B parameter model for devices with limited resources',
