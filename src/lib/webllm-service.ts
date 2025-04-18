@@ -1,5 +1,6 @@
 import * as webllm from '@mlc-ai/web-llm';
 import { CreateServiceWorkerMLCEngine } from '@mlc-ai/web-llm';
+import { ModelConfig, selectBestModel } from './model-config';
 
 export type ChatCompletionRequestMessage = {
 	role: 'system' | 'user' | 'assistant' | 'function';
@@ -7,9 +8,15 @@ export type ChatCompletionRequestMessage = {
 	name?: string;
 };
 
-export const MODEL_ID = 'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC';
+// Model will be dynamically selected based on device capabilities
 
-export type ModelStatus = 'not-loaded' | 'loading' | 'loaded' | 'error';
+export type ModelStatus =
+	| 'evaluating'
+	| 'not-loaded'
+	| 'loading'
+	| 'loaded'
+	| 'error'
+	| 'unsupported';
 
 export interface WebLLMState {
 	status: ModelStatus;
@@ -17,14 +24,16 @@ export interface WebLLMState {
 	progressText: string;
 	error?: string;
 	engine: webllm.MLCEngineInterface | null;
+	selectedModel?: ModelConfig;
 }
 
 export const initialWebLLMState: WebLLMState = {
-	status: 'not-loaded',
+	status: 'evaluating',
 	progress: 0,
-	progressText: 'Model not loaded',
+	progressText: 'Evaluating device capabilities...',
 	engine: null,
 	error: undefined,
+	selectedModel: undefined,
 };
 
 let currentState = { ...initialWebLLMState };
@@ -116,84 +125,115 @@ export async function registerServiceWorker(): Promise<void> {
 }
 
 export async function loadModel(): Promise<void> {
+	// Don't restart loading if already in progress or loaded
 	if (currentState.status === 'loading' || currentState.status === 'loaded') {
 		return;
 	}
 
-	updateState({
-		status: 'loading',
-		progress: 0,
-		progressText: 'Initializing model...',
-	});
-
-	let useServiceWorker = false;
-	if ('serviceWorker' in navigator) {
-		try {
-			await registerServiceWorker();
-			useServiceWorker = true;
-		} catch (error) {
-			console.warn(
-				'Service worker registration failed, falling back to regular engine:',
-				error,
-			);
-			useServiceWorker = false;
-		}
+	// If we're not in evaluating state, set it
+	if (currentState.status !== 'evaluating') {
+		updateState({
+			status: 'evaluating',
+			progress: 0,
+			progressText: 'Evaluating device capabilities...',
+		});
 	}
 
+	// Select the best model based on device capabilities
 	try {
+		const selectedModel = await selectBestModel();
+
+		// Update state with selected model
 		updateState({
-			progressText: `Loading model: ${MODEL_ID}...`,
+			selectedModel,
+			status: 'loading',
+			progress: 0,
+			progressText: `Initializing ${selectedModel.name}...`,
 		});
 
-		let engine;
-		if (useServiceWorker) {
-			engine = await CreateServiceWorkerMLCEngine(MODEL_ID, {
-				initProgressCallback: (report: webllm.InitProgressReport) => {
-					let progress = 0;
-					if (report.progress !== undefined) {
-						progress = Math.min(
-							Math.round(report.progress * 100),
-							100,
-						);
-					}
-
-					updateState({
-						progress,
-						progressText: report.text,
-					});
-				},
-			});
-		} else {
-			engine = await webllm.CreateMLCEngine(MODEL_ID, {
-				initProgressCallback: (report: webllm.InitProgressReport) => {
-					let progress = 0;
-					if (report.progress !== undefined) {
-						progress = Math.min(
-							Math.round(report.progress * 100),
-							100,
-						);
-					}
-
-					updateState({
-						progress,
-						progressText: report.text,
-					});
-				},
-			});
+		// Set up service worker if available
+		let useServiceWorker = false;
+		if ('serviceWorker' in navigator) {
+			try {
+				await registerServiceWorker();
+				useServiceWorker = true;
+			} catch (error) {
+				console.warn(
+					'Service worker registration failed, falling back to regular engine:',
+					error,
+				);
+				useServiceWorker = false;
+			}
 		}
 
-		updateState({
-			status: 'loaded',
-			progress: 100,
-			progressText: `Model loaded successfully`,
-			engine,
-		});
+		// Load the selected model
+		try {
+			updateState({
+				progressText: `Loading model: ${selectedModel.name}...`,
+			});
+
+			let engine;
+			if (useServiceWorker) {
+				engine = await CreateServiceWorkerMLCEngine(selectedModel.id, {
+					initProgressCallback: (
+						report: webllm.InitProgressReport,
+					) => {
+						let progress = 0;
+						if (report.progress !== undefined) {
+							progress = Math.min(
+								Math.round(report.progress * 100),
+								100,
+							);
+						}
+
+						updateState({
+							progress,
+							progressText: report.text,
+						});
+					},
+				});
+			} else {
+				engine = await webllm.CreateMLCEngine(selectedModel.id, {
+					initProgressCallback: (
+						report: webllm.InitProgressReport,
+					) => {
+						let progress = 0;
+						if (report.progress !== undefined) {
+							progress = Math.min(
+								Math.round(report.progress * 100),
+								100,
+							);
+						}
+
+						updateState({
+							progress,
+							progressText: report.text,
+						});
+					},
+				});
+			}
+
+			updateState({
+				status: 'loaded',
+				progress: 100,
+				progressText: `${selectedModel.name} loaded successfully`,
+				engine,
+			});
+		} catch (error) {
+			console.error(`Failed to load model ${selectedModel.id}:`, error);
+			updateState({
+				status: 'error',
+				progress: 0,
+				progressText: 'Failed to load model',
+				error: error instanceof Error ? error.message : String(error),
+			});
+		}
 	} catch (error) {
-		console.error(`Failed to load model ${MODEL_ID}:`, error);
+		console.error('Failed to select appropriate model:', error);
 		updateState({
-			status: 'error',
+			status: 'unsupported',
 			progress: 0,
-			progressText: 'Failed to load model',
+			progressText: 'Your device does not support any available models',
 			error: error instanceof Error ? error.message : String(error),
 		});
 	}

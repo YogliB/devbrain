@@ -11,6 +11,7 @@ import {
 	generateSuggestedQuestions,
 	ChatCompletionRequestMessage,
 } from '@/lib/webllm-service';
+import { ModelConfig } from '@/lib/model-config';
 import { Source } from '@/types/source';
 
 interface ModelContextType {
@@ -18,6 +19,7 @@ interface ModelContextType {
 	modelStatus: WebLLMState['status'];
 	modelProgress: number;
 	modelProgressText: string;
+	selectedModel?: ModelConfig;
 	loadModel: () => Promise<void>;
 	generateResponse: (
 		messages: ChatCompletionRequestMessage[],
@@ -34,9 +36,10 @@ interface ModelContextType {
 
 const ModelContext = createContext<ModelContextType>({
 	modelAvailable: false,
-	modelStatus: 'not-loaded',
+	modelStatus: 'evaluating',
 	modelProgress: 0,
 	modelProgressText: '',
+	selectedModel: undefined,
 	loadModel: async () => {},
 	generateResponse: async () => '',
 	generateStreamingResponse: async () => '',
@@ -57,6 +60,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		modelStatus: state.status,
 		modelProgress: state.progress,
 		modelProgressText: state.progressText,
+		selectedModel: state.selectedModel,
 		loadModel,
 		generateResponse,
 		generateStreamingResponse,

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Notebook } from '@/types/notebook';
 import { NotebookItem } from '@/components/molecules/notebook-item';
 import { Logo } from '@/components/atoms/logo';
+import { ModelSelector } from '@/components/molecules/model-selector';
 
 interface NotebooksSidebarProps {
 	notebooks: Notebook[];
@@ -96,6 +97,12 @@ export function NotebooksSidebar({
 					</div>
 				)}
 			</div>
+
+			{!isCollapsed && (
+				<div className="mt-auto p-2">
+					<ModelSelector />
+				</div>
+			)}
 		</div>
 	);
 }
