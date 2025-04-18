@@ -264,9 +264,20 @@ export async function generateSuggestedQuestions(
 			{
 				role: 'system',
 				content: `You are an AI assistant that generates insightful questions based on provided content.
-			Generate ${count} specific, relevant questions that a user might want to ask about the following sources.
-			Make the questions diverse and interesting. Focus on the most important aspects of the content.
-			Return ONLY the questions in a numbered list format, with no additional text or explanations.`,
+			Your task is to generate exactly ${count} specific, relevant questions that a user might want to ask about the following sources.
+			Make the questions diverse, interesting, and focused on the most important aspects of the content.
+
+			IMPORTANT FORMATTING INSTRUCTIONS:
+			1. Return ONLY the numbered questions with no additional text, explanations, or commentary
+			2. Each question must be on its own line
+			3. Format each question exactly as: "1 - Question text", "2 - Question text", etc.
+			4. Do not include any introductory text or conclusion
+			5. Ensure you generate exactly ${count} complete questions
+
+			Example of correct format:
+			1 - What is the main purpose of this code?
+			2 - How does this algorithm handle edge cases?
+			3 - What are the performance implications of this approach?`,
 			},
 			{
 				role: 'user',
@@ -283,34 +294,70 @@ export async function generateSuggestedQuestions(
 		const response = await currentState.engine.chat.completions.create({
 			// @ts-expect-error - WebLLM has specific type requirements
 			messages: webllmMessages,
-			temperature: 0.8, // Slightly higher temperature for more creative questions
+			temperature: 0.7, // Slightly lower temperature for more consistent formatting
 			max_tokens: 512,
 		});
 
 		const questionsText = response.choices[0].message.content || '';
 
-		// Parse the numbered list of questions
-		const questionRegex = /\d+\.\s*(.+?)(?=\n\d+\.|$)/gs;
-		const matches = [...questionsText.matchAll(questionRegex)];
+		// Try multiple parsing strategies to handle different formats
+		let questions: { id: string; text: string }[] = [];
 
-		// Convert to SuggestedQuestion format
-		const questions = matches.map((match, index) => ({
-			id: `generated-${Date.now()}-${index}`,
-			text: match[1].trim(),
-		}));
+		// Strategy 1: Parse numbered format with dash (e.g., "1 - What is...")
+		const dashFormatRegex = /(\d+)\s*-\s*([^\n]+)/g;
+		const dashMatches = [...questionsText.matchAll(dashFormatRegex)];
 
-		// If regex didn't work, try a simpler approach by splitting on newlines
-		if (questions.length === 0 && questionsText.trim().length > 0) {
-			return questionsText
-				.split('\n')
-				.filter((line) => line.trim().length > 0)
-				.slice(0, count)
-				.map((line, index) => ({
+		if (dashMatches.length > 0) {
+			questions = dashMatches.map((match, index) => ({
+				id: `generated-${Date.now()}-${index}`,
+				text: match[2].trim(),
+			}));
+		} else {
+			// Strategy 2: Parse standard numbered list format (e.g., "1. What is...")
+			const standardRegex = /\d+\.\s*(.+?)(?=\n\d+\.|$)/gs;
+			const standardMatches = [...questionsText.matchAll(standardRegex)];
+
+			if (standardMatches.length > 0) {
+				questions = standardMatches.map((match, index) => ({
 					id: `generated-${Date.now()}-${index}`,
-					text: line.replace(/^\d+\.\s*/, '').trim(),
+					text: match[1].trim(),
 				}));
+			} else {
+				// Strategy 3: Split by newlines and clean up
+				const lines = questionsText
+					.split('\n')
+					.map((line) => line.trim())
+					.filter((line) => line.length > 0);
+
+				questions = lines.map((line, index) => ({
+					id: `generated-${Date.now()}-${index}`,
+					// Remove any numbering or prefixes
+					text: line.replace(/^\s*\d+\s*[-.:]?\s*/, '').trim(),
+				}));
+			}
 		}
 
+		// Validate and clean up questions
+		questions = questions
+			.filter((q) => q.text.length > 0) // Remove empty questions
+			.map((q) => ({
+				// Clean up text
+				...q,
+				text: q.text
+					.replace(/^["']+|["']+$/g, '') // Remove quotes
+					.replace(/\*\*/g, '') // Remove markdown bold
+					.trim(),
+			}))
+			.filter(
+				(q, i, arr) =>
+					// Remove duplicates
+					arr.findIndex(
+						(item) =>
+							item.text.toLowerCase() === q.text.toLowerCase(),
+					) === i,
+			);
+
+		// Ensure we don't return more than requested count
 		return questions.slice(0, count);
 	} catch (error) {
 		console.error('Error generating suggested questions:', error);

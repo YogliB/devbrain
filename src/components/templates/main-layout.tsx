@@ -25,6 +25,7 @@ interface MainLayoutProps {
 	onSendMessage: (message: string) => void;
 	onSelectQuestion: (question: SuggestedQuestion) => void;
 	onClearMessages?: () => void;
+	onRegenerateQuestions?: () => void;
 	onAddSource: (content: string, filename?: string) => void;
 	onUpdateSource: (source: Source, content: string) => void;
 	onDeleteSource: (source: Source) => void;
@@ -46,6 +47,7 @@ export function MainLayout({
 	onSendMessage,
 	onSelectQuestion,
 	onClearMessages,
+	onRegenerateQuestions,
 	onAddSource,
 	onUpdateSource,
 	onDeleteSource,
@@ -86,6 +88,7 @@ export function MainLayout({
 							onSendMessage={onSendMessage}
 							onSelectQuestion={onSelectQuestion}
 							onClearMessages={onClearMessages}
+							onRegenerateQuestions={onRegenerateQuestions}
 							onAddSource={onAddSource}
 							onUpdateSource={onUpdateSource}
 							onDeleteSource={onDeleteSource}

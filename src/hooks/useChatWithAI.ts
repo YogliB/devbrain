@@ -136,26 +136,38 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 		}
 	}, [notebookId, fetchMessages]);
 
-	// Regenerate suggested questions when sources change or model becomes available
-	useEffect(() => {
-		if (sources.length > 0 && modelAvailable) {
-			setIsGeneratingQuestions(true);
-			generateSuggestedQuestions(sources)
-				.then((questions) => setSuggestedQuestions(questions))
-				.catch((error) => {
-					console.error(
-						'Failed to generate suggested questions:',
-						error,
-					);
-					setSuggestedQuestions([]);
-				})
-				.finally(() => {
-					setIsGeneratingQuestions(false);
-				});
-		} else {
+	// Function to generate suggested questions
+	const generateQuestions = useCallback(async () => {
+		if (sources.length === 0 || !modelAvailable) {
 			setSuggestedQuestions([]);
+			return;
+		}
+
+		setIsGeneratingQuestions(true);
+		try {
+			const questions = await generateSuggestedQuestions(sources);
+
+			// Only update state if we got valid questions
+			if (questions.length > 0) {
+				setSuggestedQuestions(questions);
+			} else {
+				// If we got no questions, keep the previous ones but mark them as invalid
+				// This will trigger the error state in the UI
+				setSuggestedQuestions([{ id: 'error', text: '' }]);
+			}
+		} catch (error) {
+			console.error('Failed to generate suggested questions:', error);
+			// Set an empty question with just an ID to trigger the error state
+			setSuggestedQuestions([{ id: 'error', text: '' }]);
+		} finally {
+			setIsGeneratingQuestions(false);
 		}
 	}, [sources, modelAvailable, generateSuggestedQuestions]);
+
+	// Regenerate suggested questions when sources change or model becomes available
+	useEffect(() => {
+		generateQuestions();
+	}, [generateQuestions]);
 
 	return {
 		messages,
@@ -171,5 +183,6 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 		addSource,
 		updateSource,
 		deleteSource,
+		regenerateQuestions: generateQuestions,
 	};
 }

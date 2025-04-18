@@ -28,6 +28,7 @@ export default function Home() {
 		addSource,
 		updateSource,
 		deleteSource,
+		regenerateQuestions,
 	} = useChatWithAI(activeNotebook?.id || null);
 
 	// Sources and messages are automatically loaded when activeNotebook changes
@@ -70,6 +71,7 @@ export default function Home() {
 			onSendMessage={sendMessage}
 			onSelectQuestion={selectQuestion}
 			onClearMessages={clearMessages}
+			onRegenerateQuestions={regenerateQuestions}
 			onAddSource={addSource}
 			onUpdateSource={updateSource}
 			onDeleteSource={deleteSource}

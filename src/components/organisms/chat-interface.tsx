@@ -20,6 +20,7 @@ interface ChatInterfaceProps {
 	onSendMessage: (message: string) => void;
 	onSelectQuestion: (question: SuggestedQuestion) => void;
 	onClearMessages?: () => void;
+	onRegenerateQuestions?: () => void;
 	disabled?: boolean;
 	modelAvailable?: boolean;
 	isGenerating?: boolean;
@@ -33,6 +34,7 @@ export function ChatInterface({
 	onSendMessage,
 	onSelectQuestion,
 	onClearMessages,
+	onRegenerateQuestions,
 	disabled = false,
 	modelAvailable = true,
 	isGenerating = false,
@@ -94,6 +96,7 @@ export function ChatInterface({
 						questions={suggestedQuestions}
 						onSelectQuestion={onSelectQuestion}
 						isLoading={isGeneratingQuestions}
+						onRefresh={onRegenerateQuestions}
 					/>
 				)}
 				<ChatInput
