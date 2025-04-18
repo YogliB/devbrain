@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 import { messagesAPI, sourcesAPI } from '@/lib/api';
@@ -11,7 +11,11 @@ export function useChatWithAI(notebookId: string | null) {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [sources, setSources] = useState<Source[]>([]);
-	const { modelAvailable, generateResponse } = useModel();
+	const [suggestedQuestions, setSuggestedQuestions] = useState<
+		SuggestedQuestion[]
+	>([]);
+	const { modelAvailable, generateResponse, generateSuggestedQuestions } =
+		useModel();
 
 	const fetchMessages = async (notebookId: string) => {
 		if (!notebookId) return [];
@@ -32,9 +36,30 @@ export function useChatWithAI(notebookId: string | null) {
 		try {
 			const sourcesData = await sourcesAPI.getAll(notebookId);
 			setSources(sourcesData);
+
+			// Generate suggested questions based on sources
+			if (sourcesData.length > 0 && modelAvailable) {
+				try {
+					const questions =
+						await generateSuggestedQuestions(sourcesData);
+					setSuggestedQuestions(questions);
+				} catch (error) {
+					console.error(
+						'Failed to generate suggested questions:',
+						error,
+					);
+					// If we can't generate questions, use empty array
+					setSuggestedQuestions([]);
+				}
+			} else {
+				// No sources or model not available, clear suggested questions
+				setSuggestedQuestions([]);
+			}
+
 			return sourcesData;
 		} catch (error) {
 			console.error('Failed to fetch sources:', error);
+			setSuggestedQuestions([]);
 			return [];
 		}
 	};
@@ -135,10 +160,91 @@ ${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename 
 		}
 	}, [notebookId]);
 
+	// Regenerate suggested questions when sources change or model becomes available
+	useEffect(() => {
+		if (sources.length > 0 && modelAvailable) {
+			generateSuggestedQuestions(sources)
+				.then((questions) => setSuggestedQuestions(questions))
+				.catch((error) => {
+					console.error(
+						'Failed to generate suggested questions:',
+						error,
+					);
+					setSuggestedQuestions([]);
+				});
+		} else {
+			setSuggestedQuestions([]);
+		}
+	}, [sources, modelAvailable, generateSuggestedQuestions]);
+
+	// Source management functions
+	const addSource = useCallback(
+		async (content: string, filename?: string) => {
+			if (!notebookId) return null;
+
+			try {
+				const newSource = await sourcesAPI.create(
+					notebookId,
+					content,
+					filename,
+				);
+				setSources((prev) => [...prev, newSource]);
+				return newSource;
+			} catch (error) {
+				console.error('Failed to add source:', error);
+				return null;
+			}
+		},
+		[notebookId],
+	);
+
+	const updateSource = useCallback(
+		async (source: Source, content: string) => {
+			if (!notebookId) return null;
+
+			try {
+				const updatedSource = await sourcesAPI.update(
+					notebookId,
+					source.id,
+					content,
+					source.filename,
+				);
+
+				setSources((prev) =>
+					prev.map((s) =>
+						s.id === updatedSource.id ? updatedSource : s,
+					),
+				);
+				return updatedSource;
+			} catch (error) {
+				console.error('Failed to update source:', error);
+				return null;
+			}
+		},
+		[notebookId],
+	);
+
+	const deleteSource = useCallback(
+		async (source: Source) => {
+			if (!notebookId) return false;
+
+			try {
+				await sourcesAPI.delete(notebookId, source.id);
+				setSources((prev) => prev.filter((s) => s.id !== source.id));
+				return true;
+			} catch (error) {
+				console.error('Failed to delete source:', error);
+				return false;
+			}
+		},
+		[notebookId],
+	);
+
 	return {
 		messages,
 		isGenerating,
 		sources,
+		suggestedQuestions,
 		setMessages,
 		fetchMessages,
 		fetchSources,
@@ -146,5 +252,8 @@ ${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename 
 		selectQuestion,
 		canSendMessages,
 		clearMessages,
+		addSource,
+		updateSource,
+		deleteSource,
 	};
 }

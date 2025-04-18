@@ -1,30 +1,43 @@
 'use client';
 
+import { useEffect } from 'react';
 import { MainLayout } from '@/components/templates/main-layout';
-import { suggestedQuestions } from '@/lib/data/suggestedQuestionsData';
 import { useAppInitialization } from '@/hooks/useAppInitialization';
 import { useModel } from '@/contexts/model-context';
+import { useChatWithAI } from '@/hooks/useChatWithAI';
 
 export default function Home() {
 	const {
 		isLoading: appLoading,
 		notebooks,
 		activeNotebook,
-		messages,
-		sources,
-		isGenerating,
 		selectNotebook,
 		createNotebook,
 		deleteNotebook,
+	} = useAppInitialization();
+
+	// Use the chat hook for AI interactions
+	const {
+		messages,
+		isGenerating,
+		sources,
+		suggestedQuestions,
 		sendMessage,
 		selectQuestion,
 		clearMessages,
 		addSource,
 		updateSource,
 		deleteSource,
-	} = useAppInitialization();
+	} = useChatWithAI(activeNotebook?.id || null);
 
-	// Use the model context for model availability check only
+	// Load sources when active notebook changes
+	useEffect(() => {
+		if (activeNotebook?.id) {
+			// Sources will be loaded by the useChatWithAI hook
+		}
+	}, [activeNotebook]);
+
+	// Use the model context for model availability check
 	const { modelAvailable } = useModel();
 
 	// Loading state

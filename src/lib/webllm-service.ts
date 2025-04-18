@@ -199,6 +199,85 @@ export async function loadModel(): Promise<void> {
 	}
 }
 
+export async function generateSuggestedQuestions(
+	sources: { content: string; filename?: string }[],
+	count: number = 3,
+): Promise<{ id: string; text: string }[]> {
+	if (!currentState.engine || currentState.status !== 'loaded') {
+		throw new Error('Model not loaded');
+	}
+
+	if (sources.length === 0) {
+		return [];
+	}
+
+	try {
+		// Create a prompt for generating questions
+		const sourcesText = sources
+			.map(
+				(source, index) =>
+					`Source ${index + 1}: ${source.filename || `Source ${index + 1}`}\n${source.content}`,
+			)
+			.join('\n\n');
+
+		const messages: ChatCompletionRequestMessage[] = [
+			{
+				role: 'system',
+				content: `You are an AI assistant that generates insightful questions based on provided content.
+			Generate ${count} specific, relevant questions that a user might want to ask about the following sources.
+			Make the questions diverse and interesting. Focus on the most important aspects of the content.
+			Return ONLY the questions in a numbered list format, with no additional text or explanations.`,
+			},
+			{
+				role: 'user',
+				content: sourcesText,
+			},
+		];
+
+		const webllmMessages = messages.map((msg) => ({
+			role: msg.role,
+			content: msg.content,
+			...(msg.name ? { name: msg.name } : {}),
+		}));
+
+		const response = await currentState.engine.chat.completions.create({
+			// @ts-expect-error - WebLLM has specific type requirements
+			messages: webllmMessages,
+			temperature: 0.8, // Slightly higher temperature for more creative questions
+			max_tokens: 512,
+		});
+
+		const questionsText = response.choices[0].message.content || '';
+
+		// Parse the numbered list of questions
+		const questionRegex = /\d+\.\s*(.+?)(?=\n\d+\.|$)/gs;
+		const matches = [...questionsText.matchAll(questionRegex)];
+
+		// Convert to SuggestedQuestion format
+		const questions = matches.map((match, index) => ({
+			id: `generated-${Date.now()}-${index}`,
+			text: match[1].trim(),
+		}));
+
+		// If regex didn't work, try a simpler approach by splitting on newlines
+		if (questions.length === 0 && questionsText.trim().length > 0) {
+			return questionsText
+				.split('\n')
+				.filter((line) => line.trim().length > 0)
+				.slice(0, count)
+				.map((line, index) => ({
+					id: `generated-${Date.now()}-${index}`,
+					text: line.replace(/^\d+\.\s*/, '').trim(),
+				}));
+		}
+
+		return questions.slice(0, count);
+	} catch (error) {
+		console.error('Error generating suggested questions:', error);
+		return [];
+	}
+}
+
 export async function generateResponse(
 	messages: ChatCompletionRequestMessage[],
 ): Promise<string> {
