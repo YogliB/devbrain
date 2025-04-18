@@ -9,7 +9,6 @@ import { SourcesList } from '@/components/organisms/sources-list';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 import { useModel } from '@/contexts/model-context';
-import { ModelLoadingIndicator } from '@/components/molecules/model-loading-indicator';
 
 type Tab = 'chat' | 'sources';
 
@@ -66,7 +65,6 @@ export function ContentTabs({
 			</div>
 
 			<div className="flex-grow overflow-y-auto p-4">
-				<ModelLoadingIndicator className="mb-4" />
 				{activeTab === 'chat' ? (
 					<ChatInterface
 						messages={messages}
