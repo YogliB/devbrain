@@ -17,6 +17,7 @@ interface MainLayoutProps {
 	suggestedQuestions: SuggestedQuestion[];
 	sources: Source[];
 	isGenerating?: boolean;
+	isGeneratingQuestions?: boolean;
 	modelAvailable?: boolean;
 	onSelectNotebook: (notebook: Notebook) => void;
 	onCreateNotebook: () => void;
@@ -37,6 +38,7 @@ export function MainLayout({
 	suggestedQuestions,
 	sources,
 	isGenerating = false,
+	isGeneratingQuestions = false,
 	modelAvailable = false,
 	onSelectNotebook,
 	onCreateNotebook,
@@ -80,6 +82,7 @@ export function MainLayout({
 							messages={messages}
 							suggestedQuestions={suggestedQuestions}
 							sources={sources}
+							isGeneratingQuestions={isGeneratingQuestions}
 							onSendMessage={onSendMessage}
 							onSelectQuestion={onSelectQuestion}
 							onClearMessages={onClearMessages}

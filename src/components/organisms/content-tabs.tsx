@@ -17,6 +17,7 @@ interface ContentTabsProps {
 	messages: ChatMessage[];
 	suggestedQuestions: SuggestedQuestion[];
 	sources: Source[];
+	isGeneratingQuestions?: boolean;
 	onSendMessage: (message: string) => void;
 	onSelectQuestion: (question: SuggestedQuestion) => void;
 	onClearMessages?: () => void;
@@ -30,6 +31,7 @@ export function ContentTabs({
 	messages,
 	suggestedQuestions,
 	sources,
+	isGeneratingQuestions = false,
 	onSendMessage,
 	onSelectQuestion,
 	onClearMessages,
@@ -85,6 +87,7 @@ export function ContentTabs({
 						disabled={sources.length === 0}
 						modelAvailable={modelAvailable}
 						isGenerating={isGenerating}
+						isGeneratingQuestions={isGeneratingQuestions}
 					/>
 				) : (
 					<SourcesList

@@ -14,6 +14,7 @@ export function useChatWithAI(notebookId: string | null) {
 	const [suggestedQuestions, setSuggestedQuestions] = useState<
 		SuggestedQuestion[]
 	>([]);
+	const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 	const { modelAvailable, generateResponse, generateSuggestedQuestions } =
 		useModel();
 
@@ -39,6 +40,7 @@ export function useChatWithAI(notebookId: string | null) {
 
 			// Generate suggested questions based on sources
 			if (sourcesData.length > 0 && modelAvailable) {
+				setIsGeneratingQuestions(true);
 				try {
 					const questions =
 						await generateSuggestedQuestions(sourcesData);
@@ -50,6 +52,8 @@ export function useChatWithAI(notebookId: string | null) {
 					);
 					// If we can't generate questions, use empty array
 					setSuggestedQuestions([]);
+				} finally {
+					setIsGeneratingQuestions(false);
 				}
 			} else {
 				// No sources or model not available, clear suggested questions
@@ -163,6 +167,7 @@ ${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename 
 	// Regenerate suggested questions when sources change or model becomes available
 	useEffect(() => {
 		if (sources.length > 0 && modelAvailable) {
+			setIsGeneratingQuestions(true);
 			generateSuggestedQuestions(sources)
 				.then((questions) => setSuggestedQuestions(questions))
 				.catch((error) => {
@@ -171,6 +176,9 @@ ${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename 
 						error,
 					);
 					setSuggestedQuestions([]);
+				})
+				.finally(() => {
+					setIsGeneratingQuestions(false);
 				});
 		} else {
 			setSuggestedQuestions([]);
@@ -245,6 +253,7 @@ ${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename 
 		isGenerating,
 		sources,
 		suggestedQuestions,
+		isGeneratingQuestions,
 		setMessages,
 		fetchMessages,
 		fetchSources,

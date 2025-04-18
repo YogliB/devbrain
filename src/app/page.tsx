@@ -22,6 +22,7 @@ export default function Home() {
 		isGenerating,
 		sources,
 		suggestedQuestions,
+		isGeneratingQuestions,
 		sendMessage,
 		selectQuestion,
 		clearMessages,
@@ -66,6 +67,7 @@ export default function Home() {
 			suggestedQuestions={suggestedQuestions}
 			sources={sources}
 			isGenerating={isGenerating}
+			isGeneratingQuestions={isGeneratingQuestions}
 			modelAvailable={modelAvailable}
 			onSelectNotebook={selectNotebook}
 			onCreateNotebook={createNotebook}

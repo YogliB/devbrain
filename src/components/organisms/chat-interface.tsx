@@ -23,6 +23,7 @@ interface ChatInterfaceProps {
 	disabled?: boolean;
 	modelAvailable?: boolean;
 	isGenerating?: boolean;
+	isGeneratingQuestions?: boolean;
 	className?: string;
 }
 
@@ -35,6 +36,7 @@ export function ChatInterface({
 	disabled = false,
 	modelAvailable = true,
 	isGenerating = false,
+	isGeneratingQuestions = false,
 	className,
 }: ChatInterfaceProps) {
 	return (
@@ -91,6 +93,7 @@ export function ChatInterface({
 					<SuggestedQuestions
 						questions={suggestedQuestions}
 						onSelectQuestion={onSelectQuestion}
+						isLoading={isGeneratingQuestions}
 					/>
 				)}
 				<ChatInput
