@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { MainLayout } from '@/components/templates/main-layout';
 import { useAppInitialization } from '@/hooks/useAppInitialization';
 import { useModel } from '@/contexts/model-context';
@@ -31,12 +30,8 @@ export default function Home() {
 		deleteSource,
 	} = useChatWithAI(activeNotebook?.id || null);
 
-	// Load sources when active notebook changes
-	useEffect(() => {
-		if (activeNotebook?.id) {
-			// Sources will be loaded by the useChatWithAI hook
-		}
-	}, [activeNotebook]);
+	// Sources and messages are automatically loaded when activeNotebook changes
+	// via the useEffect in useChatWithAI.ts
 
 	// Use the model context for model availability check
 	const { modelAvailable } = useModel();

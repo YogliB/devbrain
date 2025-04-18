@@ -2,15 +2,14 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
-import { Source } from '@/types/source';
-import { messagesAPI, sourcesAPI } from '@/lib/api';
+import { messagesAPI } from '@/lib/api';
 import { useModel } from '@/contexts/model-context';
 import { ChatCompletionRequestMessage } from '@/lib/webllm-service';
+import { useSources } from '@/hooks/useSources';
 
 export function useChatWithAI(notebookId: string | null) {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isGenerating, setIsGenerating] = useState(false);
-	const [sources, setSources] = useState<Source[]>([]);
 	const [suggestedQuestions, setSuggestedQuestions] = useState<
 		SuggestedQuestion[]
 	>([]);
@@ -18,7 +17,11 @@ export function useChatWithAI(notebookId: string | null) {
 	const { modelAvailable, generateResponse, generateSuggestedQuestions } =
 		useModel();
 
-	const fetchMessages = async (notebookId: string) => {
+	// Use the sources hook to manage sources
+	const { sources, addSource, updateSource, deleteSource } =
+		useSources(notebookId);
+
+	const fetchMessages = useCallback(async (notebookId: string) => {
 		if (!notebookId) return [];
 
 		try {
@@ -29,44 +32,7 @@ export function useChatWithAI(notebookId: string | null) {
 			console.error('Failed to fetch messages:', error);
 			return [];
 		}
-	};
-
-	const fetchSources = async (notebookId: string) => {
-		if (!notebookId) return [];
-
-		try {
-			const sourcesData = await sourcesAPI.getAll(notebookId);
-			setSources(sourcesData);
-
-			// Generate suggested questions based on sources
-			if (sourcesData.length > 0 && modelAvailable) {
-				setIsGeneratingQuestions(true);
-				try {
-					const questions =
-						await generateSuggestedQuestions(sourcesData);
-					setSuggestedQuestions(questions);
-				} catch (error) {
-					console.error(
-						'Failed to generate suggested questions:',
-						error,
-					);
-					// If we can't generate questions, use empty array
-					setSuggestedQuestions([]);
-				} finally {
-					setIsGeneratingQuestions(false);
-				}
-			} else {
-				// No sources or model not available, clear suggested questions
-				setSuggestedQuestions([]);
-			}
-
-			return sourcesData;
-		} catch (error) {
-			console.error('Failed to fetch sources:', error);
-			setSuggestedQuestions([]);
-			return [];
-		}
-	};
+	}, []);
 
 	const sendMessage = useCallback(
 		async (content: string) => {
@@ -82,9 +48,6 @@ export function useChatWithAI(notebookId: string | null) {
 				);
 				setMessages((prev) => [...prev, userMessage]);
 
-				// Make sure we have the latest sources
-				const currentSources = await fetchSources(notebookId);
-
 				// Generate AI response
 				setIsGenerating(true);
 				try {
@@ -93,9 +56,9 @@ export function useChatWithAI(notebookId: string | null) {
 						{
 							role: 'system',
 							content: `You are a helpful AI assistant that answers questions based on the provided sources.
-${currentSources.length > 0 ? 'Use the following sources to answer the question:' : 'No sources are available, so answer based on your general knowledge.'}
+${sources.length > 0 ? 'Use the following sources to answer the question:' : 'No sources are available, so answer based on your general knowledge.'}
 
-${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename || `Source ${index + 1}`}\n${source.content}`).join('\n\n')}`,
+${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Source ${index + 1}`}\n${source.content}`).join('\n\n')}`,
 						},
 						...messages
 							.filter(
@@ -141,7 +104,7 @@ ${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename 
 				return null;
 			}
 		},
-		[notebookId, modelAvailable, fetchSources, generateResponse, messages],
+		[notebookId, modelAvailable, generateResponse, messages, sources],
 	);
 
 	const selectQuestion = useCallback(
@@ -164,6 +127,15 @@ ${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename 
 		}
 	}, [notebookId]);
 
+	// Fetch messages when notebook ID changes
+	useEffect(() => {
+		if (notebookId) {
+			fetchMessages(notebookId);
+		} else {
+			setMessages([]);
+		}
+	}, [notebookId, fetchMessages]);
+
 	// Regenerate suggested questions when sources change or model becomes available
 	useEffect(() => {
 		if (sources.length > 0 && modelAvailable) {
@@ -185,78 +157,13 @@ ${currentSources.map((source, index) => `Source ${index + 1}: ${source.filename 
 		}
 	}, [sources, modelAvailable, generateSuggestedQuestions]);
 
-	// Source management functions
-	const addSource = useCallback(
-		async (content: string, filename?: string) => {
-			if (!notebookId) return null;
-
-			try {
-				const newSource = await sourcesAPI.create(
-					notebookId,
-					content,
-					filename,
-				);
-				setSources((prev) => [...prev, newSource]);
-				return newSource;
-			} catch (error) {
-				console.error('Failed to add source:', error);
-				return null;
-			}
-		},
-		[notebookId],
-	);
-
-	const updateSource = useCallback(
-		async (source: Source, content: string) => {
-			if (!notebookId) return null;
-
-			try {
-				const updatedSource = await sourcesAPI.update(
-					notebookId,
-					source.id,
-					content,
-					source.filename,
-				);
-
-				setSources((prev) =>
-					prev.map((s) =>
-						s.id === updatedSource.id ? updatedSource : s,
-					),
-				);
-				return updatedSource;
-			} catch (error) {
-				console.error('Failed to update source:', error);
-				return null;
-			}
-		},
-		[notebookId],
-	);
-
-	const deleteSource = useCallback(
-		async (source: Source) => {
-			if (!notebookId) return false;
-
-			try {
-				await sourcesAPI.delete(notebookId, source.id);
-				setSources((prev) => prev.filter((s) => s.id !== source.id));
-				return true;
-			} catch (error) {
-				console.error('Failed to delete source:', error);
-				return false;
-			}
-		},
-		[notebookId],
-	);
-
 	return {
 		messages,
 		isGenerating,
 		sources,
 		suggestedQuestions,
 		isGeneratingQuestions,
-		setMessages,
 		fetchMessages,
-		fetchSources,
 		sendMessage,
 		selectQuestion,
 		canSendMessages,

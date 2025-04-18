@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Source } from '@/types/source';
 import { sourcesAPI } from '@/lib/api';
 
 export function useSources(notebookId: string | null) {
 	const [sources, setSources] = useState<Source[]>([]);
 
-	const fetchSources = async (notebookId: string) => {
+	const fetchSources = useCallback(async (notebookId: string) => {
 		if (!notebookId) return [];
 
 		try {
@@ -16,7 +16,7 @@ export function useSources(notebookId: string | null) {
 			console.error('Failed to fetch sources:', error);
 			return [];
 		}
-	};
+	}, []);
 
 	const addSource = async (content: string, filename?: string) => {
 		if (!notebookId) return null;
@@ -70,6 +70,15 @@ export function useSources(notebookId: string | null) {
 			return false;
 		}
 	};
+
+	// Automatically fetch sources when notebookId changes
+	useEffect(() => {
+		if (notebookId) {
+			fetchSources(notebookId);
+		} else {
+			setSources([]);
+		}
+	}, [notebookId, fetchSources]);
 
 	return {
 		sources,
