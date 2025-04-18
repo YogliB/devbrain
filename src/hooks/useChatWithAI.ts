@@ -51,6 +51,19 @@ export function useChatWithAI(notebookId: string | null) {
 				);
 				setMessages((prev) => [...prev, userMessage]);
 
+				// Create a temporary thinking message
+				const thinkingMessageId = `thinking-${Date.now()}`;
+				const thinkingMessage: ChatMessage = {
+					id: thinkingMessageId,
+					content: '',
+					role: 'assistant',
+					timestamp: new Date(),
+					isThinking: true,
+				};
+
+				// Add the thinking message to the UI
+				setMessages((prev) => [...prev, thinkingMessage]);
+
 				// Generate AI response
 				setIsGenerating(true);
 				try {
@@ -66,8 +79,9 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 						...messages
 							.filter(
 								(msg) =>
-									msg.role === 'user' ||
-									msg.role === 'assistant',
+									(msg.role === 'user' ||
+										msg.role === 'assistant') &&
+									!msg.isThinking,
 							)
 							.map((msg) => ({
 								role: msg.role as 'user' | 'assistant',
@@ -86,7 +100,14 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 						'assistant',
 					);
 
-					setMessages((prev) => [...prev, assistantMessage]);
+					// Replace the thinking message with the actual response
+					setMessages((prev) =>
+						prev.map((msg) =>
+							msg.id === thinkingMessageId
+								? assistantMessage
+								: msg,
+						),
+					);
 					return userMessage;
 				} catch (error) {
 					console.error('Failed to generate AI response:', error);
@@ -98,7 +119,12 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 						'assistant',
 					);
 
-					setMessages((prev) => [...prev, errorMessage]);
+					// Replace the thinking message with the error message
+					setMessages((prev) =>
+						prev.map((msg) =>
+							msg.id === thinkingMessageId ? errorMessage : msg,
+						),
+					);
 				} finally {
 					setIsGenerating(false);
 				}

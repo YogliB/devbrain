@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChatMessage as ChatMessageType } from '@/types/chat';
+import { ThinkingIndicator } from '@/components/atoms/thinking-indicator';
 
 interface ChatMessageProps {
 	message: ChatMessageType;
@@ -55,11 +56,15 @@ export function ChatMessage({ message, className }: ChatMessageProps) {
 			</div>
 			<div className="flex-1 space-y-2">
 				<div className="prose prose-neutral dark:prose-invert">
-					{message.content}
+					{message.isThinking ? (
+						<ThinkingIndicator />
+					) : (
+						<>{message.content}</>
+					)}
 				</div>
 				{mounted ? (
 					<div className="text-xs text-muted-foreground">
-						{timeString}
+						{message.isThinking ? 'Thinking...' : timeString}
 					</div>
 				) : (
 					<div className="text-xs text-muted-foreground opacity-0">

@@ -71,6 +71,25 @@ const config: Config = {
 				sans: ['var(--font-sans)'],
 				mono: ['var(--font-mono)'],
 			},
+			keyframes: {
+				pulse: {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.3' },
+				},
+				blink: {
+					'0%': { opacity: '0.2' },
+					'20%': { opacity: '1' },
+					'100%': { opacity: '0.2' },
+				},
+			},
+			animation: {
+				'pulse-delay-0': 'pulse 1.5s ease-in-out infinite',
+				'pulse-delay-300': 'pulse 1.5s ease-in-out 0.3s infinite',
+				'pulse-delay-600': 'pulse 1.5s ease-in-out 0.6s infinite',
+				'blink-delay-0': 'blink 1.4s infinite',
+				'blink-delay-200': 'blink 1.4s 0.2s infinite',
+				'blink-delay-400': 'blink 1.4s 0.4s infinite',
+			},
 		},
 	},
 };

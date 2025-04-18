@@ -18,6 +18,14 @@ const assistantMessage: ChatMessageType = {
 	timestamp: new Date(),
 };
 
+const thinkingMessage: ChatMessageType = {
+	id: '3',
+	content: '',
+	role: 'assistant',
+	timestamp: new Date(),
+	isThinking: true,
+};
+
 const meta: Meta<typeof ChatMessage> = {
 	title: 'Molecules/ChatMessage',
 	component: ChatMessage,
@@ -50,5 +58,11 @@ export const WithCustomClass: Story = {
 	args: {
 		message: userMessage,
 		className: 'border border-primary rounded-md',
+	},
+};
+
+export const ThinkingState: Story = {
+	args: {
+		message: thinkingMessage,
 	},
 };

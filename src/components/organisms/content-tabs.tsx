@@ -74,14 +74,10 @@ export function ContentTabs({
 						onSendMessage={(message) => {
 							setIsGenerating(true);
 							onSendMessage(message);
-							// Set generating to false after a delay to simulate response time
-							setTimeout(() => setIsGenerating(false), 1500);
 						}}
 						onSelectQuestion={(question) => {
 							setIsGenerating(true);
 							onSelectQuestion(question);
-							// Set generating to false after a delay to simulate response time
-							setTimeout(() => setIsGenerating(false), 1500);
 						}}
 						onClearMessages={onClearMessages}
 						onRegenerateQuestions={onRegenerateQuestions}

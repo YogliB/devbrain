@@ -30,20 +30,20 @@ class BinarySearchTree {
   constructor() {
     this.root = null;
   }
-  
+
   insert(value) {
     const newNode = new Node(value);
-    
+
     if (!this.root) {
       this.root = newNode;
       return this;
     }
-    
+
     let current = this.root;
-    
+
     while (true) {
       if (value === current.value) return this;
-      
+
       if (value < current.value) {
         if (!current.left) {
           current.left = newNode;
@@ -59,13 +59,13 @@ class BinarySearchTree {
       }
     }
   }
-  
+
   find(value) {
     if (!this.root) return null;
-    
+
     let current = this.root;
     let found = false;
-    
+
     while (current && !found) {
       if (value < current.value) {
         current = current.left;
@@ -75,7 +75,7 @@ class BinarySearchTree {
         found = true;
       }
     }
-    
+
     if (!found) return null;
     return current;
   }
@@ -112,10 +112,10 @@ inOrderTraversal(node = this.root, callback) {
   if (node) {
     // First traverse left subtree
     this.inOrderTraversal(node.left, callback);
-    
+
     // Then visit the node
     if (callback) callback(node.value);
-    
+
     // Finally traverse right subtree
     this.inOrderTraversal(node.right, callback);
   }
@@ -229,6 +229,28 @@ export const NoModelAvailable: Story = {
 export const IsGenerating: Story = {
 	args: {
 		messages: mockMessages,
+		suggestedQuestions: mockSuggestedQuestions,
+		onSendMessage: fn(),
+		onSelectQuestion: fn(),
+		onClearMessages: fn(),
+		disabled: false,
+		modelAvailable: true,
+		isGenerating: true,
+	},
+};
+
+export const WithThinkingMessage: Story = {
+	args: {
+		messages: [
+			...mockMessages,
+			{
+				id: 'thinking-1',
+				content: '',
+				role: 'assistant',
+				timestamp: new Date(),
+				isThinking: true,
+			},
+		],
 		suggestedQuestions: mockSuggestedQuestions,
 		onSendMessage: fn(),
 		onSelectQuestion: fn(),

@@ -120,3 +120,28 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+/* Thinking indicator animation */
+@keyframes thinking-dot-blink {
+	0% {
+		opacity: 0.2;
+	}
+	20% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0.2;
+	}
+}
+
+.thinking-dot-1 {
+	animation: thinking-dot-blink 1.4s infinite;
+}
+
+.thinking-dot-2 {
+	animation: thinking-dot-blink 1.4s 0.2s infinite;
+}
+
+.thinking-dot-3 {
+	animation: thinking-dot-blink 1.4s 0.4s infinite;
+}
