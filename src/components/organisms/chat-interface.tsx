@@ -53,25 +53,25 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
 	return (
 		<div className={cn('flex flex-col h-full', className)}>
+			{messages.length > 0 && onClearMessages && (
+				<div className="flex justify-end mb-2">
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<button
+								onClick={onClearMessages}
+								className="p-2 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all"
+								aria-label="Clear chat"
+							>
+								<Eraser className="h-5 w-5" />
+							</button>
+						</TooltipTrigger>
+						<TooltipContent sideOffset={5}>
+							Clear chat history
+						</TooltipContent>
+					</Tooltip>
+				</div>
+			)}
 			<div className="flex-grow overflow-y-auto relative">
-				{messages.length > 0 && onClearMessages && (
-					<div className="fixed bottom-20 right-4 z-20">
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<button
-									onClick={onClearMessages}
-									className="p-2 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all"
-									aria-label="Clear chat"
-								>
-									<Eraser className="h-5 w-5" />
-								</button>
-							</TooltipTrigger>
-							<TooltipContent sideOffset={5}>
-								Clear chat history
-							</TooltipContent>
-						</Tooltip>
-					</div>
-				)}
 				{messages.length === 0 ? (
 					<div className="h-full flex items-center justify-center text-muted-foreground">
 						{!modelAvailable ? (

@@ -7,6 +7,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 
 interface SuggestedQuestionsProps {
 	questions: SuggestedQuestion[];
@@ -64,13 +65,13 @@ export function SuggestedQuestions({
 				{onRefresh && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<button
+							<Button
 								onClick={onRefresh}
-								className="p-1 rounded-full hover:bg-muted transition-colors"
+								className="p-1 rounded-full bg-muted/30 dark:bg-muted/50 hover:bg-muted transition-colors"
 								disabled={isLoading}
 							>
 								<RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
-							</button>
+							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
 							{showEmptyState
