@@ -22,6 +22,32 @@ export function useAppInitialization() {
 		setActiveNotebook(notebook);
 	}, []);
 
+	const loadNotebookById = useCallback(
+		async (id: string) => {
+			// If notebooks are already loaded, try to find the notebook in the existing list
+			const existingNotebook = notebooks.find((n) => n.id === id);
+			if (existingNotebook) {
+				setActiveNotebook(existingNotebook);
+				return existingNotebook;
+			}
+
+			// If not found in the existing list, try to fetch it from the API
+			try {
+				const notebook = await notebooksAPI.get(id);
+				// Add the notebook to the list if it's not already there
+				if (!notebooks.some((n) => n.id === notebook.id)) {
+					setNotebooks((prev) => [...prev, notebook]);
+				}
+				setActiveNotebook(notebook);
+				return notebook;
+			} catch (error) {
+				console.error(`Failed to load notebook with ID ${id}:`, error);
+				return null;
+			}
+		},
+		[notebooks],
+	);
+
 	const createNotebook = useCallback(async () => {
 		try {
 			const newNotebook = await notebooksAPI.create(
@@ -94,5 +120,6 @@ export function useAppInitialization() {
 		selectNotebook,
 		createNotebook,
 		deleteNotebook,
+		loadNotebookById,
 	};
 }

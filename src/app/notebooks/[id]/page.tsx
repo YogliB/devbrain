@@ -1,14 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { MainLayout } from '@/components/templates/main-layout';
 import { useAppInitialization } from '@/hooks/useAppInitialization';
 import { useModel } from '@/contexts/model-context';
 import { useChatWithAI } from '@/hooks/useChatWithAI';
 
-export default function Home() {
+export default function NotebookPage() {
+	const params = useParams();
 	const router = useRouter();
+	const notebookId = params.id as string;
+	const [notFoundChecked, setNotFoundChecked] = useState(false);
 
 	const {
 		isLoading: appLoading,
@@ -17,7 +21,27 @@ export default function Home() {
 		selectNotebook,
 		createNotebook,
 		deleteNotebook,
+		loadNotebookById,
 	} = useAppInitialization();
+
+	// Load the notebook by ID when the component mounts
+	useEffect(() => {
+		if (!appLoading) {
+			// Try to load the notebook
+			const loadNotebook = async () => {
+				const notebook = await loadNotebookById(notebookId);
+
+				// If notebook couldn't be loaded, show not found page
+				if (!notebook) {
+					notFound();
+				}
+
+				setNotFoundChecked(true);
+			};
+
+			loadNotebook();
+		}
+	}, [appLoading, notebookId, loadNotebookById]);
 
 	// Use the chat hook for AI interactions
 	const {
@@ -35,36 +59,19 @@ export default function Home() {
 		regenerateQuestions,
 	} = useChatWithAI(activeNotebook?.id || null);
 
-	// Sources and messages are automatically loaded when activeNotebook changes
-	// via the useEffect in useChatWithAI.ts
+	// Get model status from context
+	const { isModelAvailable: modelAvailable } = useModel();
 
-	// Use the model context for model availability check
-	const { modelAvailable } = useModel();
-
-	// Loading state
-	const isLoading = appLoading;
-
-	// Redirect to notebook page if a notebook is active
-	useEffect(() => {
-		if (!isLoading && activeNotebook) {
-			router.push(`/notebooks/${activeNotebook.id}`);
+	// Handle notebook deletion with navigation
+	const handleDeleteNotebook = async (notebook) => {
+		const success = await deleteNotebook(notebook);
+		if (success) {
+			// Navigate to home if the active notebook was deleted
+			if (notebook.id === activeNotebook?.id) {
+				router.push('/');
+			}
 		}
-	}, [isLoading, activeNotebook, router]);
-
-	if (isLoading) {
-		return (
-			<div className="flex h-screen items-center justify-center">
-				<div className="text-center">
-					<h2 className="text-2xl font-semibold mb-2">
-						Loading DevBrain
-					</h2>
-					<p className="text-muted-foreground">
-						Loading application...
-					</p>
-				</div>
-			</div>
-		);
-	}
+	};
 
 	return (
 		<MainLayout
@@ -86,7 +93,7 @@ export default function Home() {
 					router.push(`/notebooks/${newNotebook.id}`);
 				}
 			}}
-			onDeleteNotebook={deleteNotebook}
+			onDeleteNotebook={handleDeleteNotebook}
 			onSendMessage={sendMessage}
 			onSelectQuestion={selectQuestion}
 			onClearMessages={clearMessages}
