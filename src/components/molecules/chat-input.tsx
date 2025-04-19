@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, AlertCircle } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
 	Tooltip,
@@ -35,11 +35,8 @@ export function ChatInput({
 	};
 
 	return (
-		<form
-			onSubmit={handleSubmit}
-			className={cn('flex items-end gap-2', className)}
-		>
-			<div className="flex-grow relative">
+		<form onSubmit={handleSubmit} className={cn('flex gap-2', className)}>
+			<div className="flex-grow flex">
 				<textarea
 					value={message}
 					onChange={(e) => setMessage(e.target.value)}
@@ -52,7 +49,12 @@ export function ChatInput({
 					}
 					disabled={disabled || !modelAvailable}
 					rows={1}
-					className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+					className="w-full resize-none rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 self-center"
+					style={{
+						height: '40px',
+						paddingTop: '8px',
+						paddingBottom: '8px',
+					}}
 					onKeyDown={(e) => {
 						if (e.key === 'Enter' && !e.shiftKey) {
 							e.preventDefault();
@@ -61,7 +63,7 @@ export function ChatInput({
 					}}
 				/>
 			</div>
-			<div className="relative">
+			<div className="flex">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<button
@@ -69,7 +71,12 @@ export function ChatInput({
 							disabled={
 								disabled || !modelAvailable || !message.trim()
 							}
-							className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+							className="inline-flex items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 self-center"
+							style={{
+								height: '40px',
+								paddingLeft: '12px',
+								paddingRight: '12px',
+							}}
 							aria-label="Send message"
 						>
 							<Send className="h-4 w-4" />
