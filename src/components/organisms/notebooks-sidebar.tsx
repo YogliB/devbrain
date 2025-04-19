@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PlusCircle, ChevronLeft, ChevronRight, Book } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Notebook } from '@/types/notebook';
 import { NotebookItem } from '@/components/molecules/notebook-item';
 import { Logo } from '@/components/atoms/logo';
 import { ModelSelector } from '@/components/molecules/model-selector';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface NotebooksSidebarProps {
 	notebooks: Notebook[];
@@ -78,16 +79,23 @@ export function NotebooksSidebar({
 				{isLoading ? (
 					// Show loading skeletons
 					<div className="space-y-1">
-						{Array.from({ length: 3 }).map((_, i) => (
+						{Array.from({ length: 4 }).map((_, i) => (
 							<div
 								key={i}
 								className={cn(
-									'h-10 w-full rounded-md bg-sidebar-accent/30 animate-pulse',
-									isCollapsed
-										? 'flex justify-center items-center'
-										: 'px-3 py-2',
+									'group flex items-center gap-2 px-3 py-2 rounded-md',
+									isCollapsed && 'justify-center',
 								)}
-							/>
+							>
+								{isCollapsed ? (
+									<Book className="h-5 w-5 flex-shrink-0 text-sidebar-foreground/50" />
+								) : (
+									<>
+										<Book className="h-5 w-5 flex-shrink-0 text-sidebar-foreground/50" />
+										<Skeleton className="h-5 flex-grow" />
+									</>
+								)}
+							</div>
 						))}
 					</div>
 				) : notebooks.length === 0 ? (

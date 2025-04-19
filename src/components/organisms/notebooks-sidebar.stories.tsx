@@ -85,3 +85,32 @@ export const WithCustomClass: Story = {
 		className: 'border border-primary rounded-md',
 	},
 };
+
+export const Loading: Story = {
+	args: {
+		notebooks: mockNotebooks,
+		activeNotebook: null,
+		isLoading: true,
+		onSelectNotebook: fn(),
+		onCreateNotebook: fn(),
+		onDeleteNotebook: fn(),
+	},
+};
+
+export const LoadingCollapsed: Story = {
+	render: () => {
+		// Force the sidebar to be collapsed initially
+		return (
+			<div className="w-16">
+				<NotebooksSidebar
+					notebooks={mockNotebooks}
+					activeNotebook={null}
+					isLoading={true}
+					onSelectNotebook={fn()}
+					onCreateNotebook={fn()}
+					onDeleteNotebook={fn()}
+				/>
+			</div>
+		);
+	},
+};
