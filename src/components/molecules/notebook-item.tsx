@@ -2,6 +2,11 @@ import React from 'react';
 import { Book, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Notebook } from '@/types/notebook';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface NotebookItemProps {
 	notebook: Notebook;
@@ -32,9 +37,21 @@ export function NotebookItem({
 					? 'bg-sidebar-primary/10 text-sidebar-foreground font-medium'
 					: 'hover:bg-sidebar-accent text-sidebar-foreground',
 			)}
-			title={isCollapsed ? notebook.title : undefined}
 		>
-			<Book className="h-5 w-5 flex-shrink-0" />
+			{isCollapsed ? (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<div>
+							<Book className="h-5 w-5 flex-shrink-0" />
+						</div>
+					</TooltipTrigger>
+					<TooltipContent sideOffset={5}>
+						{notebook.title}
+					</TooltipContent>
+				</Tooltip>
+			) : (
+				<Book className="h-5 w-5 flex-shrink-0" />
+			)}
 			{!isCollapsed && (
 				<>
 					<span className="flex-grow truncate">{notebook.title}</span>
