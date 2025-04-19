@@ -20,10 +20,16 @@ export function SuggestedQuestionsSkeleton({
 				</div>
 				<Skeleton className="h-5 w-5 rounded-full" />
 			</div>
-			<div className="flex flex-wrap gap-2">
-				<Skeleton className="h-8 w-32 rounded-full" />
-				<Skeleton className="h-8 w-40 rounded-full" />
-				<Skeleton className="h-8 w-36 rounded-full" />
+			<div className="flex flex-col gap-2">
+				<div className="flex">
+					<Skeleton className="h-8 w-32 rounded-full" />
+				</div>
+				<div className="flex">
+					<Skeleton className="h-8 w-40 rounded-full" />
+				</div>
+				<div className="flex">
+					<Skeleton className="h-8 w-36 rounded-full" />
+				</div>
 			</div>
 		</div>
 	);

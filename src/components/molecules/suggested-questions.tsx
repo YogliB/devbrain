@@ -2,6 +2,11 @@ import React from 'react';
 import { Lightbulb, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SuggestedQuestion } from '@/types/chat';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface SuggestedQuestionsProps {
 	questions: SuggestedQuestion[];
@@ -57,31 +62,36 @@ export function SuggestedQuestions({
 					</span>
 				</div>
 				{onRefresh && (
-					<button
-						onClick={onRefresh}
-						className="p-1 rounded-full hover:bg-muted transition-colors"
-						title={
-							showEmptyState
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<button
+								onClick={onRefresh}
+								className="p-1 rounded-full hover:bg-muted transition-colors"
+								disabled={isLoading}
+							>
+								<RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
+							</button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{showEmptyState
 								? 'Generate questions'
-								: 'Regenerate questions'
-						}
-						disabled={isLoading}
-					>
-						<RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
-					</button>
+								: 'Regenerate questions'}
+						</TooltipContent>
+					</Tooltip>
 				)}
 			</div>
 
 			{!isLoading && hasValidQuestions && (
-				<div className="flex flex-wrap gap-2">
+				<div className="flex flex-col gap-2">
 					{validQuestions.map((question) => (
-						<button
-							key={question.id}
-							onClick={() => onSelectQuestion(question)}
-							className="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 rounded-full text-muted-foreground transition-colors"
-						>
-							{question.text}
-						</button>
+						<div key={question.id} className="flex">
+							<button
+								onClick={() => onSelectQuestion(question)}
+								className="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 rounded-full text-muted-foreground transition-colors text-left w-fit"
+							>
+								{question.text}
+							</button>
+						</div>
 					))}
 				</div>
 			)}
