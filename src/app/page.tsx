@@ -54,19 +54,10 @@ export default function Home() {
 		}
 	}, [isLoading, activeNotebook, router]);
 
+	// Don't show loading UI on the root page to prevent double loading messages
+	// Just render a blank div while loading and let the redirect happen
 	if (isLoading) {
-		return (
-			<div className="flex h-screen items-center justify-center">
-				<div className="text-center">
-					<h2 className="text-2xl font-semibold mb-2">
-						Loading DevBrain
-					</h2>
-					<p className="text-muted-foreground">
-						Loading application...
-					</p>
-				</div>
-			</div>
-		);
+		return <div className="h-screen" />;
 	}
 
 	return (
