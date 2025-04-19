@@ -5,13 +5,20 @@ import { cn } from '@/lib/utils';
 import { ProgressBar } from '@/components/atoms/progress-bar';
 import { useModel } from '@/contexts/model-context';
 import { Download, AlertCircle, Cpu, Gauge } from 'lucide-react';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ModelLoadingIndicatorProps {
 	className?: string;
+	isCollapsed?: boolean;
 }
 
 export function ModelLoadingIndicator({
 	className,
+	isCollapsed = false,
 }: ModelLoadingIndicatorProps) {
 	const { modelStatus, modelProgress, modelProgressText, selectedModel } =
 		useModel();
@@ -21,33 +28,62 @@ export function ModelLoadingIndicator({
 		return null;
 	}
 
+	// Get the appropriate icon based on model status
+	const getStatusIcon = () => {
+		if (modelStatus === 'evaluating') {
+			return <Gauge className="h-5 w-5 text-primary animate-pulse" />;
+		} else if (modelStatus === 'loading') {
+			return <Download className="h-5 w-5 text-primary animate-pulse" />;
+		} else if (modelStatus === 'error') {
+			return <AlertCircle className="h-5 w-5 text-red-500" />;
+		} else if (modelStatus === 'unsupported') {
+			return <Cpu className="h-5 w-5 text-amber-500" />;
+		} else {
+			return <Download className="h-5 w-5 text-muted-foreground" />;
+		}
+	};
+
+	// Get the status text
+	const getStatusText = () => {
+		if (modelStatus === 'evaluating') {
+			return 'Evaluating Device Capabilities';
+		} else if (modelStatus === 'loading') {
+			return selectedModel
+				? `Loading ${selectedModel.name}`
+				: 'Loading AI Model';
+		} else if (modelStatus === 'error') {
+			return 'Error Loading Model';
+		} else if (modelStatus === 'unsupported') {
+			return 'Device Not Supported';
+		} else {
+			return 'AI Model Not Loaded';
+		}
+	};
+
+	// If collapsed, show only the icon with a tooltip
+	if (isCollapsed) {
+		return (
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<div className="flex justify-center p-2">
+						{getStatusIcon()}
+					</div>
+				</TooltipTrigger>
+				<TooltipContent sideOffset={5}>
+					{getStatusText()}
+					{modelStatus === 'loading' &&
+						` (${Math.round(modelProgress)}%)`}
+				</TooltipContent>
+			</Tooltip>
+		);
+	}
+
+	// Full view for expanded sidebar
 	return (
 		<div className={cn('p-4 rounded-lg border bg-card', className)}>
 			<div className="flex items-center gap-3 mb-2">
-				{modelStatus === 'evaluating' ? (
-					<Gauge className="h-5 w-5 text-primary animate-pulse" />
-				) : modelStatus === 'loading' ? (
-					<Download className="h-5 w-5 text-primary animate-pulse" />
-				) : modelStatus === 'error' ? (
-					<AlertCircle className="h-5 w-5 text-red-500" />
-				) : modelStatus === 'unsupported' ? (
-					<Cpu className="h-5 w-5 text-amber-500" />
-				) : (
-					<Download className="h-5 w-5 text-muted-foreground" />
-				)}
-				<h3 className="text-sm font-medium">
-					{modelStatus === 'evaluating'
-						? 'Evaluating Device Capabilities'
-						: modelStatus === 'loading'
-							? selectedModel
-								? `Loading ${selectedModel.name}`
-								: 'Loading AI Model'
-							: modelStatus === 'error'
-								? 'Error Loading Model'
-								: modelStatus === 'unsupported'
-									? 'Device Not Supported'
-									: 'AI Model Not Loaded'}
-				</h3>
+				{getStatusIcon()}
+				<h3 className="text-sm font-medium">{getStatusText()}</h3>
 			</div>
 
 			{(modelStatus === 'loading' || modelStatus === 'evaluating') && (

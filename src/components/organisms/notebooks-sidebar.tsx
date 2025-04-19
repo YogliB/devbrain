@@ -98,11 +98,9 @@ export function NotebooksSidebar({
 				)}
 			</div>
 
-			{!isCollapsed && (
-				<div className="mt-auto p-2">
-					<ModelSelector />
-				</div>
-			)}
+			<div className="mt-auto p-2">
+				<ModelSelector isCollapsed={isCollapsed} />
+			</div>
 		</div>
 	);
 }
