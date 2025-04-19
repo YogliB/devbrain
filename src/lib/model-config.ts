@@ -109,7 +109,6 @@ export async function detectDeviceCapabilities(): Promise<DeviceCapabilities> {
  */
 export async function selectBestModel(): Promise<ModelConfig> {
 	const capabilities = await detectDeviceCapabilities();
-	console.log('Detected device capabilities:', capabilities);
 
 	// Filter models that can run on the device
 	const compatibleModels = AVAILABLE_MODELS.filter((model) => {
@@ -133,6 +132,5 @@ export async function selectBestModel(): Promise<ModelConfig> {
 	const selectedModel =
 		sortedModels[0] || AVAILABLE_MODELS[AVAILABLE_MODELS.length - 1];
 
-	console.log('Selected model:', selectedModel);
 	return selectedModel;
 }
