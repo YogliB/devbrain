@@ -7,6 +7,11 @@ import { useModel } from '@/contexts/model-context';
 import { ChatCompletionRequestMessage } from '@/lib/webllm-service';
 import { useSources } from '@/hooks/useSources';
 
+// Cache to store messages by notebook ID
+const messagesCache = new Map<string, ChatMessage[]>();
+// Cache to store suggested questions by notebook ID
+const questionsCache = new Map<string, SuggestedQuestion[]>();
+
 export function useChatWithAI(notebookId: string | null) {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isGenerating, setIsGenerating] = useState(false);
@@ -27,9 +32,24 @@ export function useChatWithAI(notebookId: string | null) {
 	const fetchMessages = useCallback(async (notebookId: string) => {
 		if (!notebookId) return [];
 
+		// Check cache first
+		if (messagesCache.has(notebookId)) {
+			const cachedMessages = messagesCache.get(notebookId);
+			console.log(
+				`[useChatWithAI] Using cached messages for notebook ${notebookId}`,
+			);
+			setMessages(cachedMessages || []);
+			return cachedMessages || [];
+		}
+
 		try {
+			console.log(
+				`[useChatWithAI] Fetching messages for notebook ${notebookId}`,
+			);
 			const messagesData = await messagesAPI.getAll(notebookId);
 			setMessages(messagesData);
+			// Store in cache
+			messagesCache.set(notebookId, messagesData);
 			return messagesData;
 		} catch (error) {
 			console.error('Failed to fetch messages:', error);
@@ -149,6 +169,12 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 		try {
 			await messagesAPI.clear(notebookId);
 			setMessages([]);
+
+			// Update cache
+			if (messagesCache.has(notebookId)) {
+				messagesCache.set(notebookId, []);
+			}
+
 			return true;
 		} catch (error) {
 			console.error('Failed to clear messages:', error);
@@ -160,6 +186,16 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 	const fetchSuggestedQuestions = useCallback(async () => {
 		if (!notebookId) return false;
 
+		// Check cache first
+		if (questionsCache.has(notebookId)) {
+			const cachedQuestions = questionsCache.get(notebookId);
+			if (cachedQuestions && cachedQuestions.length > 0) {
+				setSuggestedQuestions(cachedQuestions);
+				setQuestionsLoaded(true);
+				return true;
+			}
+		}
+
 		try {
 			const questions = await suggestedQuestionsAPI.getAll(notebookId);
 			const formattedQuestions = questions.map((q) => ({
@@ -170,7 +206,8 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 			if (formattedQuestions.length > 0) {
 				setSuggestedQuestions(formattedQuestions);
 				setQuestionsLoaded(true);
-
+				// Store in cache
+				questionsCache.set(notebookId, formattedQuestions);
 				return true;
 			}
 
@@ -181,23 +218,42 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 		}
 	}, [notebookId]);
 
-	// Fetch messages and questions when notebook ID changes
+	// Track if we've already fetched data for this notebook
+	const fetchedNotebookRef = useRef<string | null>(null);
+
+	// Fetch messages and questions when notebook ID changes, but only if we haven't fetched them before
 	useEffect(() => {
 		if (notebookId) {
-			// Reset state for the new notebook
-			setQuestionsLoaded(false);
-			sourcesChangedRef.current = false;
+			// Only fetch if we haven't already fetched for this notebook
+			if (fetchedNotebookRef.current !== notebookId) {
+				// Reset state for the new notebook
+				setQuestionsLoaded(false);
+				sourcesChangedRef.current = false;
 
-			// Fetch messages
-			fetchMessages(notebookId);
+				// Fetch messages
+				fetchMessages(notebookId);
 
-			// Fetch persisted questions - never auto-regenerate
-			fetchSuggestedQuestions();
+				// Fetch persisted questions - never auto-regenerate
+				fetchSuggestedQuestions();
+
+				// Mark as fetched
+				fetchedNotebookRef.current = notebookId;
+			} else {
+				// If we've already fetched, just use the cache
+				if (messagesCache.has(notebookId)) {
+					setMessages(messagesCache.get(notebookId) || []);
+				}
+				if (questionsCache.has(notebookId)) {
+					setSuggestedQuestions(questionsCache.get(notebookId) || []);
+					setQuestionsLoaded(true);
+				}
+			}
 		} else {
 			// Clear state when no notebook is selected
 			setMessages([]);
 			setSuggestedQuestions([]);
 			setQuestionsLoaded(false);
+			fetchedNotebookRef.current = null;
 		}
 	}, [notebookId, fetchMessages, fetchSuggestedQuestions]);
 
@@ -244,6 +300,10 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 							);
 							setQuestionsLoaded(true);
 							sourcesChangedRef.current = false;
+
+							// Update cache
+							questionsCache.set(notebookId, questions);
+
 							console.log('Questions saved successfully');
 						} catch (saveError) {
 							console.error(
@@ -320,6 +380,12 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 				// Reset state to force regeneration
 				setQuestionsLoaded(false);
 				sourcesChangedRef.current = true;
+
+				// Clear cache
+				if (questionsCache.has(notebookId)) {
+					questionsCache.delete(notebookId);
+				}
+
 				// Now generate new questions
 				await generateQuestions(true);
 			} catch (error) {

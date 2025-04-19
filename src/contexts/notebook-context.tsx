@@ -6,9 +6,13 @@ import React, {
 	useState,
 	useEffect,
 	useCallback,
+	useRef,
 } from 'react';
 import { initializeDatabase, notebooksAPI } from '@/lib/api';
 import { Notebook } from '@/types/notebook';
+
+// Cache to store notebooks by ID
+const notebooksCache = new Map<string, Notebook>();
 
 interface NotebookContextType {
 	isLoading: boolean;
@@ -44,28 +48,68 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 		setActiveNotebook(notebook);
 	}, []);
 
+	// Track notebooks we've already tried to load
+	const loadedNotebooksRef = useRef<Set<string>>(new Set());
+
 	const loadNotebookById = useCallback(
 		async (id: string) => {
+			// Check if we've already loaded this notebook
+			const alreadyLoaded = loadedNotebooksRef.current.has(id);
+
+			// Check cache first
+			if (notebooksCache.has(id)) {
+				const cachedNotebook = notebooksCache.get(id);
+				if (cachedNotebook) {
+					console.log(
+						`[notebook-context] Using cached notebook for ID ${id}`,
+					);
+					setActiveNotebook(cachedNotebook);
+					return cachedNotebook;
+				}
+			}
+
 			// If notebooks are already loaded, try to find the notebook in the existing list
 			const existingNotebook = notebooks.find((n) => n.id === id);
 			if (existingNotebook) {
 				setActiveNotebook(existingNotebook);
+				// Add to cache
+				notebooksCache.set(id, existingNotebook);
+				// Mark as loaded
+				loadedNotebooksRef.current.add(id);
 				return existingNotebook;
 			}
 
-			// If not found in the existing list, try to fetch it from the API
-			try {
-				const notebook = await notebooksAPI.get(id);
-				// Add the notebook to the list if it's not already there
-				if (!notebooks.some((n) => n.id === notebook.id)) {
-					setNotebooks((prev) => [...prev, notebook]);
+			// If not found in the existing list and not already attempted, try to fetch it from the API
+			if (!alreadyLoaded) {
+				try {
+					console.log(
+						`[notebook-context] Fetching notebook with ID ${id}`,
+					);
+					const notebook = await notebooksAPI.get(id);
+					// Add the notebook to the list if it's not already there
+					if (!notebooks.some((n) => n.id === notebook.id)) {
+						setNotebooks((prev) => [...prev, notebook]);
+					}
+					setActiveNotebook(notebook);
+					// Add to cache
+					notebooksCache.set(id, notebook);
+					// Mark as loaded
+					loadedNotebooksRef.current.add(id);
+					return notebook;
+				} catch (error) {
+					console.error(
+						`Failed to load notebook with ID ${id}:`,
+						error,
+					);
+					// Mark as attempted even if it failed
+					loadedNotebooksRef.current.add(id);
+					return null;
 				}
-				setActiveNotebook(notebook);
-				return notebook;
-			} catch (error) {
-				console.error(`Failed to load notebook with ID ${id}:`, error);
-				return null;
 			}
+
+			// If we've already tried to load this notebook and it's not in the cache or list,
+			// it probably doesn't exist
+			return null;
 		},
 		[notebooks],
 	);
@@ -77,6 +121,12 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 			);
 			setNotebooks((prev) => [...prev, newNotebook]);
 			setActiveNotebook(newNotebook);
+
+			// Add to cache
+			notebooksCache.set(newNotebook.id, newNotebook);
+			// Mark as loaded
+			loadedNotebooksRef.current.add(newNotebook.id);
+
 			return newNotebook;
 		} catch (error) {
 			console.error('Failed to create notebook:', error);
@@ -96,6 +146,12 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 				if (activeNotebook?.id === notebook.id) {
 					setActiveNotebook(updatedNotebooks[0] || null);
 				}
+
+				// Remove from cache
+				notebooksCache.delete(notebook.id);
+				// Remove from loaded set
+				loadedNotebooksRef.current.delete(notebook.id);
+
 				return true;
 			} catch (error) {
 				console.error('Failed to delete notebook:', error);
@@ -119,6 +175,12 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 				await timeoutPromise;
 
 				const notebooksData = await fetchNotebooks();
+
+				// Cache all notebooks
+				notebooksData.forEach((notebook) => {
+					notebooksCache.set(notebook.id, notebook);
+					loadedNotebooksRef.current.add(notebook.id);
+				});
 
 				if (notebooksData.length > 0) {
 					const notebook = notebooksData[0];

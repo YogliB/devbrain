@@ -24,9 +24,12 @@ export default function NotebookPage() {
 		loadNotebookById,
 	} = useNotebook();
 
+	// Track if we've already loaded this notebook
+	const [notebookLoaded, setNotebookLoaded] = useState(false);
+
 	// Load the notebook by ID when the component mounts
 	useEffect(() => {
-		if (!appLoading) {
+		if (!appLoading && !notebookLoaded) {
 			// Try to load the notebook
 			const loadNotebook = async () => {
 				const notebook = await loadNotebookById(notebookId);
@@ -37,11 +40,12 @@ export default function NotebookPage() {
 				}
 
 				setNotFoundChecked(true);
+				setNotebookLoaded(true);
 			};
 
 			loadNotebook();
 		}
-	}, [appLoading, notebookId, loadNotebookById]);
+	}, [appLoading, notebookId, loadNotebookById, notebookLoaded]);
 
 	// Use the chat hook for AI interactions
 	const {
