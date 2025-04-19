@@ -32,10 +32,28 @@ export default function NotebookPage() {
 		if (!appLoading && !notebookLoaded) {
 			// Try to load the notebook
 			const loadNotebook = async () => {
+				console.log(
+					`[NotebookPage] Loading notebook with ID: ${notebookId}`,
+				);
+
+				// Check if the active notebook is already the one we want
+				if (activeNotebook?.id === notebookId) {
+					console.log(
+						`[NotebookPage] Notebook ${notebookId} is already active`,
+					);
+					setNotFoundChecked(true);
+					setNotebookLoaded(true);
+					return;
+				}
+
+				// Otherwise, load the notebook by ID
 				const notebook = await loadNotebookById(notebookId);
 
 				// If notebook couldn't be loaded, show not found page
 				if (!notebook) {
+					console.error(
+						`[NotebookPage] Notebook ${notebookId} not found`,
+					);
 					notFound();
 				}
 
@@ -45,7 +63,13 @@ export default function NotebookPage() {
 
 			loadNotebook();
 		}
-	}, [appLoading, notebookId, loadNotebookById, notebookLoaded]);
+	}, [
+		appLoading,
+		notebookId,
+		loadNotebookById,
+		notebookLoaded,
+		activeNotebook,
+	]);
 
 	// Use the chat hook for AI interactions
 	const {

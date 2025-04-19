@@ -223,37 +223,44 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 
 	// Fetch messages and questions when notebook ID changes, but only if we haven't fetched them before
 	useEffect(() => {
-		if (notebookId) {
-			// Only fetch if we haven't already fetched for this notebook
-			if (fetchedNotebookRef.current !== notebookId) {
-				// Reset state for the new notebook
-				setQuestionsLoaded(false);
-				sourcesChangedRef.current = false;
-
-				// Fetch messages
-				fetchMessages(notebookId);
-
-				// Fetch persisted questions - never auto-regenerate
-				fetchSuggestedQuestions();
-
-				// Mark as fetched
-				fetchedNotebookRef.current = notebookId;
-			} else {
-				// If we've already fetched, just use the cache
-				if (messagesCache.has(notebookId)) {
-					setMessages(messagesCache.get(notebookId) || []);
-				}
-				if (questionsCache.has(notebookId)) {
-					setSuggestedQuestions(questionsCache.get(notebookId) || []);
-					setQuestionsLoaded(true);
-				}
-			}
-		} else {
+		// Skip if notebookId is null or undefined
+		if (!notebookId) {
 			// Clear state when no notebook is selected
 			setMessages([]);
 			setSuggestedQuestions([]);
 			setQuestionsLoaded(false);
 			fetchedNotebookRef.current = null;
+			return;
+		}
+
+		console.log(`[useChatWithAI] Notebook ID changed to: ${notebookId}`);
+		console.log(
+			`[useChatWithAI] Previously fetched notebook: ${fetchedNotebookRef.current}`,
+		);
+
+		// Only fetch if we haven't already fetched for this notebook
+		if (fetchedNotebookRef.current !== notebookId) {
+			// Reset state for the new notebook
+			setQuestionsLoaded(false);
+			sourcesChangedRef.current = false;
+
+			// Fetch messages
+			fetchMessages(notebookId);
+
+			// Fetch persisted questions - never auto-regenerate
+			fetchSuggestedQuestions();
+
+			// Mark as fetched
+			fetchedNotebookRef.current = notebookId;
+		} else {
+			// If we've already fetched, just use the cache
+			if (messagesCache.has(notebookId)) {
+				setMessages(messagesCache.get(notebookId) || []);
+			}
+			if (questionsCache.has(notebookId)) {
+				setSuggestedQuestions(questionsCache.get(notebookId) || []);
+				setQuestionsLoaded(true);
+			}
 		}
 	}, [notebookId, fetchMessages, fetchSuggestedQuestions]);
 

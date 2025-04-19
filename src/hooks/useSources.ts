@@ -127,18 +127,25 @@ export function useSources(notebookId: string | null) {
 
 	// Automatically fetch sources when notebookId changes, but only if we haven't fetched them before
 	useEffect(() => {
-		if (notebookId) {
-			// Only fetch if we haven't already fetched for this notebook
-			if (fetchedRef.current !== notebookId) {
-				fetchSources(notebookId);
-				fetchedRef.current = notebookId;
-			} else if (sourcesCache.has(notebookId)) {
-				// If we've already fetched and have cache, just use the cache
-				setSources(sourcesCache.get(notebookId) || []);
-			}
-		} else {
+		// Skip if notebookId is null or undefined
+		if (!notebookId) {
 			setSources([]);
 			fetchedRef.current = null;
+			return;
+		}
+
+		console.log(`[useSources] Notebook ID changed to: ${notebookId}`);
+		console.log(
+			`[useSources] Previously fetched notebook: ${fetchedRef.current}`,
+		);
+
+		// Only fetch if we haven't already fetched for this notebook
+		if (fetchedRef.current !== notebookId) {
+			fetchSources(notebookId);
+			fetchedRef.current = notebookId;
+		} else if (sourcesCache.has(notebookId)) {
+			// If we've already fetched and have cache, just use the cache
+			setSources(sourcesCache.get(notebookId) || []);
 		}
 	}, [notebookId, fetchSources]);
 

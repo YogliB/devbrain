@@ -161,6 +161,19 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 		[notebooks, activeNotebook],
 	);
 
+	// Track if we're on the home page (not a specific notebook page)
+	const isHomePage = useRef(true);
+
+	// Check if we're on the home page by looking at the URL
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			// If the URL contains /notebooks/ followed by an ID, we're not on the home page
+			isHomePage.current =
+				!window.location.pathname.match(/\/notebooks\/[\w-]+/);
+			console.log(`[notebook-context] isHomePage: ${isHomePage.current}`);
+		}
+	}, []);
+
 	useEffect(() => {
 		async function initializeApp() {
 			try {
@@ -182,7 +195,12 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 					loadedNotebooksRef.current.add(notebook.id);
 				});
 
-				if (notebooksData.length > 0) {
+				// Only set the first notebook as active if we're on the home page
+				// If we're on a specific notebook page, the notebook will be loaded by the page component
+				if (notebooksData.length > 0 && isHomePage.current) {
+					console.log(
+						'[notebook-context] Setting first notebook as active (home page)',
+					);
 					const notebook = notebooksData[0];
 					setActiveNotebook(notebook);
 				}
