@@ -9,12 +9,12 @@ export interface ModelConfig {
 
 export const AVAILABLE_MODELS: ModelConfig[] = [
 	{
-		id: 'DeepSeek-R1-Distill-Qwen-14B-q4f16_1-MLC',
-		name: 'DeepSeek R1 Distill Qwen 14B',
+		id: 'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC',
+		name: 'DeepSeek R1 Distill Llama 8B',
 		description:
-			'High-quality 14B parameter model with excellent reasoning capabilities',
-		size: 7800, // Approximate size in MB
-		minMemory: 8000, // Minimum memory required in MB
+			'High-quality 8B parameter model with excellent reasoning capabilities',
+		size: 4500, // Approximate size in MB
+		minMemory: 5000, // Minimum memory required in MB
 		requiresWebGPU: true,
 	},
 	{
