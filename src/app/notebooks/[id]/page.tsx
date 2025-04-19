@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import { MainLayout } from '@/components/templates/main-layout';
-import { useAppInitialization } from '@/hooks/useAppInitialization';
+import { useNotebook } from '@/contexts/notebook-context';
 import { useModel } from '@/contexts/model-context';
 import { useChatWithAI } from '@/hooks/useChatWithAI';
 
@@ -22,7 +22,7 @@ export default function NotebookPage() {
 		createNotebook,
 		deleteNotebook,
 		loadNotebookById,
-	} = useAppInitialization();
+	} = useNotebook();
 
 	// Load the notebook by ID when the component mounts
 	useEffect(() => {
@@ -68,7 +68,7 @@ export default function NotebookPage() {
 		if (success) {
 			// Navigate to home if the active notebook was deleted
 			if (notebook.id === activeNotebook?.id) {
-				router.push('/');
+				router.replace('/', { scroll: false });
 			}
 		}
 	};
@@ -84,13 +84,17 @@ export default function NotebookPage() {
 			isGeneratingQuestions={isGeneratingQuestions}
 			modelAvailable={modelAvailable}
 			onSelectNotebook={(notebook) => {
+				// Just update the state, don't navigate programmatically
 				selectNotebook(notebook);
-				router.push(`/notebooks/${notebook.id}`);
+				// Update URL without full navigation
+				router.replace(`/notebooks/${notebook.id}`, { scroll: false });
 			}}
 			onCreateNotebook={async () => {
 				const newNotebook = await createNotebook();
 				if (newNotebook) {
-					router.push(`/notebooks/${newNotebook.id}`);
+					router.replace(`/notebooks/${newNotebook.id}`, {
+						scroll: false,
+					});
 				}
 			}}
 			onDeleteNotebook={handleDeleteNotebook}

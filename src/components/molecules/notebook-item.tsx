@@ -1,5 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
 import { Book, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Notebook } from '@/types/notebook';
@@ -29,21 +28,16 @@ export function NotebookItem({
 		onDelete(notebook);
 	};
 
-	// Use Link component for navigation but keep the onClick for state management
+	// Don't use Link for navigation, just use a div with onClick
 	return (
-		<Link
-			href={`/notebooks/${notebook.id}`}
+		<div
 			className={cn(
 				'group flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors',
 				isActive
 					? 'bg-sidebar-primary/10 text-sidebar-foreground font-medium'
 					: 'hover:bg-sidebar-accent text-sidebar-foreground',
 			)}
-			onClick={(e) => {
-				// Prevent default navigation since we're handling it with state
-				e.preventDefault();
-				onClick(notebook);
-			}}
+			onClick={() => onClick(notebook)}
 		>
 			{isCollapsed ? (
 				<Tooltip>
@@ -76,6 +70,6 @@ export function NotebookItem({
 					</button>
 				</>
 			)}
-		</Link>
+		</div>
 	);
 }

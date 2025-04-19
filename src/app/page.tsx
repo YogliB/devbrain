@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/templates/main-layout';
-import { useAppInitialization } from '@/hooks/useAppInitialization';
+import { useNotebook } from '@/contexts/notebook-context';
 import { useModel } from '@/contexts/model-context';
 import { useChatWithAI } from '@/hooks/useChatWithAI';
 
@@ -17,7 +17,7 @@ export default function Home() {
 		selectNotebook,
 		createNotebook,
 		deleteNotebook,
-	} = useAppInitialization();
+	} = useNotebook();
 
 	// Use the chat hook for AI interactions
 	const {
@@ -47,7 +47,10 @@ export default function Home() {
 	// Redirect to notebook page if a notebook is active
 	useEffect(() => {
 		if (!isLoading && activeNotebook) {
-			router.push(`/notebooks/${activeNotebook.id}`);
+			// Use replace instead of push to avoid adding to history stack
+			router.replace(`/notebooks/${activeNotebook.id}`, {
+				scroll: false,
+			});
 		}
 	}, [isLoading, activeNotebook, router]);
 
@@ -77,13 +80,17 @@ export default function Home() {
 			isGeneratingQuestions={isGeneratingQuestions}
 			modelAvailable={modelAvailable}
 			onSelectNotebook={(notebook) => {
+				// Just update the state, don't navigate programmatically
 				selectNotebook(notebook);
-				router.push(`/notebooks/${notebook.id}`);
+				// Update URL without full navigation
+				router.replace(`/notebooks/${notebook.id}`, { scroll: false });
 			}}
 			onCreateNotebook={async () => {
 				const newNotebook = await createNotebook();
 				if (newNotebook) {
-					router.push(`/notebooks/${newNotebook.id}`);
+					router.replace(`/notebooks/${newNotebook.id}`, {
+						scroll: false,
+					});
 				}
 			}}
 			onDeleteNotebook={deleteNotebook}

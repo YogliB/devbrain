@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { ModelProvider } from '@/contexts/model-context';
+import { NotebookProvider } from '@/contexts/notebook-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 const geistSans = Geist({
@@ -35,7 +36,9 @@ export default function RootLayout({
 					storageKey="devbrain-theme"
 				>
 					<TooltipProvider>
-						<ModelProvider>{children}</ModelProvider>
+						<ModelProvider>
+							<NotebookProvider>{children}</NotebookProvider>
+						</ModelProvider>
 					</TooltipProvider>
 				</ThemeProvider>
 			</body>
