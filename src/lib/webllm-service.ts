@@ -178,6 +178,7 @@ export async function loadModel(): Promise<void> {
 					initProgressCallback: (
 						report: webllm.InitProgressReport,
 					) => {
+						console.log('[Client] Init progress:', report);
 						let progress = 0;
 						if (report.progress !== undefined) {
 							progress = Math.min(
