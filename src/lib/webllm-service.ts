@@ -8,8 +8,6 @@ export type ChatCompletionRequestMessage = {
 	name?: string;
 };
 
-// Model will be dynamically selected based on device capabilities
-
 export type ModelStatus =
 	| 'evaluating'
 	| 'not-loaded'
@@ -69,19 +67,15 @@ export async function registerServiceWorker(timeout = 3000): Promise<boolean> {
 	}
 
 	try {
-		// If service worker is already controlling the page, we're good to go
 		if (navigator.serviceWorker.controller) {
-			console.log('[Client] Service worker already controlling the page');
 			return true;
 		}
 
-		console.log('[Client] Registering service worker...');
 		const registration = await navigator.serviceWorker.register(
 			'/webllm-sw.js',
 			{ type: 'module' },
 		);
 
-		// Wait for the service worker to become active and control the page
 		const result = await Promise.race([
 			new Promise<boolean>((resolve) => {
 				const checkController = () =>
@@ -123,11 +117,7 @@ export async function registerServiceWorker(timeout = 3000): Promise<boolean> {
 				}
 			}),
 			new Promise<boolean>((resolve) => {
-				// Timeout to prevent waiting indefinitely
 				setTimeout(() => {
-					console.log(
-						'[Client] Service worker registration timed out',
-					);
 					resolve(false);
 				}, timeout);
 			}),
@@ -140,16 +130,13 @@ export async function registerServiceWorker(timeout = 3000): Promise<boolean> {
 	}
 }
 
-// Track if this is the first load of the page
 let isFirstLoad = true;
 
 export async function loadModel(): Promise<void> {
-	// Don't restart loading if already in progress or loaded
 	if (currentState.status === 'loading' || currentState.status === 'loaded') {
 		return;
 	}
 
-	// If we're not in evaluating state, set it
 	if (currentState.status !== 'evaluating') {
 		updateState({
 			status: 'evaluating',
@@ -158,11 +145,9 @@ export async function loadModel(): Promise<void> {
 		});
 	}
 
-	// Select the best model based on device capabilities
 	try {
 		const selectedModel = await selectBestModel();
 
-		// Update state with selected model
 		updateState({
 			selectedModel,
 			status: 'loading',
@@ -170,26 +155,12 @@ export async function loadModel(): Promise<void> {
 			progressText: `Initializing ${selectedModel.name}...`,
 		});
 
-		// Determine whether to use service worker
 		let useServiceWorker = false;
 
-		// On first load, we'll try to use the service worker but with a timeout
-		// On subsequent loads (refreshes), the service worker should already be controlling the page
 		if ('serviceWorker' in navigator) {
 			try {
-				// If this is the first load, we'll use a shorter timeout
 				const timeout = isFirstLoad ? 2000 : 5000;
 				useServiceWorker = await registerServiceWorker(timeout);
-
-				if (useServiceWorker) {
-					console.log(
-						'[Client] Using service worker for model loading',
-					);
-				} else {
-					console.log(
-						'[Client] Service worker not ready, using regular engine for this load',
-					);
-				}
 			} catch (error) {
 				console.warn(
 					'Service worker registration failed, falling back to regular engine:',
@@ -199,7 +170,6 @@ export async function loadModel(): Promise<void> {
 			}
 		}
 
-		// Load the selected model
 		try {
 			updateState({
 				progressText: `Loading model: ${selectedModel.name}...`,
@@ -211,7 +181,6 @@ export async function loadModel(): Promise<void> {
 					initProgressCallback: (
 						report: webllm.InitProgressReport,
 					) => {
-						console.log('[Client] Init progress:', report);
 						let progress = 0;
 						if (report.progress !== undefined) {
 							progress = Math.min(
@@ -227,7 +196,6 @@ export async function loadModel(): Promise<void> {
 					},
 				});
 			} else {
-				// For first load without service worker, use regular engine
 				engine = await webllm.CreateMLCEngine(selectedModel.id, {
 					initProgressCallback: (
 						report: webllm.InitProgressReport,
@@ -248,7 +216,6 @@ export async function loadModel(): Promise<void> {
 				});
 			}
 
-			// Mark that we've completed the first load
 			isFirstLoad = false;
 
 			updateState({
@@ -290,7 +257,6 @@ export async function generateSuggestedQuestions(
 	}
 
 	try {
-		// Create a prompt for generating questions
 		const sourcesText = sources
 			.map(
 				(source, index) =>
@@ -302,20 +268,20 @@ export async function generateSuggestedQuestions(
 			{
 				role: 'system',
 				content: `You are an AI assistant that generates insightful questions based on provided content.
-			Your task is to generate exactly ${count} specific, relevant questions that a user might want to ask about the following sources.
-			Make the questions diverse, interesting, and focused on the most important aspects of the content.
+				Your task is to generate exactly ${count} specific, relevant questions that a user might want to ask about the following sources.
+				Make the questions diverse, interesting, and focused on the most important aspects of the content.
 
-			IMPORTANT FORMATTING INSTRUCTIONS:
-			1. Return ONLY the numbered questions with no additional text, explanations, or commentary
-			2. Each question must be on its own line
-			3. Format each question exactly as: "1 - Question text", "2 - Question text", etc.
-			4. Do not include any introductory text or conclusion
-			5. Ensure you generate exactly ${count} complete questions
+				IMPORTANT FORMATTING INSTRUCTIONS:
+				1. Return ONLY the numbered questions with no additional text, explanations, or commentary
+				2. Each question must be on its own line
+				3. Format each question exactly as: "1 - Question text", "2 - Question text", etc.
+				4. Do not include any introductory text or conclusion
+				5. Ensure you generate exactly ${count} complete questions
 
-			Example of correct format:
-			1 - What is the main purpose of this code?
-			2 - How does this algorithm handle edge cases?
-			3 - What are the performance implications of this approach?`,
+				Example of correct format:
+				1 - What is the main purpose of this code?
+				2 - How does this algorithm handle edge cases?
+				3 - What are the performance implications of this approach?`,
 			},
 			{
 				role: 'user',
@@ -332,16 +298,14 @@ export async function generateSuggestedQuestions(
 		const response = await currentState.engine.chat.completions.create({
 			// @ts-expect-error - WebLLM has specific type requirements
 			messages: webllmMessages,
-			temperature: 0.7, // Slightly lower temperature for more consistent formatting
+			temperature: 0.7,
 			max_tokens: 512,
 		});
 
 		const questionsText = response.choices[0].message.content || '';
 
-		// Try multiple parsing strategies to handle different formats
 		let questions: { id: string; text: string }[] = [];
 
-		// Strategy 1: Parse numbered format with dash (e.g., "1 - What is...")
 		const dashFormatRegex = /(\d+)\s*-\s*([^\n]+)/g;
 		const dashMatches = [...questionsText.matchAll(dashFormatRegex)];
 
@@ -351,7 +315,6 @@ export async function generateSuggestedQuestions(
 				text: match[2].trim(),
 			}));
 		} else {
-			// Strategy 2: Parse standard numbered list format (e.g., "1. What is...")
 			const standardRegex = /\d+\.\s*(.+?)(?=\n\d+\.|$)/gs;
 			const standardMatches = [...questionsText.matchAll(standardRegex)];
 
@@ -361,7 +324,6 @@ export async function generateSuggestedQuestions(
 					text: match[1].trim(),
 				}));
 			} else {
-				// Strategy 3: Split by newlines and clean up
 				const lines = questionsText
 					.split('\n')
 					.map((line) => line.trim())
@@ -369,33 +331,28 @@ export async function generateSuggestedQuestions(
 
 				questions = lines.map((line, index) => ({
 					id: `generated-${Date.now()}-${index}`,
-					// Remove any numbering or prefixes
 					text: line.replace(/^\s*\d+\s*[-.:]?\s*/, '').trim(),
 				}));
 			}
 		}
 
-		// Validate and clean up questions
 		questions = questions
-			.filter((q) => q.text.length > 0) // Remove empty questions
+			.filter((q) => q.text.length > 0)
 			.map((q) => ({
-				// Clean up text
 				...q,
 				text: q.text
-					.replace(/^["']+|["']+$/g, '') // Remove quotes
-					.replace(/\*\*/g, '') // Remove markdown bold
+					.replace(/^["']+|["']+$/g, '')
+					.replace(/\*\*/g, '')
 					.trim(),
 			}))
 			.filter(
 				(q, i, arr) =>
-					// Remove duplicates
 					arr.findIndex(
 						(item) =>
 							item.text.toLowerCase() === q.text.toLowerCase(),
 					) === i,
 			);
 
-		// Ensure we don't return more than requested count
 		return questions.slice(0, count);
 	} catch (error) {
 		console.error('Error generating suggested questions:', error);
