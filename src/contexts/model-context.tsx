@@ -49,6 +49,38 @@ const ModelContext = createContext<ModelContextType>({
 export function ModelProvider({ children }: { children: React.ReactNode }) {
 	const [state, setState] = useState<WebLLMState>(getWebLLMState());
 
+	// Listen for service worker messages
+	useEffect(() => {
+		const handleServiceWorkerMessage = (event: MessageEvent) => {
+			if (
+				event.data &&
+				(event.data.type === 'SW_ACTIVATED' ||
+					event.data.type === 'SW_CLAIMED')
+			) {
+				console.log(
+					'[Client] Received message from service worker:',
+					event.data,
+				);
+				// Trigger model loading when service worker is activated
+				loadModel();
+			}
+		};
+
+		// Add message listener
+		navigator.serviceWorker.addEventListener(
+			'message',
+			handleServiceWorkerMessage,
+		);
+
+		// Remove listener on cleanup
+		return () => {
+			navigator.serviceWorker.removeEventListener(
+				'message',
+				handleServiceWorkerMessage,
+			);
+		};
+	}, []);
+
 	useEffect(() => {
 		const unsubscribe = addStateListener(setState);
 		loadModel();

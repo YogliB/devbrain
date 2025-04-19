@@ -63,25 +63,33 @@ export function getWebLLMState(): WebLLMState {
 	return currentState;
 }
 
-export async function registerServiceWorker(): Promise<void> {
-	if (window !== undefined || 'serviceWorker' in navigator) {
-		try {
-			if (navigator.serviceWorker.controller) {
-				return;
-			}
+export async function registerServiceWorker(timeout = 3000): Promise<boolean> {
+	if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+		return false;
+	}
 
-			const registration = await navigator.serviceWorker.register(
-				'/webllm-sw.js',
-				{ type: 'module' },
-			);
+	try {
+		// If service worker is already controlling the page, we're good to go
+		if (navigator.serviceWorker.controller) {
+			console.log('[Client] Service worker already controlling the page');
+			return true;
+		}
 
-			await new Promise<void>((resolve) => {
+		console.log('[Client] Registering service worker...');
+		const registration = await navigator.serviceWorker.register(
+			'/webllm-sw.js',
+			{ type: 'module' },
+		);
+
+		// Wait for the service worker to become active and control the page
+		const result = await Promise.race([
+			new Promise<boolean>((resolve) => {
 				const checkController = () =>
 					!!navigator.serviceWorker.controller;
 
 				if (registration.active) {
 					if (checkController()) {
-						resolve();
+						resolve(true);
 						return;
 					}
 
@@ -98,7 +106,7 @@ export async function registerServiceWorker(): Promise<void> {
 					const interval = setInterval(() => {
 						if (checkController()) {
 							clearInterval(interval);
-							resolve();
+							resolve(true);
 						}
 					}, 100);
 				} else {
@@ -108,21 +116,32 @@ export async function registerServiceWorker(): Promise<void> {
 						const interval = setInterval(() => {
 							if (checkController()) {
 								clearInterval(interval);
-								resolve();
+								resolve(true);
 							}
 						}, 100);
 					});
 				}
-			});
-		} catch (error) {
-			console.error(
-				'[Client] Service worker registration failed:',
-				error,
-			);
-			throw error;
-		}
+			}),
+			new Promise<boolean>((resolve) => {
+				// Timeout to prevent waiting indefinitely
+				setTimeout(() => {
+					console.log(
+						'[Client] Service worker registration timed out',
+					);
+					resolve(false);
+				}, timeout);
+			}),
+		]);
+
+		return result;
+	} catch (error) {
+		console.error('[Client] Service worker registration failed:', error);
+		return false;
 	}
 }
+
+// Track if this is the first load of the page
+let isFirstLoad = true;
 
 export async function loadModel(): Promise<void> {
 	// Don't restart loading if already in progress or loaded
@@ -151,12 +170,26 @@ export async function loadModel(): Promise<void> {
 			progressText: `Initializing ${selectedModel.name}...`,
 		});
 
-		// Set up service worker if available
+		// Determine whether to use service worker
 		let useServiceWorker = false;
+
+		// On first load, we'll try to use the service worker but with a timeout
+		// On subsequent loads (refreshes), the service worker should already be controlling the page
 		if ('serviceWorker' in navigator) {
 			try {
-				await registerServiceWorker();
-				useServiceWorker = true;
+				// If this is the first load, we'll use a shorter timeout
+				const timeout = isFirstLoad ? 2000 : 5000;
+				useServiceWorker = await registerServiceWorker(timeout);
+
+				if (useServiceWorker) {
+					console.log(
+						'[Client] Using service worker for model loading',
+					);
+				} else {
+					console.log(
+						'[Client] Service worker not ready, using regular engine for this load',
+					);
+				}
 			} catch (error) {
 				console.warn(
 					'Service worker registration failed, falling back to regular engine:',
@@ -194,6 +227,7 @@ export async function loadModel(): Promise<void> {
 					},
 				});
 			} else {
+				// For first load without service worker, use regular engine
 				engine = await webllm.CreateMLCEngine(selectedModel.id, {
 					initProgressCallback: (
 						report: webllm.InitProgressReport,
@@ -213,6 +247,9 @@ export async function loadModel(): Promise<void> {
 					},
 				});
 			}
+
+			// Mark that we've completed the first load
+			isFirstLoad = false;
 
 			updateState({
 				status: 'loaded',
