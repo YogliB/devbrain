@@ -162,11 +162,6 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 
 		try {
 			const questions = await suggestedQuestionsAPI.getAll(notebookId);
-			console.log(
-				`Fetched ${questions.length} persisted questions for notebook ${notebookId}`,
-			);
-
-			// Convert DB format to app format
 			const formattedQuestions = questions.map((q) => ({
 				id: q.id,
 				text: q.text,
@@ -175,10 +170,10 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 			if (formattedQuestions.length > 0) {
 				setSuggestedQuestions(formattedQuestions);
 				setQuestionsLoaded(true);
-				console.log('Loaded persisted questions successfully');
+
 				return true;
 			}
-			console.log('No persisted questions found');
+
 			return false;
 		} catch (error) {
 			console.error('Failed to fetch suggested questions:', error);
@@ -197,12 +192,7 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 			fetchMessages(notebookId);
 
 			// Fetch persisted questions - never auto-regenerate
-			fetchSuggestedQuestions().then((hasQuestions) => {
-				console.log(
-					`Notebook ${notebookId} has persisted questions: ${hasQuestions}`,
-				);
-				// We don't do anything if there are no questions - user must manually generate
-			});
+			fetchSuggestedQuestions();
 		} else {
 			// Clear state when no notebook is selected
 			setMessages([]);
@@ -311,9 +301,6 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 
 				// If this is a brand new notebook with no persisted questions, generate initial ones
 				if (!hasPersistedQuestions) {
-					console.log(
-						'First-time load for notebook with no persisted questions, generating initial set',
-					);
 					await generateQuestions(true);
 				}
 			}
