@@ -5,7 +5,7 @@ import { spawn } from 'child_process';
 async function runProcessWithTimeout(
 	command: string,
 	args: string[],
-	timeoutMs: number = 2000, // Reduced timeout to 2 seconds
+	timeoutMs: number = 1000, // Reduced timeout to 1 second
 ) {
 	const process = spawn(command, args);
 
@@ -48,13 +48,15 @@ export async function GET() {
 		await initDb(false);
 
 		if (isDev) {
-			runProcessWithTimeout('npm', ['run', 'db:push'], 2000)
-				.then(() => console.log('Schema push completed'))
-				.catch(() => {});
-
-			runProcessWithTimeout('npm', ['run', 'db:seed'], 2000)
-				.then(() => console.log('Database seeding completed'))
-				.catch(() => {});
+			// Run these processes in parallel with shorter timeouts
+			Promise.all([
+				runProcessWithTimeout('npm', ['run', 'db:push'], 1000)
+					.then(() => console.log('Schema push completed'))
+					.catch(() => {}),
+				runProcessWithTimeout('npm', ['run', 'db:seed'], 1000)
+					.then(() => console.log('Database seeding completed'))
+					.catch(() => {}),
+			]).catch(() => {});
 		}
 
 		return NextResponse.json({

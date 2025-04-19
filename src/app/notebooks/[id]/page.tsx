@@ -108,6 +108,7 @@ export default function NotebookPage() {
 			messages={messages}
 			suggestedQuestions={suggestedQuestions}
 			sources={sources}
+			isLoading={appLoading}
 			isGenerating={isGenerating}
 			isGeneratingQuestions={isGeneratingQuestions}
 			modelAvailable={modelAvailable}

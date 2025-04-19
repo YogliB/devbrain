@@ -76,6 +76,7 @@ export default function Home() {
 			messages={messages}
 			suggestedQuestions={suggestedQuestions}
 			sources={sources}
+			isLoading={isLoading}
 			isGenerating={isGenerating}
 			isGeneratingQuestions={isGeneratingQuestions}
 			modelAvailable={modelAvailable}

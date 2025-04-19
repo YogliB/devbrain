@@ -177,17 +177,17 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				const timeoutPromise = new Promise<void>((resolve) => {
-					setTimeout(resolve, 2000);
-				});
-
-				initializeDatabase().catch((error) => {
+				// Initialize database in parallel with fetching notebooks
+				const dbInitPromise = initializeDatabase().catch((error) => {
 					console.error('Database initialization issue:', error);
 				});
 
-				await timeoutPromise;
-
+				// Immediately fetch notebooks without waiting for DB initialization
+				console.log('[notebook-context] Fetching notebooks');
 				const notebooksData = await fetchNotebooks();
+				console.log(
+					`[notebook-context] Fetched ${notebooksData.length} notebooks`,
+				);
 
 				// Cache all notebooks
 				notebooksData.forEach((notebook) => {
@@ -204,6 +204,9 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 					const notebook = notebooksData[0];
 					setActiveNotebook(notebook);
 				}
+
+				// Wait for DB initialization to complete in the background
+				await dbInitPromise;
 			} catch (error) {
 				console.error('Failed to initialize app:', error);
 			} finally {

@@ -32,6 +32,7 @@ interface MainLayoutProps {
 	messages: ChatMessage[];
 	suggestedQuestions: SuggestedQuestion[];
 	sources: Source[];
+	isLoading?: boolean;
 	isGenerating?: boolean;
 	isGeneratingQuestions?: boolean;
 	modelAvailable?: boolean;
@@ -54,6 +55,7 @@ export function MainLayout({
 	messages,
 	suggestedQuestions,
 	sources,
+	isLoading = false,
 	isGenerating = false,
 	isGeneratingQuestions = false,
 	modelAvailable = false,
@@ -80,6 +82,7 @@ export function MainLayout({
 					<NotebooksSidebar
 						notebooks={notebooks}
 						activeNotebook={activeNotebook}
+						isLoading={isLoading}
 						onSelectNotebook={onSelectNotebook}
 						onCreateNotebook={onCreateNotebook}
 						onDeleteNotebook={onDeleteNotebook}
