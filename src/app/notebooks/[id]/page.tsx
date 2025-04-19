@@ -7,6 +7,7 @@ import { MainLayout } from '@/components/templates/main-layout';
 import { useNotebook } from '@/contexts/notebook-context';
 import { useModel } from '@/contexts/model-context';
 import { useChatWithAI } from '@/hooks/useChatWithAI';
+import { Notebook } from '@/types/notebook';
 
 export default function NotebookPage() {
 	const params = useParams();
@@ -88,10 +89,10 @@ export default function NotebookPage() {
 	} = useChatWithAI(activeNotebook?.id || null);
 
 	// Get model status from context
-	const { isModelAvailable: modelAvailable } = useModel();
+	const { modelAvailable } = useModel();
 
 	// Handle notebook deletion with navigation
-	const handleDeleteNotebook = async (notebook) => {
+	const handleDeleteNotebook = async (notebook: Notebook) => {
 		const success = await deleteNotebook(notebook);
 		if (success) {
 			// Navigate to home if the active notebook was deleted
@@ -101,6 +102,9 @@ export default function NotebookPage() {
 		}
 	};
 
+	// Determine if we're in a loading state
+	const isLoading = appLoading || (!notebookLoaded && !notFoundChecked);
+
 	return (
 		<MainLayout
 			notebooks={notebooks}
@@ -108,7 +112,7 @@ export default function NotebookPage() {
 			messages={messages}
 			suggestedQuestions={suggestedQuestions}
 			sources={sources}
-			isLoading={appLoading}
+			isLoading={isLoading}
 			isGenerating={isGenerating}
 			isGeneratingQuestions={isGeneratingQuestions}
 			modelAvailable={modelAvailable}

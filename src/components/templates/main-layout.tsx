@@ -13,6 +13,7 @@ import { ErrorBoundary } from '@/components/atoms/error-boundary';
 // Skeleton components for lazy loading
 import { NotebooksSidebarSkeleton } from '@/components/skeletons/notebooks-sidebar-skeleton';
 import { ContentTabsSkeleton } from '@/components/skeletons/content-tabs-skeleton';
+import { NotebookPlaceholderSkeleton } from '@/components/skeletons/notebook-placeholder-skeleton';
 
 // Lazy-loaded components
 const NotebooksSidebar = lazy(() =>
@@ -102,7 +103,9 @@ export function MainLayout({
 				</header>
 
 				<main className="flex-1 overflow-hidden">
-					{notebooks.length === 0 || !activeNotebook ? (
+					{isLoading ? (
+						<NotebookPlaceholderSkeleton />
+					) : notebooks.length === 0 || !activeNotebook ? (
 						<EmptyNotebookPlaceholder
 							onCreateNotebook={onCreateNotebook}
 						/>
