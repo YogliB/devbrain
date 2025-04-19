@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { ChatInput } from './chat-input';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const meta: Meta<typeof ChatInput> = {
 	title: 'Molecules/ChatInput',
@@ -16,6 +18,9 @@ const meta: Meta<typeof ChatInput> = {
 		className: { control: 'text' },
 		disabledReason: { control: 'text' },
 	},
+	decoratorComponents: {
+		TooltipProvider: TooltipProvider,
+	},
 };
 
 export default meta;
@@ -26,6 +31,7 @@ export const Default: Story = {
 		disabled: false,
 		modelAvailable: true,
 		placeholder: 'Type your message...',
+		onSendMessage: fn(),
 	},
 };
 
@@ -34,6 +40,7 @@ export const Disabled: Story = {
 		disabled: true,
 		modelAvailable: true,
 		disabledReason: 'Add data to start inquiring...',
+		onSendMessage: fn(),
 	},
 };
 
@@ -42,6 +49,7 @@ export const NoModelAvailable: Story = {
 		disabled: false,
 		modelAvailable: false,
 		disabledReason: 'Download a model to start chatting',
+		onSendMessage: fn(),
 	},
 };
 
@@ -50,17 +58,20 @@ export const DisabledAndNoModel: Story = {
 		disabled: true,
 		modelAvailable: false,
 		disabledReason: 'Add data and download a model to start chatting',
+		onSendMessage: fn(),
 	},
 };
 
 export const CustomPlaceholder: Story = {
 	args: {
 		placeholder: 'Ask me anything about your code...',
+		onSendMessage: fn(),
 	},
 };
 
 export const WithCustomClass: Story = {
 	args: {
 		className: 'border-2 border-primary rounded-xl',
+		onSendMessage: fn(),
 	},
 };

@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Send, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ChatInputProps {
 	onSendMessage: (message: string) => void;
@@ -57,13 +62,29 @@ export function ChatInput({
 				/>
 			</div>
 			<div className="relative">
-				<button
-					type="submit"
-					disabled={disabled || !modelAvailable || !message.trim()}
-					className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-				>
-					<Send className="h-4 w-4" />
-				</button>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<button
+							type="submit"
+							disabled={
+								disabled || !modelAvailable || !message.trim()
+							}
+							className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+							aria-label="Send message"
+						>
+							<Send className="h-4 w-4" />
+						</button>
+					</TooltipTrigger>
+					<TooltipContent sideOffset={5}>
+						{!modelAvailable
+							? 'Please download a model first'
+							: disabled
+								? disabledReason
+								: !message.trim()
+									? 'Type a message to send'
+									: 'Send message'}
+					</TooltipContent>
+				</Tooltip>
 			</div>
 		</form>
 	);
