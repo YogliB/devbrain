@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { Suspense, lazy } from 'react';
 import { cn } from '@/lib/utils';
 import { Download, Eraser } from 'lucide-react';
 import {
@@ -7,12 +9,20 @@ import {
 } from '@/types/chat';
 import { ChatMessage } from '@/components/molecules/chat-message';
 import { ChatInput } from '@/components/molecules/chat-input';
-import { SuggestedQuestions } from '@/components/molecules/suggested-questions';
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { ErrorBoundary } from '@/components/atoms/error-boundary';
+import { SuggestedQuestionsSkeleton } from '@/components/skeletons/suggested-questions-skeleton';
+
+// Lazy-loaded components
+const SuggestedQuestions = lazy(() =>
+	import('@/components/molecules/suggested-questions').then((mod) => ({
+		default: mod.SuggestedQuestions,
+	})),
+);
 
 interface ChatInterfaceProps {
 	messages: ChatMessageType[];
@@ -92,12 +102,16 @@ export function ChatInterface({
 
 			<div className="mt-4 space-y-4">
 				{!disabled && (
-					<SuggestedQuestions
-						questions={suggestedQuestions}
-						onSelectQuestion={onSelectQuestion}
-						isLoading={isGeneratingQuestions}
-						onRefresh={onRegenerateQuestions}
-					/>
+					<ErrorBoundary>
+						<Suspense fallback={<SuggestedQuestionsSkeleton />}>
+							<SuggestedQuestions
+								questions={suggestedQuestions}
+								onSelectQuestion={onSelectQuestion}
+								isLoading={isGeneratingQuestions}
+								onRefresh={onRegenerateQuestions}
+							/>
+						</Suspense>
+					</ErrorBoundary>
 				)}
 				<ChatInput
 					onSendMessage={onSendMessage}

@@ -1,14 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { cn } from '@/lib/utils';
 import { TabButton } from '@/components/molecules/tab-button';
-import { ChatInterface } from '@/components/organisms/chat-interface';
-import { SourcesList } from '@/components/organisms/sources-list';
-
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 import { useModel } from '@/contexts/model-context';
+import { ErrorBoundary } from '@/components/atoms/error-boundary';
+
+// Skeleton components for lazy loading
+import { ChatInterfaceSkeleton } from '@/components/skeletons/chat-interface-skeleton';
+import { SourcesListSkeleton } from '@/components/skeletons/sources-list-skeleton';
+
+// Lazy-loaded components
+const ChatInterface = lazy(() =>
+	import('@/components/organisms/chat-interface').then((mod) => ({
+		default: mod.ChatInterface,
+	})),
+);
+const SourcesList = lazy(() =>
+	import('@/components/organisms/sources-list').then((mod) => ({
+		default: mod.SourcesList,
+	})),
+);
 
 type Tab = 'chat' | 'sources';
 
@@ -68,31 +82,39 @@ export function ContentTabs({
 
 			<div className="flex-grow overflow-y-auto p-4">
 				{activeTab === 'chat' ? (
-					<ChatInterface
-						messages={messages}
-						suggestedQuestions={suggestedQuestions}
-						onSendMessage={(message) => {
-							setIsGenerating(true);
-							onSendMessage(message);
-						}}
-						onSelectQuestion={(question) => {
-							setIsGenerating(true);
-							onSelectQuestion(question);
-						}}
-						onClearMessages={onClearMessages}
-						onRegenerateQuestions={onRegenerateQuestions}
-						disabled={sources.length === 0}
-						modelAvailable={modelAvailable}
-						isGenerating={isGenerating}
-						isGeneratingQuestions={isGeneratingQuestions}
-					/>
+					<ErrorBoundary>
+						<Suspense fallback={<ChatInterfaceSkeleton />}>
+							<ChatInterface
+								messages={messages}
+								suggestedQuestions={suggestedQuestions}
+								onSendMessage={(message) => {
+									setIsGenerating(true);
+									onSendMessage(message);
+								}}
+								onSelectQuestion={(question) => {
+									setIsGenerating(true);
+									onSelectQuestion(question);
+								}}
+								onClearMessages={onClearMessages}
+								onRegenerateQuestions={onRegenerateQuestions}
+								disabled={sources.length === 0}
+								modelAvailable={modelAvailable}
+								isGenerating={isGenerating}
+								isGeneratingQuestions={isGeneratingQuestions}
+							/>
+						</Suspense>
+					</ErrorBoundary>
 				) : (
-					<SourcesList
-						sources={sources}
-						onAddSource={onAddSource}
-						onUpdateSource={onUpdateSource}
-						onDeleteSource={onDeleteSource}
-					/>
+					<ErrorBoundary>
+						<Suspense fallback={<SourcesListSkeleton />}>
+							<SourcesList
+								sources={sources}
+								onAddSource={onAddSource}
+								onUpdateSource={onUpdateSource}
+								onDeleteSource={onDeleteSource}
+							/>
+						</Suspense>
+					</ErrorBoundary>
 				)}
 			</div>
 		</div>

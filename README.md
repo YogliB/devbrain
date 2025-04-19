@@ -53,6 +53,24 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+### Code-Splitting and Lazy Loading
+
+This project implements code-splitting and lazy loading for major components to improve performance and reduce the initial bundle size. The implementation includes:
+
+- Dynamic imports using Next.js's `lazy()` function for main components
+- Suspense boundaries with skeleton loading states
+- Error boundaries for graceful error handling
+
+The following components are lazy-loaded:
+
+- NotebooksSidebar
+- ContentTabs
+- ChatInterface
+- SourcesList
+- SuggestedQuestions
+
+Each lazy-loaded component has a corresponding skeleton component that displays during loading. This approach improves the initial page load time and provides a better user experience with meaningful loading states.
+
 ### Code Formatting
 
 This project uses Prettier for code formatting and ESLint for code linting. The configuration is set up to run Prettier as an ESLint rule, which means that formatting issues will be reported as ESLint errors.
