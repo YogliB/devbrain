@@ -54,12 +54,6 @@ export default function Home() {
 		}
 	}, [isLoading, activeNotebook, router]);
 
-	// Don't show loading UI on the root page to prevent double loading messages
-	// Just render a blank div while loading and let the redirect happen
-	if (isLoading) {
-		return <div className="h-screen" />;
-	}
-
 	return (
 		<MainLayout
 			notebooks={notebooks}
