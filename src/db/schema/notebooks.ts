@@ -1,10 +1,10 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
-export const notebooks = sqliteTable('notebooks', {
+export const notebooks = pgTable('notebooks', {
 	id: text('id').primaryKey(),
 	title: text('title').notNull(),
-	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+	createdAt: timestamp('created_at').notNull(),
+	updatedAt: timestamp('updated_at').notNull(),
 });
 
 export type Notebook = typeof notebooks.$inferSelect;

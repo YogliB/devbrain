@@ -20,19 +20,18 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Database Management
 
-This project currently uses SQLite with Drizzle ORM for database management. The database is automatically initialized when running the application, but you can also manually initialize it using the database commands listed below.
-
-> **Note:** While the project is configured to use PostgreSQL in the future (as seen in the environment variables and Docker configuration), it currently uses SQLite for simplicity.
+This project uses PostgreSQL with Drizzle ORM for database management. The database is automatically initialized when running the application, but you can also manually initialize it using the database commands listed below.
 
 #### Database Commands
 
-- `npm run db:push` - Apply migrations to the database
+- `npm run db:push` - Apply schema to the database
 - `npm run db:studio` - Open Drizzle Studio to view and edit the database
-- `npm run db:ensure-dir` - Ensure the database directory exists
+- `npm run db:start` - Start the PostgreSQL Docker container
+- `npm run db:stop` - Stop the PostgreSQL Docker container
 
-#### PostgreSQL Setup (Not Currently Used)
+#### PostgreSQL Setup
 
-The project includes configuration for a dockerized PostgreSQL 17.4 (Alpine) instance for future development. To start the database:
+The project uses a dockerized PostgreSQL 17.4 (Alpine) instance. To start the database:
 
 ```bash
 npm run db:start
@@ -46,7 +45,15 @@ npm run db:stop
 
 #### Environment Variables
 
-The database connection is configured using environment variables. See `.env.example` for the variables. Currently, the SQLite database is used regardless of the PostgreSQL connection string in the environment variables.
+The database connection is configured using environment variables. See `.env.example` for the variables. Make sure to set up the following environment variables in your `.env` file:
+
+```
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=devbrain
+POSTGRES_PORT=5432
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/devbrain
+```
 
 ### Using VS Code
 

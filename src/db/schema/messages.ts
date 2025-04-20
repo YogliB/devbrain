@@ -1,14 +1,14 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { notebooks } from './notebooks';
 
-export const messages = sqliteTable('messages', {
+export const messages = pgTable('messages', {
 	id: text('id').primaryKey(),
 	content: text('content').notNull(),
 	role: text('role', { enum: ['user', 'assistant'] }).notNull(),
 	notebookId: text('notebook_id')
 		.notNull()
 		.references(() => notebooks.id, { onDelete: 'cascade' }),
-	timestamp: integer('timestamp', { mode: 'timestamp' }).notNull(),
+	timestamp: timestamp('timestamp').notNull(),
 });
 
 export type Message = typeof messages.$inferSelect;
