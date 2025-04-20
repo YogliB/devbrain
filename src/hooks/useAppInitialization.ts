@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { initializeDatabase, notebooksAPI } from '@/lib/api';
+import { notebooksAPI } from '@/lib/api';
 import { Notebook } from '@/types/notebook';
 
 export function useAppInitialization() {
@@ -86,12 +86,9 @@ export function useAppInitialization() {
 	useEffect(() => {
 		async function initializeApp() {
 			try {
+				// Short delay to allow UI to render
 				const timeoutPromise = new Promise<void>((resolve) => {
-					setTimeout(resolve, 2000);
-				});
-
-				initializeDatabase().catch((error) => {
-					console.error('Database initialization issue:', error);
+					setTimeout(resolve, 500);
 				});
 
 				await timeoutPromise;

@@ -20,7 +20,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Database Management
 
-This project uses PostgreSQL with Drizzle ORM for database management. The database is automatically initialized when the application starts, but migrations are only run when necessary.
+This project uses PostgreSQL with Drizzle ORM for database management. The database must be manually initialized before running the application using the database commands listed below.
 
 #### PostgreSQL Setup
 

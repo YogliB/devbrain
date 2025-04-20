@@ -8,7 +8,7 @@ import React, {
 	useCallback,
 	useRef,
 } from 'react';
-import { initializeDatabase, notebooksAPI } from '@/lib/api';
+import { notebooksAPI } from '@/lib/api';
 import { Notebook } from '@/types/notebook';
 
 // Cache to store notebooks by ID
@@ -177,12 +177,7 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		async function initializeApp() {
 			try {
-				// Initialize database in parallel with fetching notebooks
-				const dbInitPromise = initializeDatabase().catch((error) => {
-					console.error('Database initialization issue:', error);
-				});
-
-				// Immediately fetch notebooks without waiting for DB initialization
+				// Fetch notebooks
 				console.log('[notebook-context] Fetching notebooks');
 				const notebooksData = await fetchNotebooks();
 				console.log(
@@ -204,9 +199,6 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
 					const notebook = notebooksData[0];
 					setActiveNotebook(notebook);
 				}
-
-				// Wait for DB initialization to complete in the background
-				await dbInitPromise;
 			} catch (error) {
 				console.error('Failed to initialize app:', error);
 			} finally {

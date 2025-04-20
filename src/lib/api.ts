@@ -26,13 +26,6 @@ async function fetchAPI<T>(
 	return res.json();
 }
 
-export async function initializeDatabase(): Promise<{
-	success: boolean;
-	message: string;
-}> {
-	return fetchAPI('/db/init');
-}
-
 export const notebooksAPI = {
 	getAll: (): Promise<Notebook[]> => fetchAPI('/notebooks'),
 
