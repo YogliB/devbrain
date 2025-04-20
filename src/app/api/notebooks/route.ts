@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, closeDb, initDb } from '@/db';
+import { getDb, closeDb } from '@/db';
 import { notebooks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function GET() {
 	try {
-		// Initialize the database first
-		await initDb();
-
 		const db = getDb();
 
 		const notebooksData = await db
@@ -36,9 +33,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
 	try {
-		// Initialize the database first
-		await initDb();
-
 		const body = await request.json();
 		const { title } = body;
 

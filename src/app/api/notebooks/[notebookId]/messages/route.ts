@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, closeDb, initDb } from '@/db';
+import { getDb, closeDb } from '@/db';
 import { notebooks, messages } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 

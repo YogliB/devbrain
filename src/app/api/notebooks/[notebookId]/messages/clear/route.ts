@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, closeDb, initDb } from '@/db';
+import { getDb, closeDb } from '@/db';
 import { notebooks, messages } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -8,9 +8,6 @@ export async function DELETE(
 	{ params }: { params: Promise<{ notebookId: string }> },
 ) {
 	try {
-		// Initialize the database first
-		await initDb();
-
 		const { notebookId } = await params;
 		const db = getDb();
 
@@ -27,10 +24,8 @@ export async function DELETE(
 			);
 		}
 
-		// Delete all messages for this notebook
 		await db.delete(messages).where(eq(messages.notebookId, notebookId));
 
-		// Update the notebook's updatedAt timestamp
 		const now = new Date();
 		await db
 			.update(notebooks)

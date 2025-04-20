@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, closeDb, initDb } from '@/db';
+import { getDb, closeDb } from '@/db';
 import { notebooks, suggestedQuestions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -87,12 +87,9 @@ export async function POST(
 			);
 		}
 
-		// First, delete any existing questions for this notebook
 		await db
 			.delete(suggestedQuestions)
 			.where(eq(suggestedQuestions.notebookId, notebookId));
-
-		// Then insert the new questions
 		const now = new Date();
 		const questionsToInsert = questions.map((question) => ({
 			id: uuidv4(),
@@ -105,7 +102,6 @@ export async function POST(
 			await db.insert(suggestedQuestions).values(questionsToInsert);
 		}
 
-		// Fetch the newly inserted questions
 		const newQuestions = await db
 			.select()
 			.from(suggestedQuestions)
@@ -158,7 +154,6 @@ export async function DELETE(
 			);
 		}
 
-		// Delete all suggested questions for this notebook
 		await db
 			.delete(suggestedQuestions)
 			.where(eq(suggestedQuestions.notebookId, notebookId));
