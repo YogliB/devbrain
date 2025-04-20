@@ -1,14 +1,22 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from './schema';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 let db: ReturnType<typeof drizzle> | null = null;
 let sqlite: Database.Database | null = null;
 
 export function getDbPath() {
-	return process.env.DATABASE_URL || join(process.cwd(), 'devbrain.db');
+	// If DATABASE_URL starts with 'postgres://', use the default SQLite path
+	const dbUrl = process.env.DATABASE_URL;
+	if (dbUrl && dbUrl.startsWith('postgres://')) {
+		console.log(
+			'PostgreSQL URL detected, but using SQLite. Using default SQLite path.',
+		);
+		return join(process.cwd(), 'devbrain.db');
+	}
+	return dbUrl || join(process.cwd(), 'devbrain.db');
 }
 
 export function getDb() {
@@ -17,6 +25,13 @@ export function getDb() {
 	try {
 		const dbPath = getDbPath();
 		console.log(`Opening database at: ${dbPath}`);
+
+		// Ensure the directory exists
+		const dbDir = dirname(dbPath);
+		if (!existsSync(dbDir)) {
+			console.log(`Creating database directory: ${dbDir}`);
+			mkdirSync(dbDir, { recursive: true });
+		}
 
 		sqlite = new Database(dbPath);
 		db = drizzle(sqlite, { schema });
@@ -32,6 +47,13 @@ export function ensureDatabaseExists() {
 	const dbPath = getDbPath();
 
 	try {
+		// Ensure the directory exists
+		const dbDir = dirname(dbPath);
+		if (!existsSync(dbDir)) {
+			console.log(`Creating database directory: ${dbDir}`);
+			mkdirSync(dbDir, { recursive: true });
+		}
+
 		if (!existsSync(dbPath)) {
 			console.log('Database file does not exist, creating it...');
 			try {
@@ -88,6 +110,14 @@ export async function initDb(forceInit = false) {
 
 		if (forceInit) {
 			closeDb();
+		}
+
+		// Make sure the database directory exists
+		const dbPath = getDbPath();
+		const dbDir = dirname(dbPath);
+		if (!existsSync(dbDir)) {
+			console.log(`Creating database directory: ${dbDir}`);
+			mkdirSync(dbDir, { recursive: true });
 		}
 
 		const dbExisted = ensureDatabaseExists();

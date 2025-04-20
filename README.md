@@ -20,11 +20,19 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Database Management
 
-This project uses PostgreSQL with Drizzle ORM for database management. The database must be manually initialized before running the application using the database commands listed below.
+This project currently uses SQLite with Drizzle ORM for database management. The database is automatically initialized when running the application, but you can also manually initialize it using the database commands listed below.
 
-#### PostgreSQL Setup
+> **Note:** While the project is configured to use PostgreSQL in the future (as seen in the environment variables and Docker configuration), it currently uses SQLite for simplicity.
 
-The project uses a dockerized PostgreSQL 17.4 (Alpine) instance for local development. To start the database:
+#### Database Commands
+
+- `npm run db:push` - Apply migrations to the database
+- `npm run db:studio` - Open Drizzle Studio to view and edit the database
+- `npm run db:ensure-dir` - Ensure the database directory exists
+
+#### PostgreSQL Setup (Not Currently Used)
+
+The project includes configuration for a dockerized PostgreSQL 17.4 (Alpine) instance for future development. To start the database:
 
 ```bash
 npm run db:start
@@ -36,17 +44,9 @@ To stop the database:
 npm run db:stop
 ```
 
-#### Database Commands
-
-- `npm run db:start` - Start the PostgreSQL Docker container
-- `npm run db:stop` - Stop the PostgreSQL Docker container
-- `npm run db:push` - Apply migrations to the database
-- `npm run db:seed` - Seed the database with initial data
-- `npm run db:studio` - Open Drizzle Studio to view and edit the database
-
 #### Environment Variables
 
-The PostgreSQL connection is configured using environment variables. See `.env.example` for the required variables.
+The database connection is configured using environment variables. See `.env.example` for the variables. Currently, the SQLite database is used regardless of the PostgreSQL connection string in the environment variables.
 
 ### Using VS Code
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, closeDb } from '@/db';
+import { getDb, closeDb, initDb } from '@/db';
 import { notebooks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -8,6 +8,9 @@ export async function GET(
 	{ params }: { params: Promise<{ notebookId: string }> },
 ) {
 	try {
+		// Initialize the database first
+		await initDb();
+
 		const { notebookId } = await params;
 		const db = getDb();
 
