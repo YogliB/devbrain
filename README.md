@@ -20,15 +20,33 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Database Management
 
-This project uses SQLite with Drizzle ORM for database management. The database is automatically initialized when the application starts, but migrations are only run when necessary.
+This project uses PostgreSQL with Drizzle ORM for database management. The database is automatically initialized when the application starts, but migrations are only run when necessary.
+
+#### PostgreSQL Setup
+
+The project uses a dockerized PostgreSQL 17.4 (Alpine) instance for local development. To start the database:
+
+```bash
+npm run db:start
+```
+
+To stop the database:
+
+```bash
+npm run db:stop
+```
 
 #### Database Commands
 
-- `npm run db:manual-init` - Manually initialize the database (run migrations and seed data)
-- `npm run db:generate` - Generate migrations based on schema changes
+- `npm run db:start` - Start the PostgreSQL Docker container
+- `npm run db:stop` - Stop the PostgreSQL Docker container
 - `npm run db:push` - Apply migrations to the database
 - `npm run db:seed` - Seed the database with initial data
 - `npm run db:studio` - Open Drizzle Studio to view and edit the database
+
+#### Environment Variables
+
+The PostgreSQL connection is configured using environment variables. See `.env.example` for the required variables.
 
 ### Using VS Code
 
