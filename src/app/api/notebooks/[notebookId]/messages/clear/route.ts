@@ -1,53 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, closeDb } from '@/db';
+import { getDb } from '@/db';
 import { notebooks, messages } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { withDb } from '@/middleware/db-middleware';
 
-export async function DELETE(
+async function deleteHandler(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ notebookId: string }> },
 ) {
-	try {
-		const { notebookId } = await params;
-		const db = getDb();
+	const { notebookId } = await params;
+	const db = getDb();
 
-		const [notebook] = await db
-			.select()
-			.from(notebooks)
-			.where(eq(notebooks.id, notebookId));
+	const [notebook] = await db
+		.select()
+		.from(notebooks)
+		.where(eq(notebooks.id, notebookId));
 
-		if (!notebook) {
-			closeDb();
-			return NextResponse.json(
-				{ message: 'Notebook not found' },
-				{ status: 404 },
-			);
-		}
-
-		await db.delete(messages).where(eq(messages.notebookId, notebookId));
-
-		const now = new Date();
-		await db
-			.update(notebooks)
-			.set({ updatedAt: now })
-			.where(eq(notebooks.id, notebookId));
-
-		closeDb();
-
-		return NextResponse.json({
-			message: 'All messages cleared successfully',
-		});
-	} catch (error) {
-		const { notebookId } = await params;
-		console.error(
-			`Error clearing messages for notebook ${notebookId}:`,
-			error,
-		);
+	if (!notebook) {
 		return NextResponse.json(
-			{ message: 'Failed to clear messages', error: String(error) },
-			{ status: 500 },
+			{ message: 'Notebook not found' },
+			{ status: 404 },
 		);
-	} finally {
-		closeDb();
 	}
+
+	await db.delete(messages).where(eq(messages.notebookId, notebookId));
+
+	const now = new Date();
+	await db
+		.update(notebooks)
+		.set({ updatedAt: now })
+		.where(eq(notebooks.id, notebookId));
+
+	return NextResponse.json({
+		message: 'All messages cleared successfully',
+	});
 }
+
+export const DELETE = withDb(deleteHandler);

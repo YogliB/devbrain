@@ -1,159 +1,128 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, closeDb } from '@/db';
+import { getDb } from '@/db';
 import { notebooks, sources } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { withDb } from '@/middleware/db-middleware';
 
-export async function GET(
+async function getHandler(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ notebookId: string; id: string }> },
 ) {
-	try {
-		const { notebookId, id } = await params;
-		const db = getDb();
+	const { notebookId, id } = await params;
+	const db = getDb();
 
-		const [source] = await db
-			.select()
-			.from(sources)
-			.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+	const [source] = await db
+		.select()
+		.from(sources)
+		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
 
-		if (!source) {
-			closeDb();
-			return NextResponse.json(
-				{ message: 'Source not found' },
-				{ status: 404 },
-			);
-		}
-
-		const formattedSource = {
-			...source,
-			createdAt: new Date(source.createdAt),
-		};
-
-		closeDb();
-
-		return NextResponse.json(formattedSource);
-	} catch (error) {
-		const { id } = await params;
-		console.error(`Error fetching source ${id}:`, error);
+	if (!source) {
 		return NextResponse.json(
-			{ message: 'Failed to fetch source', error: String(error) },
-			{ status: 500 },
+			{ message: 'Source not found' },
+			{ status: 404 },
 		);
-	} finally {
-		closeDb();
 	}
+
+	const formattedSource = {
+		...source,
+		createdAt: new Date(source.createdAt),
+	};
+
+	return NextResponse.json(formattedSource);
 }
 
-export async function PUT(
+export const GET = withDb(getHandler);
+
+async function putHandler(
 	request: NextRequest,
 	{ params }: { params: Promise<{ notebookId: string; id: string }> },
 ) {
-	try {
-		const { notebookId, id } = await params;
-		const body = await request.json();
-		const { content, filename, tag } = body;
+	const { notebookId, id } = await params;
+	const body = await request.json();
+	const { content, filename, tag } = body;
 
-		if (!content) {
-			return NextResponse.json(
-				{ message: 'Content is required' },
-				{ status: 400 },
-			);
-		}
-
-		const db = getDb();
-
-		const [existingSource] = await db
-			.select()
-			.from(sources)
-			.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
-
-		if (!existingSource) {
-			closeDb();
-			return NextResponse.json(
-				{ message: 'Source not found' },
-				{ status: 404 },
-			);
-		}
-
-		const now = new Date();
-
-		await db
-			.update(sources)
-			.set({
-				content,
-				filename: filename || null,
-				tag: tag || null,
-			})
-			.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
-
-		const [updatedSource] = await db
-			.select()
-			.from(sources)
-			.where(eq(sources.id, id));
-
-		const formattedSource = {
-			...updatedSource,
-			createdAt: new Date(updatedSource.createdAt),
-		};
-
-		await db
-			.update(notebooks)
-			.set({ updatedAt: now })
-			.where(eq(notebooks.id, notebookId));
-
-		return NextResponse.json(formattedSource);
-	} catch (error) {
-		const { id } = await params;
-		console.error(`Error updating source ${id}:`, error);
+	if (!content) {
 		return NextResponse.json(
-			{ message: 'Failed to update source', error: String(error) },
-			{ status: 500 },
+			{ message: 'Content is required' },
+			{ status: 400 },
 		);
-	} finally {
-		closeDb();
 	}
+
+	const db = getDb();
+
+	const [existingSource] = await db
+		.select()
+		.from(sources)
+		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+
+	if (!existingSource) {
+		return NextResponse.json(
+			{ message: 'Source not found' },
+			{ status: 404 },
+		);
+	}
+
+	const now = new Date();
+
+	await db
+		.update(sources)
+		.set({
+			content,
+			filename: filename || null,
+			tag: tag || null,
+		})
+		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+
+	const [updatedSource] = await db
+		.select()
+		.from(sources)
+		.where(eq(sources.id, id));
+
+	const formattedSource = {
+		...updatedSource,
+		createdAt: new Date(updatedSource.createdAt),
+	};
+
+	await db
+		.update(notebooks)
+		.set({ updatedAt: now })
+		.where(eq(notebooks.id, notebookId));
+
+	return NextResponse.json(formattedSource);
 }
 
-export async function DELETE(
+export const PUT = withDb(putHandler);
+
+async function deleteHandler(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ notebookId: string; id: string }> },
 ) {
-	try {
-		const { notebookId, id } = await params;
-		const db = getDb();
+	const { notebookId, id } = await params;
+	const db = getDb();
 
-		const [existingSource] = await db
-			.select()
-			.from(sources)
-			.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+	const [existingSource] = await db
+		.select()
+		.from(sources)
+		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
 
-		if (!existingSource) {
-			closeDb();
-			return NextResponse.json(
-				{ message: 'Source not found' },
-				{ status: 404 },
-			);
-		}
-
-		await db
-			.delete(sources)
-			.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
-
-		const now = new Date();
-		await db
-			.update(notebooks)
-			.set({ updatedAt: now })
-			.where(eq(notebooks.id, notebookId));
-
-		return NextResponse.json({ message: 'Source deleted successfully' });
-	} catch (error) {
-		const { id } = await params;
-		console.error(`Error deleting source ${id}:`, error);
+	if (!existingSource) {
 		return NextResponse.json(
-			{ message: 'Failed to delete source', error: String(error) },
-			{ status: 500 },
+			{ message: 'Source not found' },
+			{ status: 404 },
 		);
-	} finally {
-		closeDb();
 	}
+
+	await db
+		.delete(sources)
+		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+
+	const now = new Date();
+	await db
+		.update(notebooks)
+		.set({ updatedAt: now })
+		.where(eq(notebooks.id, notebookId));
+
+	return NextResponse.json({ message: 'Source deleted successfully' });
 }
+
+export const DELETE = withDb(deleteHandler);
