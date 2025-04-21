@@ -6,10 +6,7 @@ let db: ReturnType<typeof drizzle> | null = null;
 let client: ReturnType<typeof postgres> | null = null;
 
 export function getConnectionString() {
-	return (
-		process.env.DATABASE_URL ||
-		'postgres://postgres:postgres@localhost:5432/devbrain'
-	);
+	return process.env.DATABASE_URL;
 }
 
 export function getDb() {
