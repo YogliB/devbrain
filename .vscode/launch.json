@@ -2,12 +2,29 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Storybook: debug",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run storybook",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "serverReadyAction": {
+        "pattern": "Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+    {
       "name": "Next.js: debug server-side",
       "type": "node-terminal",
       "request": "launch",
       "command": "npm run dev",
       "cwd": "${workspaceFolder}",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "serverReadyAction": {
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",
@@ -22,6 +39,17 @@
       "webRoot": "${workspaceFolder}",
       "sourceMapPathOverrides": {
         "webpack://_N_E/*": "${webRoot}/*"
+      }
+    },
+    {
+      "name": "Storybook: debug client-side",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:6006",
+      "webRoot": "${workspaceFolder}",
+      "sourceMapPathOverrides": {
+        "webpack://_N_E/*": "${webRoot}/*",
+        "webpack://*": "${webRoot}/*"
       }
     },
     {

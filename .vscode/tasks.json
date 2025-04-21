@@ -2,6 +2,18 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Storybook: dev",
+      "type": "npm",
+      "script": "storybook",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "develop"
+      },
+      "detail": "Start Storybook development server"
+    },
+    {
       "label": "Next.js: dev",
       "type": "npm",
       "script": "dev",
@@ -51,6 +63,13 @@
       "script": "format",
       "problemMatcher": [],
       "detail": "Format code with Prettier"
+    },
+    {
+      "label": "Storybook: build",
+      "type": "npm",
+      "script": "build-storybook",
+      "problemMatcher": [],
+      "detail": "Build Storybook for production"
     }
   ]
 }
