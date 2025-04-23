@@ -55,6 +55,26 @@ POSTGRES_PORT=5432
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/devbrain
 ```
 
+#### Database Schema and Indexes
+
+The database schema is defined using Drizzle ORM in the `src/db/schema` directory. The following tables are defined:
+
+- `notebooks` - Stores notebook metadata
+- `messages` - Stores chat messages associated with notebooks
+- `sources` - Stores source content associated with notebooks
+- `suggestedQuestions` - Stores AI-generated questions for notebooks
+
+The following indexes are defined to improve query performance:
+
+- `notebooks_updated_at_idx` - Index on the `updatedAt` column of the notebooks table
+- `messages_notebook_id_idx` - Index on the `notebookId` column of the messages table
+- `messages_timestamp_idx` - Index on the `timestamp` column of the messages table
+- `sources_notebook_id_idx` - Index on the `notebookId` column of the sources table
+- `sources_created_at_idx` - Index on the `createdAt` column of the sources table
+- `sources_tag_idx` - Index on the `tag` column of the sources table
+- `suggested_questions_notebook_id_idx` - Index on the `notebookId` column of the suggestedQuestions table
+- `suggested_questions_created_at_idx` - Index on the `createdAt` column of the suggestedQuestions table
+
 ### Using VS Code
 
 This project includes VS Code configurations to make development easier:
