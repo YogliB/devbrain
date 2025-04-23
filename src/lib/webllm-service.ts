@@ -71,11 +71,8 @@ export async function registerServiceWorker(timeout = 3000): Promise<boolean> {
 	try {
 		// If service worker is already controlling the page, we're good to go
 		if (navigator.serviceWorker.controller) {
-			console.log('[Client] Service worker already controlling the page');
 			return true;
 		}
-
-		console.log('[Client] Registering service worker...');
 		const registration = await navigator.serviceWorker.register(
 			'/webllm-sw.js',
 			{ type: 'module' },
@@ -125,9 +122,6 @@ export async function registerServiceWorker(timeout = 3000): Promise<boolean> {
 			new Promise<boolean>((resolve) => {
 				// Timeout to prevent waiting indefinitely
 				setTimeout(() => {
-					console.log(
-						'[Client] Service worker registration timed out',
-					);
 					resolve(false);
 				}, timeout);
 			}),
@@ -135,7 +129,6 @@ export async function registerServiceWorker(timeout = 3000): Promise<boolean> {
 
 		return result;
 	} catch (error) {
-		console.error('[Client] Service worker registration failed:', error);
 		return false;
 	}
 }
@@ -158,11 +151,9 @@ export async function loadModel(): Promise<void> {
 		});
 	}
 
-	// Select the best model based on device capabilities
 	try {
 		const selectedModel = await selectBestModel();
 
-		// Update state with selected model
 		updateState({
 			selectedModel,
 			status: 'loading',
@@ -170,36 +161,17 @@ export async function loadModel(): Promise<void> {
 			progressText: `Initializing ${selectedModel.name}...`,
 		});
 
-		// Determine whether to use service worker
 		let useServiceWorker = false;
 
-		// On first load, we'll try to use the service worker but with a timeout
-		// On subsequent loads (refreshes), the service worker should already be controlling the page
 		if ('serviceWorker' in navigator) {
 			try {
-				// If this is the first load, we'll use a shorter timeout
 				const timeout = isFirstLoad ? 2000 : 5000;
 				useServiceWorker = await registerServiceWorker(timeout);
-
-				if (useServiceWorker) {
-					console.log(
-						'[Client] Using service worker for model loading',
-					);
-				} else {
-					console.log(
-						'[Client] Service worker not ready, using regular engine for this load',
-					);
-				}
 			} catch (error) {
-				console.warn(
-					'Service worker registration failed, falling back to regular engine:',
-					error,
-				);
 				useServiceWorker = false;
 			}
 		}
 
-		// Load the selected model
 		try {
 			updateState({
 				progressText: `Loading model: ${selectedModel.name}...`,
@@ -211,7 +183,6 @@ export async function loadModel(): Promise<void> {
 					initProgressCallback: (
 						report: webllm.InitProgressReport,
 					) => {
-						console.log('[Client] Init progress:', report);
 						let progress = 0;
 						if (report.progress !== undefined) {
 							progress = Math.min(
@@ -227,7 +198,6 @@ export async function loadModel(): Promise<void> {
 					},
 				});
 			} else {
-				// For first load without service worker, use regular engine
 				engine = await webllm.CreateMLCEngine(selectedModel.id, {
 					initProgressCallback: (
 						report: webllm.InitProgressReport,
@@ -248,7 +218,6 @@ export async function loadModel(): Promise<void> {
 				});
 			}
 
-			// Mark that we've completed the first load
 			isFirstLoad = false;
 
 			updateState({
@@ -258,7 +227,6 @@ export async function loadModel(): Promise<void> {
 				engine,
 			});
 		} catch (error) {
-			console.error(`Failed to load model ${selectedModel.id}:`, error);
 			updateState({
 				status: 'error',
 				progress: 0,
@@ -267,7 +235,6 @@ export async function loadModel(): Promise<void> {
 			});
 		}
 	} catch (error) {
-		console.error('Failed to select appropriate model:', error);
 		updateState({
 			status: 'unsupported',
 			progress: 0,
@@ -426,48 +393,8 @@ export async function generateResponse(
 
 		return response.choices[0].message.content || '';
 	} catch (error) {
-		console.error('Error generating response:', error);
 		throw error;
 	}
 }
 
-export async function generateStreamingResponse(
-	messages: ChatCompletionRequestMessage[],
-	onChunk: (chunk: string) => void,
-): Promise<string> {
-	if (!currentState.engine || currentState.status !== 'loaded') {
-		throw new Error('Model not loaded');
-	}
-
-	try {
-		const webllmMessages = messages.map((msg) => ({
-			role: msg.role,
-			content: msg.content,
-			...(msg.name ? { name: msg.name } : {}),
-		}));
-
-		const chunks = await currentState.engine.chat.completions.create({
-			// @ts-expect-error - WebLLM has specific type requirements
-			messages: webllmMessages,
-			temperature: 0.7,
-			max_tokens: 1024,
-			stream: true,
-		});
-
-		let fullResponse = '';
-		for await (const chunk of chunks) {
-			const content = chunk.choices[0]?.delta.content || '';
-			fullResponse += content;
-			onChunk(content);
-		}
-
-		return fullResponse;
-	} catch (error) {
-		console.error('Error generating streaming response:', error);
-		throw error;
-	}
-}
-
-loadModel().catch((error) => {
-	console.error('Failed to initialize model loading:', error);
-});
+loadModel().catch(() => {});

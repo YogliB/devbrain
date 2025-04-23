@@ -7,7 +7,6 @@ import {
 	addStateListener,
 	loadModel,
 	generateResponse,
-	generateStreamingResponse,
 	generateSuggestedQuestions,
 	ChatCompletionRequestMessage,
 } from '@/lib/webllm-service';
@@ -24,10 +23,6 @@ interface ModelContextType {
 	generateResponse: (
 		messages: ChatCompletionRequestMessage[],
 	) => Promise<string>;
-	generateStreamingResponse: (
-		messages: ChatCompletionRequestMessage[],
-		onChunk: (chunk: string) => void,
-	) => Promise<string>;
 	generateSuggestedQuestions: (
 		sources: Source[],
 		count?: number,
@@ -42,7 +37,6 @@ const ModelContext = createContext<ModelContextType>({
 	selectedModel: undefined,
 	loadModel: async () => {},
 	generateResponse: async () => '',
-	generateStreamingResponse: async () => '',
 	generateSuggestedQuestions: async () => [],
 });
 
@@ -95,7 +89,6 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
 		selectedModel: state.selectedModel,
 		loadModel,
 		generateResponse,
-		generateStreamingResponse,
 		generateSuggestedQuestions,
 	};
 
