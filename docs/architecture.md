@@ -10,6 +10,7 @@ DevBrain is built using the following technologies:
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Custom authentication system with bcrypt for password hashing
 - **AI Integration**: WebLLM for client-side AI processing
+- **Service Worker**: For offline support and model persistence
 
 ## Project Structure
 
@@ -53,11 +54,11 @@ The following components are lazy-loaded:
 
 The application includes several performance optimizations:
 
-- **Million.js Integration**: For optimized React rendering
-- **Service Worker**: For offline support and caching
+- **Service Worker**: For offline support and caching WebLLM models
 - **Image Optimization**: Using Next.js Image component
 - **Font Optimization**: Using next/font for optimized font loading
 - **Bundle Size Optimization**: Using dynamic imports and tree shaking
+- **Code-Splitting**: Lazy loading components to reduce initial bundle size
 
 ## Development Environment
 
