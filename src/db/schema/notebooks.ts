@@ -8,11 +8,9 @@ export const notebooks = pgTable(
 		createdAt: timestamp('created_at').notNull(),
 		updatedAt: timestamp('updated_at').notNull(),
 	},
-	(table) => {
-		return {
-			updatedAtIdx: index('notebooks_updated_at_idx').on(table.updatedAt),
-		};
-	},
+	(table) => ({
+		updatedAtIdx: index('notebooks_updated_at_idx').on(table.updatedAt),
+	}),
 );
 
 export type Notebook = typeof notebooks.$inferSelect;
