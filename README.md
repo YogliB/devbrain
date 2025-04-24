@@ -59,24 +59,39 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/devbrain
 
 The database schema is defined using Drizzle ORM in the `src/db/schema` directory. The following tables are defined:
 
-- `notebooks` - Stores notebook metadata
-- `messages` - Stores chat messages associated with notebooks
-- `sources` - Stores source content associated with notebooks
-- `suggestedQuestions` - Stores AI-generated questions for notebooks
+- `notebooks` - Stores notebook metadata with user ownership
+- `messages` - Stores chat messages associated with notebooks and users
+- `sources` - Stores source content associated with notebooks and users
+- `suggestedQuestions` - Stores AI-generated questions for notebooks and users
 - `users` - Stores user authentication information
 
 The following indexes are defined to improve query performance:
 
 - `notebooks_updated_at_idx` - Index on the `updatedAt` column of the notebooks table
+- `notebooks_user_id_idx` - Index on the `userId` column of the notebooks table
 - `messages_notebook_id_idx` - Index on the `notebookId` column of the messages table
+- `messages_user_id_idx` - Index on the `userId` column of the messages table
 - `messages_timestamp_idx` - Index on the `timestamp` column of the messages table
 - `sources_notebook_id_idx` - Index on the `notebookId` column of the sources table
+- `sources_user_id_idx` - Index on the `userId` column of the sources table
 - `sources_created_at_idx` - Index on the `createdAt` column of the sources table
 - `sources_tag_idx` - Index on the `tag` column of the sources table
 - `suggested_questions_notebook_id_idx` - Index on the `notebookId` column of the suggestedQuestions table
+- `suggested_questions_user_id_idx` - Index on the `userId` column of the suggestedQuestions table
 - `suggested_questions_created_at_idx` - Index on the `createdAt` column of the suggestedQuestions table
 - `users_email_idx` - Index on the `email` column of the users table
 - `users_created_at_idx` - Index on the `createdAt` column of the users table
+
+#### Data Isolation
+
+This project implements data isolation at the application level using Drizzle ORM's query capabilities. Each user can only access their own data through the following mechanisms:
+
+- User ID references in all data tables (notebooks, messages, sources, suggestedQuestions)
+- Query filters that restrict data access based on the current user ID
+- Authentication middleware that extracts the user ID from requests
+- API client that includes the user ID in all requests
+
+This ensures that even though users share the same database, they can only see and interact with their own data.
 
 ### Using VS Code
 

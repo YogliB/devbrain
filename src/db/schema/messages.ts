@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, index } from 'drizzle-orm/pg-core';
 import { notebooks } from './notebooks';
+import { users } from './users';
 
 export const messages = pgTable(
 	'messages',
@@ -10,6 +11,9 @@ export const messages = pgTable(
 		notebookId: text('notebook_id')
 			.notNull()
 			.references(() => notebooks.id, { onDelete: 'cascade' }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
 		timestamp: timestamp('timestamp').notNull(),
 	},
 	(table) => {
@@ -17,6 +21,7 @@ export const messages = pgTable(
 			notebookIdIdx: index('messages_notebook_id_idx').on(
 				table.notebookId,
 			),
+			userIdIdx: index('messages_user_id_idx').on(table.userId),
 			timestampIdx: index('messages_timestamp_idx').on(table.timestamp),
 		};
 	},

@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { notebooks, messages } from '@/db/schema';
-import { eq, asc } from 'drizzle-orm';
-import { withDb } from '@/middleware/db-middleware';
+import { eq, asc, and } from 'drizzle-orm';
+import { withDbAndAuth } from '@/middleware/auth-middleware';
 
 async function getHandler(
 	_request: NextRequest,
-	{ params }: { params: Promise<{ notebookId: string }> },
+	{
+		params,
+		...context
+	}: { params: Promise<{ notebookId: string }> } & Record<string, unknown>,
 ) {
 	const { notebookId } = await params;
+	const userId = context.userId as string;
 	const db = getDb();
 
 	const [notebook] = await db
 		.select()
 		.from(notebooks)
-		.where(eq(notebooks.id, notebookId));
+		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, userId)));
 
 	if (!notebook) {
 		return NextResponse.json(
@@ -26,7 +30,12 @@ async function getHandler(
 	const messagesData = await db
 		.select()
 		.from(messages)
-		.where(eq(messages.notebookId, notebookId))
+		.where(
+			and(
+				eq(messages.notebookId, notebookId),
+				eq(messages.userId, userId),
+			),
+		)
 		.orderBy(asc(messages.timestamp));
 
 	const formattedMessages = messagesData.map((message) => ({
@@ -37,15 +46,19 @@ async function getHandler(
 	return NextResponse.json(formattedMessages);
 }
 
-export const GET = withDb(getHandler);
+export const GET = withDbAndAuth(getHandler);
 
 async function postHandler(
 	request: NextRequest,
-	{ params }: { params: Promise<{ notebookId: string }> },
+	{
+		params,
+		...context
+	}: { params: Promise<{ notebookId: string }> } & Record<string, unknown>,
 ) {
 	const { notebookId } = await params;
 	const body = await request.json();
 	const { content, role } = body;
+	const userId = context.userId as string;
 
 	if (!content) {
 		return NextResponse.json(
@@ -66,7 +79,7 @@ async function postHandler(
 	const [notebook] = await db
 		.select()
 		.from(notebooks)
-		.where(eq(notebooks.id, notebookId));
+		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, userId)));
 
 	if (!notebook) {
 		return NextResponse.json(
@@ -83,6 +96,7 @@ async function postHandler(
 		content,
 		role: role as 'user' | 'assistant',
 		notebookId,
+		userId,
 		timestamp: now,
 	});
 
@@ -104,4 +118,4 @@ async function postHandler(
 	return NextResponse.json(formattedMessage, { status: 201 });
 }
 
-export const POST = withDb(postHandler);
+export const POST = withDbAndAuth(postHandler);

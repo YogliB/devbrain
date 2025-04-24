@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, closeDb } from '@/db';
+import { NextApiContext, NextApiHandler } from './types';
 
-type NextApiHandler = (
-	req: NextRequest,
-	context: any,
-) => Promise<NextResponse> | NextResponse;
-
-export function withDb(handler: NextApiHandler): NextApiHandler {
-	return async (req: NextRequest, context: any) => {
+export function withDb<T extends NextApiContext>(
+	handler: NextApiHandler<T>,
+): NextApiHandler<T> {
+	return async (req: NextRequest, context: T) => {
 		try {
 			const db = getDb();
 			const response = await handler(req, context);

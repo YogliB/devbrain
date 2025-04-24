@@ -3,14 +3,24 @@ import { getDb } from '@/db';
 import { notebooks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { withDb } from '@/middleware/db-middleware';
+import { withDbAndAuth } from '@/middleware/auth-middleware';
+import { NextApiContext } from '@/middleware/types';
 
-async function getHandler() {
+async function getHandler(_request: NextRequest, context: NextApiContext) {
+	const userId = context.userId as string;
+	if (!userId) {
+		return NextResponse.json(
+			{ message: 'User ID is required' },
+			{ status: 401 },
+		);
+	}
 	const db = getDb();
 
+	// Filter notebooks by user ID
 	const notebooksData = await db
 		.select()
 		.from(notebooks)
+		.where(eq(notebooks.userId, userId))
 		.orderBy(notebooks.updatedAt);
 
 	const formattedNotebooks = notebooksData.map((notebook) => ({
@@ -22,11 +32,19 @@ async function getHandler() {
 	return NextResponse.json(formattedNotebooks);
 }
 
-export const GET = withDb(getHandler);
+export const GET = withDbAndAuth(getHandler);
 
-async function postHandler(request: NextRequest) {
+async function postHandler(request: NextRequest, context: NextApiContext) {
 	const body = await request.json();
 	const { title } = body;
+	const userId = context.userId as string;
+
+	if (!userId) {
+		return NextResponse.json(
+			{ message: 'User ID is required' },
+			{ status: 401 },
+		);
+	}
 
 	if (!title) {
 		return NextResponse.json(
@@ -43,6 +61,7 @@ async function postHandler(request: NextRequest) {
 	await db.insert(notebooks).values({
 		id,
 		title,
+		userId,
 		createdAt: now,
 		updatedAt: now,
 	});
@@ -61,4 +80,4 @@ async function postHandler(request: NextRequest) {
 	return NextResponse.json(formattedNotebook, { status: 201 });
 }
 
-export const POST = withDb(postHandler);
+export const POST = withDbAndAuth(postHandler);

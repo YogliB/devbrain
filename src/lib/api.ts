@@ -1,19 +1,46 @@
 import { Notebook } from '@/types/notebook';
 import { Source } from '@/types/source';
 import { ChatMessage } from '@/types/chat';
+import { SuggestedQuestion } from '@/types/suggestedQuestion';
 
 const API_URL = '/api';
+
+/**
+ * Get the current user ID from localStorage
+ * This is used to include the user ID in API requests for RLS
+ */
+function getCurrentUserId(): string | null {
+	if (typeof window === 'undefined') return null;
+
+	const userJson = localStorage.getItem('devbrain-user');
+	if (!userJson) return null;
+
+	try {
+		const user = JSON.parse(userJson);
+		return user.id;
+	} catch (error) {
+		console.error('Failed to parse user from localStorage:', error);
+		return null;
+	}
+}
 
 async function fetchAPI<T>(
 	endpoint: string,
 	options: RequestInit = {},
 ): Promise<T> {
+	// Get the current user ID
+	const userId = getCurrentUserId();
+
+	// Add the user ID to the request headers
+	const headers = {
+		'Content-Type': 'application/json',
+		...(userId ? { 'x-user-id': userId } : {}),
+		...options.headers,
+	};
+
 	const res = await fetch(`${API_URL}${endpoint}`, {
 		...options,
-		headers: {
-			'Content-Type': 'application/json',
-			...options.headers,
-		},
+		headers,
 	});
 
 	if (!res.ok) {
