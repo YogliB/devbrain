@@ -5,10 +5,18 @@ import { cn } from '@/lib/utils';
 import { Logo } from '@/components/atoms/logo';
 import { ThemeToggle } from '@/components/atoms/theme-toggle';
 import { EmptyNotebookPlaceholder } from '@/components/molecules/empty-notebook-placeholder';
+import { GuestNotification } from '@/components/molecules/guest-notification';
 import { Notebook } from '@/types/notebook';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
 import { Source } from '@/types/source';
 import { ErrorBoundary } from '@/components/atoms/error-boundary';
+import { useAuth } from '@/contexts/auth-context';
+import { LogOut, User } from 'lucide-react';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Skeleton components for lazy loading
 import { NotebooksSidebarSkeleton } from '@/components/skeletons/notebooks-sidebar-skeleton';
@@ -72,6 +80,7 @@ export function MainLayout({
 	onDeleteSource,
 	className,
 }: MainLayoutProps) {
+	const { user, isGuest, logout } = useAuth();
 	return (
 		<div className={cn('flex h-screen', className)}>
 			<ErrorBoundary>
@@ -98,8 +107,47 @@ export function MainLayout({
 						<div className="flex items-center gap-4">
 							<Logo className="md:hidden" />
 						</div>
-						<ThemeToggle />
+						<div className="flex items-center gap-4">
+							{user && (
+								<div className="flex items-center gap-2">
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="flex items-center gap-2 text-sm text-muted-foreground">
+												<User className="h-4 w-4" />
+												<span className="hidden md:inline">
+													{user.name || user.email}
+												</span>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent sideOffset={5}>
+											{isGuest
+												? 'Guest User'
+												: `Logged in as ${
+														user.name || user.email
+													}`}
+										</TooltipContent>
+									</Tooltip>
+
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<button
+												onClick={logout}
+												className="p-2 rounded-md hover:bg-muted"
+												aria-label="Logout"
+											>
+												<LogOut className="h-4 w-4" />
+											</button>
+										</TooltipTrigger>
+										<TooltipContent sideOffset={5}>
+											Logout
+										</TooltipContent>
+									</Tooltip>
+								</div>
+							)}
+							<ThemeToggle />
+						</div>
 					</div>
+					{isGuest && <GuestNotification className="mt-2" />}
 				</header>
 
 				<main className="flex-1 overflow-hidden">

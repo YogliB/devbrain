@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { ModelProvider } from '@/contexts/model-context';
 import { NotebookProvider } from '@/contexts/notebook-context';
+import { AuthProvider } from '@/contexts/auth-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 const geistSans = Geist({
@@ -36,9 +37,11 @@ export default function RootLayout({
 					storageKey="devbrain-theme"
 				>
 					<TooltipProvider>
-						<ModelProvider>
-							<NotebookProvider>{children}</NotebookProvider>
-						</ModelProvider>
+						<AuthProvider>
+							<ModelProvider>
+								<NotebookProvider>{children}</NotebookProvider>
+							</ModelProvider>
+						</AuthProvider>
 					</TooltipProvider>
 				</ThemeProvider>
 			</body>

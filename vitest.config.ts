@@ -12,6 +12,11 @@ const dirname =
 
 // More info at: https://storybook.js.org/docs/writing-tests/test-addon
 export default defineConfig({
+	resolve: {
+		alias: {
+			'@': path.resolve(dirname, './src'),
+		},
+	},
 	test: {
 		workspace: [
 			{
@@ -32,6 +37,20 @@ export default defineConfig({
 						provider: 'playwright',
 					},
 					setupFiles: ['.storybook/vitest.setup.ts'],
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: 'unit',
+					environment: 'jsdom',
+					globals: true,
+					include: ['**/*.test.ts', '**/*.test.tsx'],
+					exclude: [
+						'**/node_modules/**',
+						'**/dist/**',
+						'**/.{idea,git,cache,output,temp}/**',
+					],
 				},
 			},
 		],

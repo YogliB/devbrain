@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/templates/main-layout';
+import { ProtectedRoute } from '@/components/templates/protected-route';
 import { useNotebook } from '@/contexts/notebook-context';
 import { useModel } from '@/contexts/model-context';
 import { useChatWithAI } from '@/hooks/useChatWithAI';
@@ -55,38 +56,42 @@ export default function Home() {
 	}, [isLoading, activeNotebook, router]);
 
 	return (
-		<MainLayout
-			notebooks={notebooks}
-			activeNotebook={activeNotebook}
-			messages={messages}
-			suggestedQuestions={suggestedQuestions}
-			sources={sources}
-			isLoading={isLoading}
-			isGenerating={isGenerating}
-			isGeneratingQuestions={isGeneratingQuestions}
-			modelAvailable={modelAvailable}
-			onSelectNotebook={(notebook) => {
-				// Just update the state, don't navigate programmatically
-				selectNotebook(notebook);
-				// Update URL without full navigation
-				router.replace(`/notebooks/${notebook.id}`, { scroll: false });
-			}}
-			onCreateNotebook={async () => {
-				const newNotebook = await createNotebook();
-				if (newNotebook) {
-					router.replace(`/notebooks/${newNotebook.id}`, {
+		<ProtectedRoute>
+			<MainLayout
+				notebooks={notebooks}
+				activeNotebook={activeNotebook}
+				messages={messages}
+				suggestedQuestions={suggestedQuestions}
+				sources={sources}
+				isLoading={isLoading}
+				isGenerating={isGenerating}
+				isGeneratingQuestions={isGeneratingQuestions}
+				modelAvailable={modelAvailable}
+				onSelectNotebook={(notebook) => {
+					// Just update the state, don't navigate programmatically
+					selectNotebook(notebook);
+					// Update URL without full navigation
+					router.replace(`/notebooks/${notebook.id}`, {
 						scroll: false,
 					});
-				}
-			}}
-			onDeleteNotebook={deleteNotebook}
-			onSendMessage={sendMessage}
-			onSelectQuestion={selectQuestion}
-			onClearMessages={clearMessages}
-			onRegenerateQuestions={regenerateQuestions}
-			onAddSource={addSource}
-			onUpdateSource={updateSource}
-			onDeleteSource={deleteSource}
-		/>
+				}}
+				onCreateNotebook={async () => {
+					const newNotebook = await createNotebook();
+					if (newNotebook) {
+						router.replace(`/notebooks/${newNotebook.id}`, {
+							scroll: false,
+						});
+					}
+				}}
+				onDeleteNotebook={deleteNotebook}
+				onSendMessage={sendMessage}
+				onSelectQuestion={selectQuestion}
+				onClearMessages={clearMessages}
+				onRegenerateQuestions={regenerateQuestions}
+				onAddSource={addSource}
+				onUpdateSource={updateSource}
+				onDeleteSource={deleteSource}
+			/>
+		</ProtectedRoute>
 	);
 }

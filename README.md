@@ -63,6 +63,7 @@ The database schema is defined using Drizzle ORM in the `src/db/schema` director
 - `messages` - Stores chat messages associated with notebooks
 - `sources` - Stores source content associated with notebooks
 - `suggestedQuestions` - Stores AI-generated questions for notebooks
+- `users` - Stores user authentication information
 
 The following indexes are defined to improve query performance:
 
@@ -74,6 +75,8 @@ The following indexes are defined to improve query performance:
 - `sources_tag_idx` - Index on the `tag` column of the sources table
 - `suggested_questions_notebook_id_idx` - Index on the `notebookId` column of the suggestedQuestions table
 - `suggested_questions_created_at_idx` - Index on the `createdAt` column of the suggestedQuestions table
+- `users_email_idx` - Index on the `email` column of the users table
+- `users_created_at_idx` - Index on the `createdAt` column of the users table
 
 ### Using VS Code
 
@@ -97,6 +100,19 @@ Alternatively, you can use the VS Code tasks:
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+### Authentication System
+
+This project includes a complete authentication system with the following features:
+
+- User registration with email and password
+- User login with email and password
+- Guest user mode with notifications
+- Password strength validation
+- Protected routes that require authentication
+- Persistent sessions using localStorage
+
+Guest users can use the application without registering, but they are shown a notification that their data is not persisted between sessions. The authentication system is implemented using React context and custom hooks.
 
 ### Code-Splitting and Lazy Loading
 
