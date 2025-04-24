@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withDb } from './db-middleware';
 import { NextApiContext, NextApiHandler } from './types';
+import { setCurrentUser } from '@/db';
 
 /**
  * Middleware to extract the user ID from the request
@@ -25,6 +26,9 @@ export function withAuth<T extends NextApiContext>(
 
 			// Add the userId to the context so it can be accessed by the handler
 			context.userId = userId;
+
+			// Set the user ID for the database session (for RLS)
+			await setCurrentUser(userId);
 
 			// Call the original handler
 			return handler(req, context);

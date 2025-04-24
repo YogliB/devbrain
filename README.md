@@ -82,16 +82,18 @@ The following indexes are defined to improve query performance:
 - `users_email_idx` - Index on the `email` column of the users table
 - `users_created_at_idx` - Index on the `createdAt` column of the users table
 
-#### Data Isolation
+#### Data Isolation with Row-Level Security
 
-This project implements data isolation at the application level using Drizzle ORM's query capabilities. Each user can only access their own data through the following mechanisms:
+This project implements data isolation using PostgreSQL's Row-Level Security (RLS) feature through Drizzle ORM. This ensures that each user can only access their own data, even if they share the same database. The implementation includes:
 
 - User ID references in all data tables (notebooks, messages, sources, suggestedQuestions)
-- Query filters that restrict data access based on the current user ID
-- Authentication middleware that extracts the user ID from requests
+- RLS policies that filter data based on the current user ID
+- Middleware that sets the current user ID for each database session
 - API client that includes the user ID in all requests
 
-This ensures that even though users share the same database, they can only see and interact with their own data.
+The RLS policies are defined directly in the schema using Drizzle's `pgPolicy` API, which automatically enables RLS on the tables. Each table has policies for SELECT, INSERT, UPDATE, and DELETE operations that check if the user ID matches the current user ID set in the database session.
+
+This approach provides a robust security layer at the database level, ensuring that even if there's a bug in the application code, users cannot access data they shouldn't have access to.
 
 ### Using VS Code
 
