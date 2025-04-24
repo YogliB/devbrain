@@ -2,7 +2,16 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Documentation
 
-For detailed documentation about various aspects of the project, please refer to the [Documentation](./docs/index.md).
+DevBrain has comprehensive documentation covering all aspects of the application. The documentation is organized into the following sections:
+
+- [Architecture](./docs/architecture.md) - Overview of the application architecture and technology stack
+- [Database](./docs/database.md) - Information about the database setup, schema, and security features
+- [Authentication](./docs/authentication.md) - Details about the authentication system and user management
+- [Security](./docs/security.md) - Security features and best practices implemented in the application
+- [AI Integration](./docs/ai-integration.md) - Information about the WebLLM integration and AI features
+- [Development Guide](./docs/development.md) - Guide for setting up the development environment and workflow
+
+For a complete overview, please refer to the [Documentation Index](./docs/index.md).
 
 ## Getting Started
 
@@ -51,70 +60,19 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ### Authentication System
 
-This project includes a complete authentication system with the following features:
-
-- User registration with email and password
-- User login with email and password
-- Guest user mode with notifications
-- Password strength validation
-- Protected routes that require authentication
-- Persistent sessions using localStorage
-
-Guest users can use the application without registering, but they are shown a notification that their data is not persisted between sessions. The authentication system is implemented using React context and custom hooks.
+This project includes a complete authentication system with features like user registration, login, guest mode, and protected routes. For detailed information about the authentication system, please refer to the [Authentication Documentation](./docs/authentication.md).
 
 ### Security Features
 
-This project implements several security features to protect user data and prevent common web vulnerabilities:
-
-#### Input Sanitization
-
-All user inputs are sanitized to prevent XSS (Cross-Site Scripting) attacks and SQL injection:
-
-- **HTML Sanitization**: User-generated content that might contain HTML is sanitized using DOMPurify to remove potentially malicious tags and attributes.
-- **Text Sanitization**: Plain text inputs are escaped to prevent HTML injection.
-- **Database Sanitization**: Inputs are sanitized before being stored in the database to prevent SQL injection attacks.
-- **Filename Sanitization**: Filenames are sanitized to remove unsafe characters and prevent path traversal attacks.
-
-The sanitization utilities are implemented in `src/lib/sanitize-utils.ts` and are used throughout the application, including:
-
-- Chat messages
-- Source content
-- Notebook titles
-- Suggested questions
-
-#### Row-Level Security
-
-This project uses PostgreSQL's Row-Level Security (RLS) to ensure data isolation between users at the database level. For more details, see the [Database Documentation](./docs/database.md#data-isolation-with-row-level-security).
+This project implements several security features to protect user data and prevent common web vulnerabilities, including input sanitization and row-level security. For detailed information about the security features, please refer to the [Security Documentation](./docs/security.md).
 
 ### Code-Splitting and Lazy Loading
 
-This project implements code-splitting and lazy loading for major components to improve performance and reduce the initial bundle size. The implementation includes:
-
-- Dynamic imports using Next.js's `lazy()` function for main components
-- Suspense boundaries with skeleton loading states
-- Error boundaries for graceful error handling
-
-The following components are lazy-loaded:
-
-- NotebooksSidebar
-- ContentTabs
-- ChatInterface
-- SourcesList
-- SuggestedQuestions
-
-Each lazy-loaded component has a corresponding skeleton component that displays during loading. This approach improves the initial page load time and provides a better user experience with meaningful loading states.
+This project implements code-splitting and lazy loading for major components to improve performance and reduce the initial bundle size. For detailed information about the architecture and performance optimizations, please refer to the [Architecture Documentation](./docs/architecture.md#code-splitting-and-lazy-loading).
 
 ### Code Formatting
 
-This project uses Prettier for code formatting and ESLint for code linting. The configuration is set up to run Prettier as an ESLint rule, which means that formatting issues will be reported as ESLint errors.
-
-You can format your code in several ways:
-
-1. Automatically on save (configured in VS Code settings)
-2. By running `npm run format` to format all files
-3. By running the VS Code task `Next.js: format`
-
-To check if your code is properly formatted without making changes, run `npm run format:check`.
+This project uses Prettier for code formatting and ESLint for code linting. For detailed information about code formatting and the development workflow, please refer to the [Development Guide](./docs/development.md#code-formatting-and-linting).
 
 ## Learn More
 

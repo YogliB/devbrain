@@ -4,4 +4,9 @@ Welcome to the DevBrain documentation. This documentation provides detailed info
 
 ## Table of Contents
 
-- [Database Documentation](./database.md) - Information about the database setup, schema, and security features
+- [Architecture](./architecture.md) - Overview of the application architecture and technology stack
+- [Database](./database.md) - Information about the database setup, schema, and security features
+- [Authentication](./authentication.md) - Details about the authentication system and user management
+- [Security](./security.md) - Security features and best practices implemented in the application
+- [AI Integration](./ai-integration.md) - Information about the WebLLM integration and AI features
+- [Development Guide](./development.md) - Guide for setting up the development environment and workflow
