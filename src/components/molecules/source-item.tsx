@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { File, Trash2, Save, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { sanitizeInput } from '@/lib/sanitize-utils';
 import { Source } from '@/types/source';
 
 interface SourceItemProps {
@@ -22,7 +23,9 @@ export function SourceItem({
 	const [editedContent, setEditedContent] = useState(source.content);
 
 	const handleSave = () => {
-		onUpdate(source, editedContent);
+		// Sanitize content before updating
+		const sanitizedContent = sanitizeInput(editedContent);
+		onUpdate(source, sanitizedContent);
 		setIsEditing(false);
 	};
 
@@ -92,7 +95,8 @@ export function SourceItem({
 					/>
 				) : (
 					<div className="whitespace-pre-wrap text-sm">
-						{source.content}
+						{/* Use sanitized content for display */}
+						{sanitizeInput(source.content)}
 					</div>
 				)}
 			</div>

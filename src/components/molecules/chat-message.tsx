@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/sanitize-utils';
 import { ChatMessage as ChatMessageType } from '@/types/chat';
 import { ThinkingIndicator } from '@/components/atoms/thinking-indicator';
 
@@ -59,7 +60,11 @@ export function ChatMessage({ message, className }: ChatMessageProps) {
 					{message.isThinking ? (
 						<ThinkingIndicator />
 					) : (
-						<>{message.content}</>
+						<div
+							dangerouslySetInnerHTML={{
+								__html: sanitizeHtml(message.content),
+							}}
+						/>
 					)}
 				</div>
 				{mounted ? (

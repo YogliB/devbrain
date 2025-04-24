@@ -131,6 +131,30 @@ This project includes a complete authentication system with the following featur
 
 Guest users can use the application without registering, but they are shown a notification that their data is not persisted between sessions. The authentication system is implemented using React context and custom hooks.
 
+### Security Features
+
+This project implements several security features to protect user data and prevent common web vulnerabilities:
+
+#### Input Sanitization
+
+All user inputs are sanitized to prevent XSS (Cross-Site Scripting) attacks and SQL injection:
+
+- **HTML Sanitization**: User-generated content that might contain HTML is sanitized using DOMPurify to remove potentially malicious tags and attributes.
+- **Text Sanitization**: Plain text inputs are escaped to prevent HTML injection.
+- **Database Sanitization**: Inputs are sanitized before being stored in the database to prevent SQL injection attacks.
+- **Filename Sanitization**: Filenames are sanitized to remove unsafe characters and prevent path traversal attacks.
+
+The sanitization utilities are implemented in `src/lib/sanitize-utils.ts` and are used throughout the application, including:
+
+- Chat messages
+- Source content
+- Notebook titles
+- Suggested questions
+
+#### Row-Level Security
+
+As mentioned in the Database section, this project uses PostgreSQL's Row-Level Security (RLS) to ensure data isolation between users at the database level.
+
 ### Code-Splitting and Lazy Loading
 
 This project implements code-splitting and lazy loading for major components to improve performance and reduce the initial bundle size. The implementation includes:

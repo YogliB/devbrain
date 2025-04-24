@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { notebooks, messages } from '@/db/schema';
 import { eq, asc, and } from 'drizzle-orm';
 import { withDbAndAuth } from '@/middleware/auth-middleware';
+import { sanitizeInput } from '@/lib/sanitize-utils';
 
 async function getHandler(
 	_request: NextRequest,
@@ -57,15 +58,18 @@ async function postHandler(
 ) {
 	const { notebookId } = await params;
 	const body = await request.json();
-	const { content, role } = body;
+	const { content: rawContent, role } = body;
 	const userId = context.userId as string;
 
-	if (!content) {
+	if (!rawContent) {
 		return NextResponse.json(
 			{ message: 'Content is required' },
 			{ status: 400 },
 		);
 	}
+
+	// Sanitize the content
+	const content = sanitizeInput(rawContent);
 
 	if (!role || !['user', 'assistant'].includes(role)) {
 		return NextResponse.json(

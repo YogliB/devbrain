@@ -4,6 +4,7 @@ import { notebooks, sources } from '@/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { withDbAndAuth } from '@/middleware/auth-middleware';
+import { sanitizeInput, sanitizeFilename } from '@/lib/sanitize-utils';
 
 async function getHandler(
 	_request: NextRequest,
@@ -55,15 +56,20 @@ async function postHandler(
 ) {
 	const { notebookId } = await params;
 	const body = await request.json();
-	const { content, filename, tag } = body;
+	const { content: rawContent, filename: rawFilename, tag: rawTag } = body;
 	const userId = context.userId as string;
 
-	if (!content) {
+	if (!rawContent) {
 		return NextResponse.json(
 			{ message: 'Content is required' },
 			{ status: 400 },
 		);
 	}
+
+	// Sanitize inputs
+	const content = sanitizeInput(rawContent);
+	const filename = rawFilename ? sanitizeFilename(rawFilename) : null;
+	const tag = rawTag ? sanitizeInput(rawTag) : null;
 
 	const db = getDb();
 
@@ -85,8 +91,8 @@ async function postHandler(
 	await db.insert(sources).values({
 		id,
 		content,
-		filename: filename || null,
-		tag: tag || null,
+		filename,
+		tag,
 		notebookId,
 		userId,
 		createdAt: now,

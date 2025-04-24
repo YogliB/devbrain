@@ -4,6 +4,7 @@ import { notebooks, suggestedQuestions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { withDb } from '@/middleware/db-middleware';
+import { sanitizeInput } from '@/lib/sanitize-utils';
 
 async function getHandler(
 	_request: NextRequest,
@@ -72,10 +73,14 @@ async function postHandler(
 		.delete(suggestedQuestions)
 		.where(eq(suggestedQuestions.notebookId, notebookId));
 	const now = new Date();
+	// Get the user ID from the notebook
+	const userId = notebook.userId;
+
 	const questionsToInsert = questions.map((question) => ({
 		id: uuidv4(),
-		text: question.text,
+		text: sanitizeInput(question.text),
 		notebookId,
+		userId,
 		createdAt: now,
 	}));
 

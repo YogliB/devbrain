@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { sanitizeInput, sanitizeFilename } from '@/lib/sanitize-utils';
 
 interface AddSourceFormProps {
 	onAddSource: (content: string, filename?: string) => void;
@@ -17,7 +18,13 @@ export function AddSourceForm({ onAddSource, className }: AddSourceFormProps) {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (content.trim()) {
-			onAddSource(content, filename.trim() || undefined);
+			// Sanitize both content and filename before adding
+			const sanitizedContent = sanitizeInput(content);
+			const sanitizedFilename = filename.trim()
+				? sanitizeFilename(filename.trim())
+				: undefined;
+
+			onAddSource(sanitizedContent, sanitizedFilename);
 			setContent('');
 			setFilename('');
 			setIsExpanded(false);

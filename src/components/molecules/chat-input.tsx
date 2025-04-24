@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { sanitizeInput } from '@/lib/sanitize-utils';
 import {
 	Tooltip,
 	TooltipContent,
@@ -29,7 +30,9 @@ export function ChatInput({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (message.trim() && !disabled) {
-			onSendMessage(message);
+			// Sanitize the message before sending
+			const sanitizedMessage = sanitizeInput(message);
+			onSendMessage(sanitizedMessage);
 			setMessage('');
 		}
 	};

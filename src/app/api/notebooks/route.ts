@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { withDbAndAuth } from '@/middleware/auth-middleware';
 import { NextApiContext } from '@/middleware/types';
+import { sanitizeInput } from '@/lib/sanitize-utils';
 
 async function getHandler(_request: NextRequest, context: NextApiContext) {
 	const userId = context.userId as string;
@@ -36,7 +37,7 @@ export const GET = withDbAndAuth(getHandler);
 
 async function postHandler(request: NextRequest, context: NextApiContext) {
 	const body = await request.json();
-	const { title } = body;
+	const { title: rawTitle } = body;
 	const userId = context.userId as string;
 
 	if (!userId) {
@@ -46,12 +47,15 @@ async function postHandler(request: NextRequest, context: NextApiContext) {
 		);
 	}
 
-	if (!title) {
+	if (!rawTitle) {
 		return NextResponse.json(
 			{ message: 'Title is required' },
 			{ status: 400 },
 		);
 	}
+
+	// Sanitize the title
+	const title = sanitizeInput(rawTitle);
 
 	const db = getDb();
 
