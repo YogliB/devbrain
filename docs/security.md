@@ -43,26 +43,36 @@ DevBrain implements data isolation using PostgreSQL's Row-Level Security (RLS) f
 
 For more details on the RLS implementation, see the [Database Documentation](./database.md#data-isolation-with-row-level-security).
 
-## Additional Security Measures
+## Additional Security Considerations
 
-### HTTPS
+### Authentication Security
 
-All communication with the application is encrypted using HTTPS to protect data in transit.
+- Passwords are securely hashed using bcrypt before storage
+- User authentication is verified on both client and server sides
+- API routes validate user authentication through middleware
+- Guest users have limited access and are clearly notified about data persistence limitations
 
-### Content Security Policy
+### Service Worker Security
 
-A strict Content Security Policy (CSP) is implemented to prevent XSS attacks and other code injection vulnerabilities.
+The application uses a service worker for WebLLM model management with security considerations:
 
-### Rate Limiting
+- Service worker scope is limited to specific functionality
+- Communication between the main thread and service worker is secured
+- Service worker registration and activation follow security best practices
 
-API endpoints are protected by rate limiting to prevent brute force attacks and abuse.
+### Client-Side Data Processing
 
-### Secure Headers
+One of the key security features of DevBrain is that AI processing happens entirely on the client side:
 
-The application sets secure HTTP headers to protect against common web vulnerabilities:
+- No user data is sent to external servers for AI processing
+- Models run locally in the browser using WebLLM
+- Source content and chat messages remain on the user's device
 
-- X-Content-Type-Options: nosniff
-- X-Frame-Options: DENY
-- X-XSS-Protection: 1; mode=block
-- Referrer-Policy: strict-origin-when-cross-origin
-- Strict-Transport-Security: max-age=31536000; includeSubDomains
+### Deployment Recommendations
+
+When deploying to production, it's recommended to implement:
+
+- HTTPS for all communications
+- Content Security Policy (CSP) headers
+- Rate limiting for authentication endpoints
+- Additional secure headers (X-Content-Type-Options, X-Frame-Options, etc.)

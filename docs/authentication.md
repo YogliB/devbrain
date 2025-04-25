@@ -34,8 +34,8 @@ The authentication system is implemented using React context and custom hooks:
 
 - `AuthContext` provides authentication state to the entire application
 - `useAuth` hook gives components access to authentication functions
-- `withAuth` HOC protects routes that require authentication
-- API routes validate authentication tokens before processing requests
+- `ProtectedRoute` component protects routes that require authentication
+- API routes use `withAuth` middleware to validate user authentication
 
 ## Security Considerations
 

@@ -130,10 +130,10 @@ Git hooks (via Husky) will automatically format and lint your code before commit
 
 ### Running Tests
 
-Run tests with:
+Vitest is used for testing. While there's no explicit `test` script in package.json, you can run tests using Vitest directly:
 
 ```bash
-npm test
+npx vitest
 ```
 
 ### Writing Tests

@@ -33,8 +33,8 @@ The database connection is configured using environment variables. See `.env.exa
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=devbrain
-POSTGRES_PORT=5432
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/devbrain
+POSTGRES_PORT=5433
+DATABASE_URL=postgres://postgres:postgres@localhost:5433/devbrain
 ```
 
 ## Database Schema and Indexes

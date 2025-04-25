@@ -12,6 +12,8 @@ DevBrain is built using the following technologies:
 - **AI Integration**: WebLLM for client-side AI processing
 - **Service Worker**: For offline support and model persistence
 
+> **Note**: While the current implementation uses PostgreSQL, some documentation may reference SQLite. The project was likely migrated from SQLite to PostgreSQL at some point.
+
 ## Project Structure
 
 The project follows the Atomic Design methodology for organizing components:
