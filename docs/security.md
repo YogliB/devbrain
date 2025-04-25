@@ -60,13 +60,19 @@ The application uses a service worker for WebLLM model management with security 
 - Communication between the main thread and service worker is secured
 - Service worker registration and activation follow security best practices
 
-### Client-Side Data Processing
+### Client-Side AI Processing
 
 One of the key security features of DevBrain is that AI processing happens entirely on the client side:
 
 - No user data is sent to external servers for AI processing
 - Models run locally in the browser using WebLLM
-- Source content and chat messages remain on the user's device
+- AI inference happens on the user's device
+
+While the AI processing is local, it's important to note that user data (notebooks, messages, sources, etc.) is stored in the PostgreSQL database. This data is protected by:
+
+- Row-Level Security policies that ensure users can only access their own data
+- Proper input sanitization before storage
+- Secure database connections
 
 ### Deployment Recommendations
 
