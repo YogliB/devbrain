@@ -24,7 +24,10 @@ This project uses [Volta](https://volta.sh/) to ensure consistent Node.js and np
 To set up Volta:
 
 1. Install Volta by following the instructions on the [Volta website](https://volta.sh/)
-2. No additional configuration is needed - Volta will automatically use the correct Node.js and npm versions when you're in the project directory
+
+2. After installation, you may need to restart your terminal or run `volta setup` to ensure Volta is properly configured in your PATH
+
+3. No additional configuration is needed - Volta will automatically use the correct Node.js and npm versions when you're in the project directory
 
 ### Setting Up the Development Environment
 
@@ -40,6 +43,8 @@ To set up Volta:
     ```bash
     npm install
     ```
+
+    > **Note**: If you've installed Volta correctly, it will automatically use the Node.js and npm versions specified in the project's `package.json` file. You don't need to manually switch Node.js versions.
 
 3. Set up environment variables:
 
