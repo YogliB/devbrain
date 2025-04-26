@@ -4,10 +4,27 @@
 
 ### Prerequisites
 
-- Node.js 18.x or later
-- npm 9.x or later
+- [Volta](https://volta.sh/) (for Node.js version management)
+- Node.js 22.x or later (automatically managed by Volta)
+- npm 11.x or later (automatically managed by Volta)
 - Docker (for PostgreSQL with pgvector database)
 - Git
+
+### Node.js Setup with Volta
+
+This project uses [Volta](https://volta.sh/) to ensure consistent Node.js and npm versions across all development environments. Volta automatically uses the Node.js and npm versions specified in the `package.json` file:
+
+```json
+"volta": {
+    "node": "22.14.0",
+    "npm": "11.3.0"
+}
+```
+
+To set up Volta:
+
+1. Install Volta by following the instructions on the [Volta website](https://volta.sh/)
+2. No additional configuration is needed - Volta will automatically use the correct Node.js and npm versions when you're in the project directory
 
 ### Setting Up the Development Environment
 
