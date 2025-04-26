@@ -7,7 +7,7 @@ DevBrain is built using the following technologies:
 - **Frontend**: Next.js 15 with React 19 and TypeScript
 - **UI Components**: shadcn/ui with TailwindCSS
 - **State Management**: React Context API and custom hooks
-- **Database**: PostgreSQL with Drizzle ORM
+- **Database**: PostgreSQL with pgvector extension and Drizzle ORM
 - **Authentication**: Custom authentication system with bcrypt for password hashing
 - **AI Integration**: WebLLM for client-side AI processing
 - **Service Worker**: For offline support and model persistence

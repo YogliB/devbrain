@@ -13,7 +13,7 @@ This project uses PostgreSQL with Drizzle ORM for database management. The datab
 
 ### PostgreSQL Setup
 
-The project uses a dockerized PostgreSQL 17.4 (Alpine) instance. To start the database:
+The project uses a dockerized pgvector/pgvector:pg17 instance (PostgreSQL with pgvector extension for vector storage capabilities). To start the database:
 
 ```bash
 npm run db:start

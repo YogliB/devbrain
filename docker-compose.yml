@@ -1,6 +1,6 @@
 services:
     postgres:
-        image: postgres:17.4-alpine
+        image: pgvector/pgvector:pg17
         container_name: devbrain-postgres
         restart: unless-stopped
         environment:

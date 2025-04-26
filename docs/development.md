@@ -6,7 +6,7 @@
 
 - Node.js 18.x or later
 - npm 9.x or later
-- Docker (for PostgreSQL database)
+- Docker (for PostgreSQL with pgvector database)
 - Git
 
 ### Setting Up the Development Environment
