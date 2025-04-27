@@ -87,10 +87,10 @@ describe('source-embedding-service', () => {
 		vi.clearAllMocks();
 
 		// Setup mocks
-		(getDb as unknown).mockReturnValue(mockDb);
+		(getDb as any).mockReturnValue(mockDb);
 		mockDb.where.mockResolvedValue([mockSource]);
-		(chunkText as unknown).mockReturnValue(mockChunks);
-		(generateEmbedding as unknown).mockResolvedValue(mockEmbedding);
+		(chunkText as any).mockReturnValue(mockChunks);
+		(generateEmbedding as any).mockResolvedValue(mockEmbedding);
 	});
 
 	describe('processSource', () => {
@@ -126,7 +126,7 @@ describe('source-embedding-service', () => {
 		});
 
 		it('should handle empty content gracefully', async () => {
-			(chunkText as unknown).mockReturnValue([]);
+			(chunkText as any).mockReturnValue([]);
 			const result = await processSource('source-123', 'user-123');
 			expect(result).toBe(0);
 			expect(mockDb.insert).not.toHaveBeenCalled();

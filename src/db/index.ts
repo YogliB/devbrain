@@ -6,8 +6,12 @@ import { sql } from 'drizzle-orm';
 let db: ReturnType<typeof drizzle> | null = null;
 let client: ReturnType<typeof postgres> | null = null;
 
-export function getConnectionString() {
-	return process.env.DATABASE_URL;
+export function getConnectionString(): string {
+	const connectionString = process.env.DATABASE_URL;
+	if (!connectionString) {
+		throw new Error('DATABASE_URL environment variable is not set');
+	}
+	return connectionString;
 }
 
 export function getDb() {

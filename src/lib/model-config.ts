@@ -69,16 +69,15 @@ export async function detectDeviceCapabilities(): Promise<DeviceCapabilities> {
 			}
 
 			// Use performance.memory if available (Chromium-based browsers)
-			// @ts-expect-error - performance.memory is not in the standard Performance type
 			if (
 				performance &&
-				performance.memory &&
-				performance.memory.jsHeapSizeLimit
+				'memory' in performance &&
+				(performance as any).memory &&
+				(performance as any).memory.jsHeapSizeLimit
 			) {
 				// Convert bytes to MB
-				// @ts-expect-error - memory is not in the standard Performance type
 				const heapSizeLimit =
-					performance.memory.jsHeapSizeLimit / (1024 * 1024);
+					(performance as any).memory.jsHeapSizeLimit / (1024 * 1024);
 				estimatedMemory = Math.max(estimatedMemory, heapSizeLimit);
 			}
 		}

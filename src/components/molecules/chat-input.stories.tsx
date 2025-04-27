@@ -18,9 +18,13 @@ const meta: Meta<typeof ChatInput> = {
 		className: { control: 'text' },
 		disabledReason: { control: 'text' },
 	},
-	decoratorComponents: {
-		TooltipProvider: TooltipProvider,
-	},
+	decorators: [
+		(Story) => (
+			<TooltipProvider>
+				<Story />
+			</TooltipProvider>
+		),
+	],
 };
 
 export default meta;

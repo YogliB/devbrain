@@ -68,7 +68,9 @@ export const sourceEmbeddings = pgTable(
 		chunkId: text('chunk_id')
 			.notNull()
 			.references(() => sourceChunks.id, { onDelete: 'cascade' }),
-		embedding: sql`vector(384)`, // 384 dimensions for all-MiniLM-L6-v2
+		// Define a custom column for the vector
+		// This is a workaround for TypeScript type issues
+		embedding: text('embedding').notNull(),
 		sourceId: text('source_id')
 			.notNull()
 			.references(() => sources.id, { onDelete: 'cascade' }),
