@@ -5,6 +5,7 @@ import { eq, desc, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { withDbAndAuth } from '@/middleware/auth-middleware';
 import { sanitizeInput, sanitizeFilename } from '@/lib/sanitize-utils';
+import { processSource } from '@/lib/source-embedding-service';
 
 async function getHandler(
 	_request: NextRequest,
@@ -112,6 +113,14 @@ async function postHandler(
 		.update(notebooks)
 		.set({ updatedAt: now })
 		.where(eq(notebooks.id, notebookId));
+
+	// Process the source for chunking and embedding
+	try {
+		await processSource(id, userId);
+	} catch (error) {
+		console.error('Error processing source for embeddings:', error);
+		// Continue even if embedding fails - don't block the source creation
+	}
 
 	return NextResponse.json(formattedSource, { status: 201 });
 }

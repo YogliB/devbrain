@@ -9,6 +9,7 @@ DevBrain has comprehensive documentation covering all aspects of the application
 - [Authentication](./docs/authentication.md) - Details about the authentication system and user management
 - [Security](./docs/security.md) - Security features and best practices implemented in the application
 - [AI Integration](./docs/ai-integration.md) - Information about the WebLLM integration and AI features
+- [Vector Embeddings](./docs/vector-embeddings.md) - Details about the vector embedding system for source content
 - [Development Guide](./docs/development.md) - Guide for setting up the development environment and workflow
 
 For a complete overview, please refer to the [Documentation Index](./docs/index.md).

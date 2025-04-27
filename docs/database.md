@@ -44,6 +44,8 @@ The database schema is defined using Drizzle ORM in the `src/db/schema` director
 - `notebooks` - Stores notebook metadata with user ownership
 - `messages` - Stores chat messages associated with notebooks and users
 - `sources` - Stores source content associated with notebooks and users
+- `sourceChunks` - Stores chunked content from sources for improved retrieval
+- `sourceEmbeddings` - Stores vector embeddings of source chunks for similarity search
 - `suggestedQuestions` - Stores AI-generated questions for notebooks and users
 - `users` - Stores user authentication information
 
@@ -58,6 +60,12 @@ The following indexes are defined to improve query performance:
 - `sources_user_id_idx` - Index on the `userId` column of the sources table
 - `sources_created_at_idx` - Index on the `createdAt` column of the sources table
 - `sources_tag_idx` - Index on the `tag` column of the sources table
+- `source_chunks_source_id_idx` - Index on the `sourceId` column of the sourceChunks table
+- `source_chunks_notebook_id_idx` - Index on the `notebookId` column of the sourceChunks table
+- `source_chunks_user_id_idx` - Index on the `userId` column of the sourceChunks table
+- `source_embeddings_chunk_id_idx` - Index on the `chunkId` column of the sourceEmbeddings table
+- `source_embeddings_source_id_idx` - Index on the `sourceId` column of the sourceEmbeddings table
+- `source_embeddings_embedding_idx` - Vector index on the `embedding` column for similarity search
 - `suggested_questions_notebook_id_idx` - Index on the `notebookId` column of the suggestedQuestions table
 - `suggested_questions_user_id_idx` - Index on the `userId` column of the suggestedQuestions table
 - `suggested_questions_created_at_idx` - Index on the `createdAt` column of the suggestedQuestions table
@@ -94,6 +102,7 @@ The database schema is organized into separate files for each table:
 - `src/db/schema/notebooks.ts` - Defines the notebooks table
 - `src/db/schema/messages.ts` - Defines the messages table
 - `src/db/schema/sources.ts` - Defines the sources table
+- `src/db/schema/sourceChunks.ts` - Defines the sourceChunks and sourceEmbeddings tables
 - `src/db/schema/suggestedQuestions.ts` - Defines the suggestedQuestions table
 - `src/db/schema/users.ts` - Defines the users table
 

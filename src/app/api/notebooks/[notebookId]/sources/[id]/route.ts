@@ -2,19 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { notebooks, sources } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { withDb } from '@/middleware/db-middleware';
+import { withDbAndAuth } from '@/middleware/auth-middleware';
+import {
+	updateSourceChunks,
+	deleteSourceChunks,
+} from '@/lib/source-embedding-service';
 
 async function getHandler(
 	_request: NextRequest,
-	{ params }: { params: Promise<{ notebookId: string; id: string }> },
+	{
+		params,
+		...context
+	}: { params: Promise<{ notebookId: string; id: string }> } & Record<
+		string,
+		unknown
+	>,
 ) {
 	const { notebookId, id } = await params;
+	const userId = context.userId as string;
 	const db = getDb();
 
 	const [source] = await db
 		.select()
 		.from(sources)
-		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+		.where(
+			and(
+				eq(sources.id, id),
+				eq(sources.notebookId, notebookId),
+				eq(sources.userId, userId),
+			),
+		);
 
 	if (!source) {
 		return NextResponse.json(
@@ -31,13 +48,20 @@ async function getHandler(
 	return NextResponse.json(formattedSource);
 }
 
-export const GET = withDb(getHandler);
+export const GET = withDbAndAuth(getHandler);
 
 async function putHandler(
 	request: NextRequest,
-	{ params }: { params: Promise<{ notebookId: string; id: string }> },
+	{
+		params,
+		...context
+	}: { params: Promise<{ notebookId: string; id: string }> } & Record<
+		string,
+		unknown
+	>,
 ) {
 	const { notebookId, id } = await params;
+	const userId = context.userId as string;
 	const body = await request.json();
 	const { content, filename, tag } = body;
 
@@ -53,7 +77,13 @@ async function putHandler(
 	const [existingSource] = await db
 		.select()
 		.from(sources)
-		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+		.where(
+			and(
+				eq(sources.id, id),
+				eq(sources.notebookId, notebookId),
+				eq(sources.userId, userId),
+			),
+		);
 
 	if (!existingSource) {
 		return NextResponse.json(
@@ -71,7 +101,13 @@ async function putHandler(
 			filename: filename || null,
 			tag: tag || null,
 		})
-		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+		.where(
+			and(
+				eq(sources.id, id),
+				eq(sources.notebookId, notebookId),
+				eq(sources.userId, userId),
+			),
+		);
 
 	const [updatedSource] = await db
 		.select()
@@ -88,22 +124,43 @@ async function putHandler(
 		.set({ updatedAt: now })
 		.where(eq(notebooks.id, notebookId));
 
+	// Update source chunks and embeddings
+	try {
+		await updateSourceChunks(id, existingSource.userId);
+	} catch (error) {
+		console.error('Error updating source embeddings:', error);
+		// Continue even if embedding fails - don't block the source update
+	}
+
 	return NextResponse.json(formattedSource);
 }
 
-export const PUT = withDb(putHandler);
+export const PUT = withDbAndAuth(putHandler);
 
 async function deleteHandler(
 	_request: NextRequest,
-	{ params }: { params: Promise<{ notebookId: string; id: string }> },
+	{
+		params,
+		...context
+	}: { params: Promise<{ notebookId: string; id: string }> } & Record<
+		string,
+		unknown
+	>,
 ) {
 	const { notebookId, id } = await params;
+	const userId = context.userId as string;
 	const db = getDb();
 
 	const [existingSource] = await db
 		.select()
 		.from(sources)
-		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
+		.where(
+			and(
+				eq(sources.id, id),
+				eq(sources.notebookId, notebookId),
+				eq(sources.userId, userId),
+			),
+		);
 
 	if (!existingSource) {
 		return NextResponse.json(
@@ -112,6 +169,15 @@ async function deleteHandler(
 		);
 	}
 
+	// Delete source chunks and embeddings first
+	try {
+		await deleteSourceChunks(id, existingSource.userId);
+	} catch (error) {
+		console.error('Error deleting source embeddings:', error);
+		// Continue even if embedding deletion fails
+	}
+
+	// Then delete the source itself
 	await db
 		.delete(sources)
 		.where(and(eq(sources.id, id), eq(sources.notebookId, notebookId)));
@@ -125,4 +191,4 @@ async function deleteHandler(
 	return NextResponse.json({ message: 'Source deleted successfully' });
 }
 
-export const DELETE = withDb(deleteHandler);
+export const DELETE = withDbAndAuth(deleteHandler);

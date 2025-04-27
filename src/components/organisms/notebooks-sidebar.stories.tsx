@@ -98,19 +98,17 @@ export const Loading: Story = {
 };
 
 export const LoadingCollapsed: Story = {
-	render: () => {
+	render: () => (
 		// Force the sidebar to be collapsed initially
-		return (
-			<div className="w-16">
-				<NotebooksSidebar
-					notebooks={mockNotebooks}
-					activeNotebook={null}
-					isLoading={true}
-					onSelectNotebook={fn()}
-					onCreateNotebook={fn()}
-					onDeleteNotebook={fn()}
-				/>
-			</div>
-		);
-	},
+		<div className="w-16">
+			<NotebooksSidebar
+				notebooks={mockNotebooks}
+				activeNotebook={null}
+				isLoading={true}
+				onSelectNotebook={fn()}
+				onCreateNotebook={fn()}
+				onDeleteNotebook={fn()}
+			/>
+		</div>
+	),
 };
