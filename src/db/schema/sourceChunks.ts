@@ -6,6 +6,7 @@ import {
 	index,
 	pgPolicy,
 	jsonb,
+	vector,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { sources } from './sources';
@@ -70,7 +71,7 @@ export const sourceEmbeddings = pgTable(
 			.references(() => sourceChunks.id, { onDelete: 'cascade' }),
 		// Define a custom column for the vector
 		// This is a workaround for TypeScript type issues
-		embedding: text('embedding').notNull(),
+		embedding: vector('embedding', { dimensions: 384 }).notNull(),
 		sourceId: text('source_id')
 			.notNull()
 			.references(() => sources.id, { onDelete: 'cascade' }),
@@ -91,9 +92,10 @@ export const sourceEmbeddings = pgTable(
 			table.notebookId,
 		),
 		userIdIdx: index('source_embeddings_user_id_idx').on(table.userId),
-		// Create a vector index for similarity search
-		embeddingIdx: sql`CREATE INDEX IF NOT EXISTS source_embeddings_embedding_idx ON source_embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)`,
-		// Add RLS policies to restrict access to user's own embeddings
+		embeddingIdx: index('source_embeddings_embedding_idx').using(
+			'hnsw',
+			table.embedding.op('vector_cosine_ops'),
+		),
 		userSelectPolicy: pgPolicy('source_embeddings_user_select_policy', {
 			for: 'select',
 			to: 'public',

@@ -8,7 +8,6 @@ import { sources, sourceChunks, sourceEmbeddings } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { chunkText } from './chunking-utils';
 import { generateEmbedding } from './embedding-utils';
-import { sql } from 'drizzle-orm';
 
 // Configuration
 const CHUNK_SIZE = 1000;
@@ -82,11 +81,14 @@ export async function processSource(
 		// Generate embedding for the chunk
 		const embedding = await generateEmbedding(chunk.content);
 
+		// Convert Float32Array to regular array for Drizzle's vector type
+		const embeddingArray = Array.from(embedding);
+
 		// Prepare embedding insert
 		embeddingInserts.push({
 			id: uuidv4(),
 			chunkId,
-			embedding: sql`ARRAY[${embedding}]::real[]`, // Convert to SQL array
+			embedding: embeddingArray, // Using Drizzle's vector type
 			sourceId: source.id,
 			notebookId: source.notebookId,
 			userId: source.userId,
