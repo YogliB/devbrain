@@ -69,8 +69,6 @@ export const sourceEmbeddings = pgTable(
 		chunkId: text('chunk_id')
 			.notNull()
 			.references(() => sourceChunks.id, { onDelete: 'cascade' }),
-		// Define a custom column for the vector
-		// This is a workaround for TypeScript type issues
 		embedding: vector('embedding', { dimensions: 384 }).notNull(),
 		sourceId: text('source_id')
 			.notNull()
