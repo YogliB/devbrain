@@ -13,6 +13,27 @@ vi.mock('@/db', () => ({
 	getDb: vi.fn(),
 }));
 
+vi.mock('@/db/schema', () => ({
+	sources: {
+		id: 'id',
+		notebookId: 'notebookId',
+		userId: 'userId',
+	},
+	sourceChunks: {
+		id: 'id',
+		sourceId: 'sourceId',
+		notebookId: 'notebookId',
+		userId: 'userId',
+	},
+	sourceEmbeddings: {
+		id: 'id',
+		chunkId: 'chunkId',
+		sourceId: 'sourceId',
+		notebookId: 'notebookId',
+		userId: 'userId',
+	},
+}));
+
 vi.mock('./chunking-utils', () => ({
 	chunkText: vi.fn(),
 }));

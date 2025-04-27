@@ -32,7 +32,7 @@ The chunking process is handled by the `chunking-utils.ts` module, which provide
 
 Chunks are converted to vector embeddings using:
 
-- [Xenova/transformers](https://github.com/xenova/transformers.js) - A CPU-compatible implementation of Hugging Face Transformers
+- [@huggingface/transformers](https://github.com/huggingface/transformers.js) - The official Hugging Face Transformers.js library
 - The default model is `all-MiniLM-L6-v2` (384 dimensions), which provides a good balance of quality and performance
 - Embeddings are generated on the server during source creation/update
 

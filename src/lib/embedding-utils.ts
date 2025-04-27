@@ -1,16 +1,9 @@
 /**
  * Utility functions for generating embeddings from text
- * Uses Xenova/transformers for CPU-compatible embedding generation
+ * Uses HuggingFace Transformers.js for CPU-compatible embedding generation
  */
 
-import { pipeline, env } from '@xenova/transformers';
-
-// Configure the library to use the CPU
-env.backends.onnx.wasm.numThreads = 4;
-
-// Set model caching options
-env.cacheDir = './.cache/models';
-env.allowLocalModels = true;
+import { pipeline } from '@huggingface/transformers';
 
 // Define the embedding model to use
 // MiniLM is a good balance of quality and performance for CPU-only environments
@@ -19,17 +12,12 @@ const DEFAULT_MODEL = 'Xenova/all-MiniLM-L6-v2';
 // Singleton instance of the embedding pipeline
 let embeddingPipeline: unknown = null;
 
-// Define a type for the embedding result
-interface EmbeddingResult {
-	data: Float32Array;
-}
-
 // Define a type for the embedding pipeline
-interface EmbeddingPipeline {
+interface FeatureExtractionPipeline {
 	(
-		text: string,
-		options: { pooling: string; normalize: boolean },
-	): Promise<EmbeddingResult>;
+		text: string | string[],
+		options?: { pooling?: string; normalize?: boolean },
+	): Promise<Float32Array | Float32Array[]>;
 }
 
 /**
@@ -39,12 +27,14 @@ interface EmbeddingPipeline {
  */
 export async function initEmbeddingPipeline(
 	modelName: string = DEFAULT_MODEL,
-): Promise<EmbeddingPipeline> {
+): Promise<FeatureExtractionPipeline> {
 	if (!embeddingPipeline) {
 		// Create a feature extraction pipeline
-		embeddingPipeline = await pipeline('feature-extraction', modelName);
+		embeddingPipeline = await pipeline('feature-extraction', modelName, {
+			dtype: 'fp32', // Use full precision for better accuracy
+		});
 	}
-	return embeddingPipeline as EmbeddingPipeline;
+	return embeddingPipeline as FeatureExtractionPipeline;
 }
 
 /**
@@ -58,16 +48,16 @@ export async function generateEmbedding(
 	modelName: string = DEFAULT_MODEL,
 ): Promise<Float32Array> {
 	// Initialize the pipeline if not already done
-	const pipeline = await initEmbeddingPipeline(modelName);
+	const featurePipeline = await initEmbeddingPipeline(modelName);
 
 	// Generate embeddings
-	const result = await pipeline(text, {
+	const result = await featurePipeline(text, {
 		pooling: 'mean',
 		normalize: true,
 	});
 
 	// Return the embedding vector
-	return result.data;
+	return result as Float32Array;
 }
 
 /**
@@ -83,7 +73,7 @@ export async function generateEmbeddingsBatch(
 	batchSize: number = 8,
 ): Promise<Float32Array[]> {
 	// Initialize the pipeline
-	const pipeline = await initEmbeddingPipeline(modelName);
+	const featurePipeline = await initEmbeddingPipeline(modelName);
 
 	const embeddings: Float32Array[] = [];
 
@@ -92,19 +82,18 @@ export async function generateEmbeddingsBatch(
 		const batch = texts.slice(i, i + batchSize);
 
 		// Generate embeddings for the batch
-		const results = await Promise.all(
-			batch.map((text) =>
-				pipeline(text, {
-					pooling: 'mean',
-					normalize: true,
-				}),
-			),
-		);
+		const results = await featurePipeline(batch, {
+			pooling: 'mean',
+			normalize: true,
+		});
 
-		// Extract the embedding data
-		embeddings.push(
-			...results.map((result: EmbeddingResult) => result.data),
-		);
+		// Add the embeddings to our array
+		if (Array.isArray(results)) {
+			embeddings.push(...results);
+		} else {
+			// If only one result is returned (when batch has one item)
+			embeddings.push(results);
+		}
 	}
 
 	return embeddings;

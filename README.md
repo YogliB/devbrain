@@ -75,6 +75,32 @@ This project implements code-splitting and lazy loading for major components to 
 
 This project uses Prettier for code formatting and ESLint for code linting. For detailed information about code formatting and the development workflow, please refer to the [Development Guide](./docs/development.md#code-formatting-and-linting).
 
+### Testing
+
+This project uses Vitest for unit testing and Storybook for component testing. You can run the tests using the following commands:
+
+```bash
+# Run all tests
+npm test
+
+# Run only unit tests
+npm run test:unit
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run only unit tests in watch mode
+npm run test:watch:unit
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests with UI
+npm run test:ui
+```
+
+For detailed information about testing, please refer to the [Development Guide](./docs/development.md#testing).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

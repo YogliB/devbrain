@@ -152,11 +152,34 @@ Git hooks (via Husky) will automatically format and lint your code before commit
 
 ### Running Tests
 
-Vitest is used for testing. While there's no explicit `test` script in package.json, you can run tests using Vitest directly:
+Vitest is used for unit and integration tests, while Storybook is used for component testing. The project includes several test scripts:
 
 ```bash
-npx vitest
+# Run all tests
+npm test
+
+# Run only unit tests
+npm run test:unit
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run only unit tests in watch mode
+npm run test:watch:unit
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests with UI
+npm run test:ui
 ```
+
+### Test Projects
+
+The project is configured with two test projects in `vitest.config.ts`:
+
+1. **unit** - For unit and integration tests
+2. **storybook** - For component tests using Storybook
 
 ### Writing Tests
 
@@ -165,9 +188,10 @@ npx vitest
 - Follow the AAA pattern (Arrange, Act, Assert)
 - Mock external dependencies
 
-Example test:
+Example unit test:
 
 ```tsx
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Button } from './Button';
 
@@ -177,6 +201,29 @@ describe('Button', () => {
 		expect(screen.getByText('Click me')).toBeInTheDocument();
 	});
 });
+```
+
+Example Storybook test:
+
+```tsx
+// Button.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react';
+import { Button } from './Button';
+
+const meta: Meta<typeof Button> = {
+	component: Button,
+	title: 'Atoms/Button',
+};
+
+export default meta;
+type Story = StoryObj<typeof Button>;
+
+export const Primary: Story = {
+	args: {
+		variant: 'primary',
+		children: 'Button',
+	},
+};
 ```
 
 ## Database Development
