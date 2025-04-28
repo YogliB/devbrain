@@ -2,10 +2,16 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ChatMessage, SuggestedQuestion } from '@/types/chat';
-import { messagesAPI, suggestedQuestionsAPI } from '@/lib/api';
+import {
+	messagesAPI,
+	suggestedQuestionsAPI,
+	vectorSearchAPI,
+	SearchResult,
+} from '@/lib/api';
 import { useModel } from '@/contexts/model-context';
 import { ChatCompletionRequestMessage } from '@/lib/webllm-service';
 import { useSources } from '@/hooks/useSources';
+import { formatSearchResultsForContext } from '@/lib/vector-search-service';
 
 // Cache to store messages by notebook ID
 const messagesCache = new Map<string, ChatMessage[]>();
@@ -87,14 +93,53 @@ export function useChatWithAI(notebookId: string | null) {
 				// Generate AI response
 				setIsGenerating(true);
 				try {
+					// Perform vector search to find relevant chunks
+					let relevantContext = '';
+					let searchResults: SearchResult[] = [];
+
+					if (sources.length > 0) {
+						try {
+							// Search for relevant chunks based on the user's query
+							searchResults = await vectorSearchAPI.search(
+								notebookId,
+								content,
+							);
+
+							// Format the search results for the AI context
+							if (searchResults.length > 0) {
+								relevantContext =
+									formatSearchResultsForContext(
+										searchResults,
+									);
+							}
+						} catch (searchError) {
+							console.error(
+								'Error performing vector search:',
+								searchError,
+							);
+							// Continue even if search fails - we'll fall back to using all sources
+						}
+					}
+
+					// Prepare system message with context
+					let systemContent = `You are a helpful AI assistant that answers questions based on the provided sources.`;
+
+					// If we have relevant context from vector search, use it
+					if (relevantContext) {
+						systemContent += `\n\nI've found some relevant information from the sources that might help answer the question. Focus on this information first, but you can also use other sources if needed:\n\n${relevantContext}`;
+					} else if (sources.length > 0) {
+						// Fall back to using all sources if no relevant context was found
+						systemContent += `\n\nUse the following sources to answer the question:\n\n${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Source ${index + 1}`}\n${source.content}`).join('\n\n')}`;
+					} else {
+						// No sources available
+						systemContent += `\n\nNo sources are available, so answer based on your general knowledge.`;
+					}
+
 					// Prepare messages for the AI model
 					const aiMessages: ChatCompletionRequestMessage[] = [
 						{
 							role: 'system',
-							content: `You are a helpful AI assistant that answers questions based on the provided sources.
-${sources.length > 0 ? 'Use the following sources to answer the question:' : 'No sources are available, so answer based on your general knowledge.'}
-
-${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Source ${index + 1}`}\n${source.content}`).join('\n\n')}`,
+							content: systemContent,
 						},
 						...messages
 							.filter(
@@ -153,7 +198,14 @@ ${sources.map((source, index) => `Source ${index + 1}: ${source.filename || `Sou
 				return null;
 			}
 		},
-		[notebookId, modelAvailable, generateResponse, messages, sources],
+		[
+			notebookId,
+			modelAvailable,
+			generateResponse,
+			messages,
+			sources,
+			formatSearchResultsForContext,
+		],
 	);
 
 	const selectQuestion = useCallback(

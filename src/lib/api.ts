@@ -150,3 +150,23 @@ export const suggestedQuestionsAPI = {
 			method: 'DELETE',
 		}),
 };
+
+export interface SearchResult {
+	chunkId: string;
+	content: string;
+	similarity: number;
+	metadata: any;
+	sourceId: string;
+}
+
+export const vectorSearchAPI = {
+	search: (
+		notebookId: string,
+		query: string,
+		topK?: number,
+	): Promise<SearchResult[]> =>
+		fetchAPI(`/notebooks/${notebookId}/vector-search`, {
+			method: 'POST',
+			body: JSON.stringify({ query, topK }),
+		}),
+};

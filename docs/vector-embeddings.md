@@ -10,6 +10,12 @@ When a user adds a source to a notebook, the content is automatically:
 2. Converted to vector embeddings
 3. Stored in the database for efficient retrieval
 
+When a user asks a question in the chat interface, the question is:
+
+1. Converted to a vector embedding
+2. Used to search for the most relevant chunks from the sources
+3. The relevant chunks are sent to the AI model along with the question
+
 This process happens in the background and is transparent to the user.
 
 ## Implementation Details
@@ -50,6 +56,21 @@ Embeddings are stored in PostgreSQL using the pgvector extension:
 - `source_embeddings` table stores the vector embeddings
 - Indexes are created for efficient similarity search
 
+### Vector Search
+
+The vector search functionality is implemented in the `vector-search-service.ts` module, which provides:
+
+- `searchSimilarChunks`: Searches for chunks similar to a query text
+- `formatSearchResultsForContext`: Formats search results for use in AI prompts
+
+The search process:
+
+1. Converts the user's question to a vector embedding
+2. Performs a similarity search in the database using the pgvector extension
+3. Returns the most relevant chunks based on cosine similarity
+4. Filters results based on a similarity threshold (default: 0.7)
+5. Formats the results for inclusion in the AI prompt
+
 ## Performance Considerations
 
 The embedding system is designed with performance in mind:
@@ -59,6 +80,21 @@ The embedding system is designed with performance in mind:
 - The embedding model is optimized for CPU usage
 - Vector indexes use IVFFlat for efficient approximate nearest neighbor search
 
+## Integration with Chat
+
+The vector search is integrated with the chat interface through the `useChatWithAI` hook:
+
+1. When a user sends a message, the hook calls the vector search API
+2. The search results are formatted and included in the system prompt
+3. The AI model uses the relevant context to generate a more accurate response
+4. If no relevant chunks are found, the system falls back to using all sources
+
+This approach provides several benefits:
+
+- More accurate responses by focusing on relevant information
+- Faster responses by reducing the context size
+- Better handling of large notebooks with many sources
+
 ## Future Improvements
 
 Potential future enhancements to the embedding system:
@@ -67,3 +103,5 @@ Potential future enhancements to the embedding system:
 - Add support for different embedding models
 - Improve chunking strategies based on semantic boundaries
 - Add client-side caching of common queries
+- Implement hybrid search combining keyword and vector search
+- Add relevance feedback to improve search results over time
