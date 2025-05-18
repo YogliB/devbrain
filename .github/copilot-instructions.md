@@ -18,4 +18,5 @@ This is an open-source web application for developers that allows users to creat
 - Update the **README** and document new functionality clearly and consistently.
 - When new modules, components, or features are added, the agent must **suggest updates to the README or relevant documentation automatically**.
 - The agent should **proactively identify and flag documentation gaps, inconsistencies, or missing explanations** across code, components, and features.
+- **Update these copilot-instructions whenever the project structure or architecture changes** to keep the instructions aligned with the current state of the project.
 - Prioritize **performance, clarity, and privacy** in every feature.
